@@ -11,8 +11,6 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean(), default=True)
-    department_id = Column(Integer, ForeignKey("department.id"))
-
 
 class Role(Base):
     id = Column(Integer, primary_key=True, index=True)

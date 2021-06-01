@@ -1,1 +1,1 @@
-from .base_class import Base, CRUDMixin
+from .base_class import Base

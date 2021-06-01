@@ -28,7 +28,3 @@ class UserMixin:
     @declared_attr
     def last_modifier_user_id(self):
         return Column(BigInteger, ForeignKey("user.id"))
-
-
-class CRUDMixin:
-    pass
