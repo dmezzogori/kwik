@@ -2,10 +2,10 @@ from fastapi import HTTPException, status
 
 
 class NotFound(HTTPException):
-    def __init__(self, id: int):
+    def __init__(self, id: int, entity: str = 'The item'):
         super().__init__(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"The item with id={id} does not exist in the system"
+            detail=f"{entity} with id={id} does not exist in the system"
         )
 
 
