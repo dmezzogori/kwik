@@ -39,12 +39,22 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db.query(self.model).filter(self.model.id == id).first()
 
     def get_multi(
-        self, db: Session, *, skip: int = 0, limit: int = 100, **kwargs
+        self, db: Session, *, skip: int = 0, limit: int = 100, sort: Optional[List[Tuple[str, str]]] = None, **kwargs
     ) -> Tuple[int, List[ModelType]]:
         q = db.query(self.model)
         if kwargs:
             q = q.filter_by(**kwargs)
         count = q.count()
+
+        if sort is not None:
+            order_by = []
+            for attr, order in sort:
+                model_attr = getattr(self.model, attr)
+                if order == 'asc':
+                    order_by.append(model_attr.asc())
+                else:
+                    order_by.append(model_attr.desc())
+            q = q.order_by(*order_by)
         return count, q.offset(skip).limit(limit).all()
 
     def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:

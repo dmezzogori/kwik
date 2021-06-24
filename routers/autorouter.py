@@ -107,16 +107,30 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         db: Session = kwik.db,
         skip: int = 0,
         limit: int = 100,
+        sorting: Optional[str] = None,
         filter: Optional[str] = None,
         value: Optional[Any] = None
     ) -> List[ModelType]:
         """
         Retrieve many {name} items.
+        Sorting field:[asc|desc]
         """
         filter_d = {}
         if filter and value:
             filter_d = {filter: value}
-        return self.crud.get_multi(db, skip=skip, limit=limit, **filter_d)
+
+        sort = []
+        if sorting is not None:
+            for elem in sorting.split(','):
+                if ':' in elem:
+                    attr, order = elem.split(':')
+                else:
+                    attr = elem
+                    order = 'asc'
+                sort.append((attr, order))
+
+        _, result = self.crud.get_multi(db, skip=skip, limit=limit, sort=sort, **filter_d)
+        return result
 
     def read(
         self,
