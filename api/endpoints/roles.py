@@ -19,7 +19,8 @@ def read_roles(
     """
     Retrieve roles.
     """
-    roles = crud.role.get_multi(db, skip=skip, limit=limit)
+    # TODO total count
+    _, roles = crud.role.get_multi(db, skip=skip, limit=limit)
     return roles
 
 

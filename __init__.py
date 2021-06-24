@@ -8,3 +8,4 @@ from app.kwik.api.api import api_router
 from app.kwik.routers.autorouter import AutoRouter
 from app.kwik.websocket.deps import broadcast
 from app.kwik import exceptions
+from app.kwik import utils

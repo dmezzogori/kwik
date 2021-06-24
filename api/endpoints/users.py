@@ -22,7 +22,8 @@ def read_users(
     """
     Retrieve users.
     """
-    users = crud.user.get_multi(db, skip=skip, limit=limit)
+    # TODO total count
+    _, users = crud.user.get_multi(db, skip=skip, limit=limit)
     return users
 
 

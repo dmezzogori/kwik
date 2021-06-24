@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union, Tuple
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
@@ -40,11 +40,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     def get_multi(
         self, db: Session, *, skip: int = 0, limit: int = 100, **kwargs
-    ) -> List[ModelType]:
+    ) -> Tuple[int, List[ModelType]]:
         q = db.query(self.model)
         if kwargs:
             q = q.filter_by(**kwargs)
-        return q.offset(skip).limit(limit).all()
+        count = q.count()
+        return count, q.offset(skip).limit(limit).all()
 
     def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
         obj_in_data = jsonable_encoder(obj_in)

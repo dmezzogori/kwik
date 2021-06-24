@@ -19,7 +19,8 @@ def read_permissions(
     """
     Retrieve permissions.
     """
-    permissions = crud.permission.get_multi(db, skip=skip, limit=limit)
+    # TODO total count
+    _, permissions = crud.permission.get_multi(db, skip=skip, limit=limit)
     return permissions
 
 
