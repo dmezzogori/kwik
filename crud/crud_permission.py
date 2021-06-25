@@ -20,7 +20,7 @@ class CRUDPermission(CRUDBase[Permission, PermissionCreate, PermissionUpdate]):
             role_id=role_db.id
         )
         db.add(role_permission_db)
-        db.commit()
+        db.flush()
         return permission_db
 
     def purge_role(self, db: Session, *, role_db: models.Role, permission_db: models.Permission) -> models.Permission:
@@ -29,7 +29,7 @@ class CRUDPermission(CRUDBase[Permission, PermissionCreate, PermissionUpdate]):
             models.RolePermission.permission_id == permission_db.id
         ).first()
         db.delete(role_permission_db)
-        db.commit()
+        db.flush()
         return permission_db
 
     def deprecate(self, db: Session, *, name: str) -> models.Permission:
@@ -39,7 +39,7 @@ class CRUDPermission(CRUDBase[Permission, PermissionCreate, PermissionUpdate]):
         ).all()
         for role_permission_db in r:
             db.delete(role_permission_db)
-        db.commit()
+        db.flush()
         return permission_db
 
 

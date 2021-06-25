@@ -20,5 +20,9 @@ class DBContextManager:
     def __enter__(self) -> Session:
         return self.db
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exception_type, exception_value, exception_traceback):
+        if exception_type is not None:
+            self.db.rollback()
+        else:
+            self.db.commit()
         self.db.close()

@@ -106,5 +106,5 @@ def reset_password(
     hashed_password = get_password_hash(new_password)
     user.hashed_password = hashed_password
     db.add(user)
-    db.commit()
+    db.flush()
     return {"msg": "Password updated successfully"}

@@ -31,7 +31,7 @@ class CRUDRole(CRUDBase[Role, RoleCreate, RoleUpdate]):
             role_id=role_db.id
         )
         db.add(user_role_db)
-        db.commit()
+        db.flush()
         return role_db
 
     def purge_user(self, db: Session, *, role_db: models.Role, user_db: models.User) -> models.Role:
@@ -40,7 +40,7 @@ class CRUDRole(CRUDBase[Role, RoleCreate, RoleUpdate]):
             models.UserRole.user_id == user_db.id
         ).first()
         db.delete(user_role_db)
-        db.commit()
+        db.flush()
         return role_db
 
     def deprecate(self, db: Session, *, name: str) -> Role:
@@ -50,7 +50,7 @@ class CRUDRole(CRUDBase[Role, RoleCreate, RoleUpdate]):
         ).all()
         for user_role_db in r:
             db.delete(user_role_db)
-        db.commit()
+        db.flush()
         return role_db
 
 

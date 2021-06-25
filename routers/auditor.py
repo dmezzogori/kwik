@@ -69,7 +69,7 @@ class AuditorRoute(APIRoute):
                     status_code=response.status_code
                 )
                 db.add(audit_db)
-                db.commit()
+                db.flush()
 
             return response
 
