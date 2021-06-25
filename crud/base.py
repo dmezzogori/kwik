@@ -4,6 +4,8 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app import kwik
+from app.kwik.typings import ParsedSortingQuery
 from app.kwik.core.config import settings
 from app.kwik.db.base_class import Base
 from app.kwik.models import Logging
@@ -38,7 +40,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db.query(self.model).filter(self.model.id == id).first()
 
     def get_multi(
-        self, db: Session, *, skip: int = 0, limit: int = 100, sort: Optional[List[Tuple[str, str]]] = None, **kwargs
+        self, db: Session, *, skip: int = 0, limit: int = 100, sort: Optional[ParsedSortingQuery] = None, **kwargs
     ) -> Tuple[int, List[ModelType]]:
         q = db.query(self.model)
         if kwargs:
@@ -46,14 +48,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         count = q.count()
 
         if sort is not None:
-            order_by = []
-            for attr, order in sort:
-                model_attr = getattr(self.model, attr)
-                if order == 'asc':
-                    order_by.append(model_attr.asc())
-                else:
-                    order_by.append(model_attr.desc())
-            q = q.order_by(*order_by)
+            q = kwik.utils.sort_query(model=self.model, query=q, sort=sort)
+
         return count, q.offset(skip).limit(limit).all()
 
     def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:

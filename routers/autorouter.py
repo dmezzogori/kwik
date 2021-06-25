@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 import inspect
-from typing import List, TypeVar, Optional, Any, Generic, Type
+from typing import List, TypeVar, Optional, Any, Generic, Type, Tuple
 
 from fastapi import APIRouter
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import kwik
+from app.kwik.typings import SortingQuery
 from app.kwik.schemas.synth import MyBaseModel
 from app.kwik.db.base_class import Base
+
 
 ModelType = TypeVar("ModelType", bound=Base)
 BaseSchemaType = TypeVar("BaseSchemaType", bound=MyBaseModel)
@@ -107,7 +109,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         db: Session = kwik.db,
         skip: int = 0,
         limit: int = 100,
-        sorting: Optional[str] = None,
+        sorting: Optional[SortingQuery] = None,
         filter: Optional[str] = None,
         value: Optional[Any] = None
     ) -> List[ModelType]:
@@ -118,16 +120,9 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         filter_d = {}
         if filter and value:
             filter_d = {filter: value}
-
-        sort = []
+        sort = None
         if sorting is not None:
-            for elem in sorting.split(','):
-                if ':' in elem:
-                    attr, order = elem.split(':')
-                else:
-                    attr = elem
-                    order = 'asc'
-                sort.append((attr, order))
+            sort = kwik.utils.parse_sorting_query(sorting=sorting)
 
         _, result = self.crud.get_multi(db, skip=skip, limit=limit, sort=sort, **filter_d)
         return result
