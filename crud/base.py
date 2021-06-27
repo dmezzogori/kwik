@@ -8,7 +8,7 @@ from app import kwik
 from app.kwik.typings import ParsedSortingQuery
 from app.kwik.core.config import settings
 from app.kwik.db.base_class import Base
-from app.kwik.models import Logging
+from app.kwik.models import Log
 
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -16,7 +16,7 @@ UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
 def log(db: Session, entity: str, before: dict, after: dict):
-    log_db = Logging(
+    log_db = Log(
         entity=entity,
         before=before,
         after=after

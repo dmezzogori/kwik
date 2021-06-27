@@ -1,10 +1,10 @@
 from sqlalchemy import Column, Integer, String, JSON
 
-from app.kwik.db import Base
+from app.kwik.db import Base, RecordInfoMixin
 
 
-class Logging(Base):
-    __tablename__ = 'logging'
+class Log(Base):
+    __tablename__ = 'logs'
 
     id = Column(Integer, primary_key=True, index=True)
     entity = Column(String)

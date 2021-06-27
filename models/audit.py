@@ -4,6 +4,8 @@ from app.kwik.db import Base
 
 
 class Audit(Base):
+    __tablename__ = 'audits'
+
     id = Column(Integer, primary_key=True, index=True)
     client_host = Column(String, index=True)
     user_id = Column(Integer, index=True, nullable=True)

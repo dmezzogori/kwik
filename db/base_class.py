@@ -6,12 +6,10 @@ from sqlalchemy import Column, BigInteger, DateTime, func, ForeignKey
 
 @as_declarative()
 class Base:
+
     id: Any
     __name__: str
-    # Generate __tablename__ automatically
-    @declared_attr
-    def __tablename__(cls) -> str:
-        return cls.__name__.lower()
+    __tablename__: str
 
 
 class TimeStampsMixin:
@@ -23,8 +21,12 @@ class UserMixin:
 
     @declared_attr
     def creator_user_id(self):
-        return Column(BigInteger, ForeignKey("user.id"))
+        return Column(BigInteger, ForeignKey("users.id"), nullable=False)
 
     @declared_attr
     def last_modifier_user_id(self):
-        return Column(BigInteger, ForeignKey("user.id"))
+        return Column(BigInteger, ForeignKey("users.id"))
+
+
+class RecordInfoMixin(TimeStampsMixin, UserMixin):
+    pass

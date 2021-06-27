@@ -1,10 +1,12 @@
 from sqlalchemy import Boolean, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
-from app.kwik.db import Base
+from app.kwik.db import Base, RecordInfoMixin
 
 
 class User(Base):
+    __tablename__ = 'users'
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     surname = Column(String, index=True)
@@ -12,29 +14,36 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean(), default=True)
 
-class Role(Base):
+
+class Role(Base, RecordInfoMixin):
+    __tablename__ = 'roles'
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     is_active = Column(Boolean(), default=True)
 
 
-class UserRole(Base):
+class UserRole(Base, RecordInfoMixin):
+    __tablename__ = 'users_roles'
+
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("user.id"))
-    role_id = Column(Integer, ForeignKey("role.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    role_id = Column(Integer, ForeignKey("roles.id"))
 
 
-class Permission(Base):
+class Permission(Base, RecordInfoMixin):
+    __tablename__ = 'permissions'
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
 
 
-class RolePermission(Base):
-    __tablename__ = 'role_permission'
+class RolePermission(Base, RecordInfoMixin):
+    __tablename__ = 'roles_permissions'
 
     id = Column(Integer, primary_key=True, index=True)
-    role_id = Column(Integer, ForeignKey("role.id"))
-    permission_id = Column(Integer, ForeignKey("permission.id"))
+    role_id = Column(Integer, ForeignKey("roles.id"))
+    permission_id = Column(Integer, ForeignKey("permissions.id"))
 
     role = relationship('Role')
     permission = relationship('Permission')
