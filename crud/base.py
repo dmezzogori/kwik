@@ -1,10 +1,11 @@
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union, Tuple
+from typing import Any, Dict, Generic, List, Optional, Tuple, Type, TypeVar, Union
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import kwik
+from app.kwik import schemas
 from app.kwik.core.config import settings
 from app.kwik.db.base_class import Base
 from app.kwik.typings import ParsedSortingQuery
@@ -26,11 +27,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
-    def get(self, db: Session, id: Any) -> Optional[ModelType]:
+    def get(self, *, db: Session, id: Any) -> Optional[ModelType]:
         return db.query(self.model).filter(self.model.id == id).first()
 
     def get_multi(
-        self, db: Session, *, skip: int = 0, limit: int = 100, sort: Optional[ParsedSortingQuery] = None, **kwargs
+        self, *, db: Session, skip: int = 0, limit: int = 100, sort: Optional[ParsedSortingQuery] = None, **kwargs
     ) -> Tuple[int, List[ModelType]]:
         q = db.query(self.model)
         if kwargs:
@@ -42,35 +43,44 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         return count, q.offset(skip).limit(limit).all()
 
-    def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
+    def create(self, *, db: Session, obj_in: CreateSchemaType, user: Optional[Any] = None) -> ModelType:
         obj_in_data = jsonable_encoder(obj_in)
-        db_obj = self.model(**obj_in_data)  # type: ignore
+        if user is not None:
+            db_obj = self.model(**obj_in_data, creator_user_id=user.id)
+        else:
+            db_obj = self.model(**obj_in_data)
         db.add(db_obj)
         db.flush()
         db.refresh(db_obj)
 
         if settings.DB_LOGGER:
-            kwik.crud.logs.create(
-                db=db,
+            log_in = schemas.LogCreateSchema(
+                request_id=kwik.middlewares.get_request_id(),
                 entity=db_obj.__tablename__,
                 before=None,
-                after=jsonable_encoder(db_obj)
+                after=jsonable_encoder(db_obj),
             )
+            kwik.crud.logs.create(db=db, obj_in=log_in)
 
         return db_obj
 
     def update(
         self,
-        db: Session,
         *,
+        db: Session,
         db_obj: ModelType,
-        obj_in: Union[UpdateSchemaType, Dict[str, Any]]
+        obj_in: Union[UpdateSchemaType, Dict[str, Any]],
+        user: Optional[Any] = None
     ) -> ModelType:
         obj_data = jsonable_encoder(db_obj)
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
             update_data = obj_in.dict(exclude_unset=True)
+
+        if user is not None:
+            update_data["last_modifier_user_id"] = user.id
+
         for field in obj_data:
             if field in update_data:
                 setattr(db_obj, field, update_data[field])
@@ -79,17 +89,28 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.refresh(db_obj)
 
         if settings.DB_LOGGER:
-            kwik.crud.logs.create(
-                db=db,
+            log_in = schemas.LogCreateSchema(
+                request_id=kwik.middlewares.get_request_id(),
                 entity=db_obj.__tablename__,
                 before=obj_data,
-                after=jsonable_encoder(db_obj)
+                after=jsonable_encoder(db_obj),
             )
+            kwik.crud.logs.create(db=db, obj_in=log_in)
 
         return db_obj
 
-    def remove(self, db: Session, *, id: int) -> ModelType:
+    def remove(self, *, db: Session, id: int, user: Optional[Any] = None) -> ModelType:
         obj = db.query(self.model).get(id)
+
+        if settings.DB_LOGGER:
+            log_in = schemas.LogCreateSchema(
+                request_id=kwik.middlewares.get_request_id(),
+                entity=obj.__tablename__,
+                before=jsonable_encoder(obj),
+                after=None,
+            )
+            kwik.crud.logs.create(db=db, obj_in=log_in, user=user)
+
         db.delete(obj)
         db.flush()
         return obj

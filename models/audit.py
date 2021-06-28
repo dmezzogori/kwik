@@ -1,10 +1,10 @@
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Float, Integer, String
 
 from app.kwik.db import Base
 
 
 class Audit(Base):
-    __tablename__ = 'audits'
+    __tablename__ = "audits"
 
     id = Column(Integer, primary_key=True, index=True)
     client_host = Column(String, index=True)

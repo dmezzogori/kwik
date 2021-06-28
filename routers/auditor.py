@@ -5,10 +5,11 @@ from fastapi import APIRouter, Request, Response
 from fastapi.routing import APIRoute
 from jose import jwt
 
-from app.kwik import schemas, crud
+from app.kwik import crud, schemas
 from app.kwik.api.deps import get_current_user
 from app.kwik.core import security
 from app.kwik.core.config import settings
+from app.kwik.middlewares import get_request_id
 
 
 class KwikRequest(Request):
@@ -20,9 +21,9 @@ class KwikRequest(Request):
 
     @property
     def token(self) -> Optional[str]:
-        auth = self.headers.get('Authorization')
-        if auth is not None and 'Bearer ' in auth:
-            return auth.replace('Bearer ', '')
+        auth = self.headers.get("Authorization")
+        if auth is not None and "Bearer " in auth:
+            return auth.replace("Bearer ", "")
         return None
 
 
@@ -44,23 +45,28 @@ class AuditorRoute(APIRoute):
                 user = get_current_user(request.state.db, request.token)
                 user_id = user.id
 
-                payload = jwt.decode(
-                    request.token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
-                )
+                payload = jwt.decode(request.token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
                 token_data = schemas.TokenPayload(**payload)
 
-                if token_data.kwik_impersonate != '':
+                if token_data.kwik_impersonate != "":
                     impersonator_user_id = int(token_data.kwik_impersonate)
 
-            crud.audit.create(
-                db=request.state.db,
-                request=request,
-                body=body,
-                response=response,
-                process_time=process_time,
+            audit_in = schemas.AuditCreateSchema(
+                client_host=request.client.host,
+                request_id=get_request_id(),
                 user_id=user_id,
-                impersonator_user_id=impersonator_user_id
+                impersonator_user_id=impersonator_user_id,
+                method=request.method,
+                headers=repr(request.headers),
+                url=request.url.path,
+                query_params=repr(request.query_params),
+                path_params=repr(request.path_params),
+                body=str(body),
+                process_time=process_time * 1000,
+                status_code=response.status_code,
             )
+
+            crud.audit.create(db=request.state.db, obj_in=audit_in)
             return response
 
         return custom_route_handler

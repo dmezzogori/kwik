@@ -5,17 +5,14 @@ from sqlalchemy.orm import Session
 
 from app.kwik import crud, schemas
 from app import kwik
+from app import models
 
 
 router = kwik.routers.AuditorRouter()
 
 
 @router.get("/", response_model=List[schemas.Permission])
-def read_permissions(
-    db: Session = kwik.db,
-    skip: int = 0,
-    limit: int = 100,
-) -> Any:
+def read_permissions(db: Session = kwik.db, skip: int = 0, limit: int = 100,) -> Any:
     """
     Retrieve permissions.
     """
@@ -26,9 +23,7 @@ def read_permissions(
 
 @router.post("/", response_model=schemas.Permission)
 def create_permission(
-    *,
-    db: Session = kwik.db,
-    permission_in: schemas.PermissionCreate,
+    *, db: Session = kwik.db, permission_in: schemas.PermissionCreate, current_user: models.User = kwik.current_user
 ) -> Any:
     """
     Create new permission.
@@ -36,40 +31,30 @@ def create_permission(
     permission = crud.permission.get_by_name(db, name=permission_in.name)
     if permission:
         raise HTTPException(
-            status_code=400,
-            detail="The permission with this name already exists in the system.",
+            status_code=400, detail="The permission with this name already exists in the system.",
         )
-    permission = crud.permission.create(db, obj_in=permission_in)
+    permission = crud.permission.create(db, obj_in=permission_in, user=current_user)
     return permission
 
 
 @router.post("/associate", response_model=schemas.Permission)
-def associate_permission_to_role(
-    *,
-    db: Session = kwik.db,
-    permission_role_in: schemas.PermissionRoleCreate
-) -> Any:
+def associate_permission_to_role(*, db: Session = kwik.db, permission_role_in: schemas.PermissionRoleCreate) -> Any:
     permission = crud.permission.get(db=db, id=permission_role_in.permission_id)
     if not permission:
         raise HTTPException(
-            status_code=412,
-            detail="The specified permission does not exists in the system.",
+            status_code=412, detail="The specified permission does not exists in the system.",
         )
     role = crud.role.get(db=db, id=permission_role_in.role_id)
     if not role:
         raise HTTPException(
-            status_code=412,
-            detail="The specified role does not exists in the system.",
+            status_code=412, detail="The specified role does not exists in the system.",
         )
     permission = crud.permission.associate_role(db=db, permission_db=permission, role_db=role)
     return permission
 
 
 @router.get("/{permission_id}", response_model=schemas.Permission)
-def read_permission_by_id(
-    permission_id: int,
-    db: Session = kwik.db,
-) -> Any:
+def read_permission_by_id(permission_id: int, db: Session = kwik.db,) -> Any:
     """
     Get a specific permission by id.
     """
@@ -78,31 +63,21 @@ def read_permission_by_id(
 
 
 @router.put("/{permission_id}", response_model=schemas.Permission)
-def update_permission(
-    *,
-    db: Session = kwik.db,
-    permission_id: int,
-    permission_in: schemas.PermissionUpdate,
-) -> Any:
+def update_permission(*, db: Session = kwik.db, permission_id: int, permission_in: schemas.PermissionUpdate,) -> Any:
     """
     Update a permission.
     """
     permission = crud.permission.get(db, id=permission_id)
     if not permission:
         raise HTTPException(
-            status_code=404,
-            detail="The permission with this id does not exist in the system",
+            status_code=404, detail="The permission with this id does not exist in the system",
         )
     permission = crud.permission.update(db, db_obj=permission, obj_in=permission_in)
     return permission
 
 
 @router.delete("/{name}/deprecate", response_model=schemas.Permission)
-def deprecate_permission_by_name(
-    *,
-    db: Session = kwik.db,
-    name: str,
-) -> Any:
+def deprecate_permission_by_name(*, db: Session = kwik.db, name: str,) -> Any:
     """
     Deprecate permission. Remove all associated roles
     """
@@ -111,11 +86,7 @@ def deprecate_permission_by_name(
 
 
 @router.delete("/{permission_id}", response_model=schemas.Permission)
-def delete_permission(
-    *,
-    db: Session = kwik.db,
-    permission_id: int,
-) -> Any:
+def delete_permission(*, db: Session = kwik.db, permission_id: int,) -> Any:
     """
     Delete a role.
     """
@@ -127,25 +98,19 @@ def delete_permission(
 
 
 @router.delete("/", response_model=schemas.Permission)
-def purge_role_from_permission(
-    *,
-    db: Session = kwik.db,
-    permission_role_in: schemas.PermissionRoleRemove
-) -> Any:
+def purge_role_from_permission(*, db: Session = kwik.db, permission_role_in: schemas.PermissionRoleRemove) -> Any:
     """
     Remove permission from role
     """
     permission = crud.permission.get(db=db, id=permission_role_in.permission_id)
     if not permission:
         raise HTTPException(
-            status_code=412,
-            detail="The specified permission does not exists in the system.",
+            status_code=412, detail="The specified permission does not exists in the system.",
         )
     role = crud.role.get(db=db, id=permission_role_in.role_id)
     if not role:
         raise HTTPException(
-            status_code=412,
-            detail="The specified role does not exists in the system.",
+            status_code=412, detail="The specified role does not exists in the system.",
         )
     permission = crud.permission.purge_role(db=db, permission_db=permission, role_db=role)
     return permission

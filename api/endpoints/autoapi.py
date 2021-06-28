@@ -8,10 +8,7 @@ from app import crud, schemas
 
 
 def NotFound(id):
-    return HTTPException(
-        status_code=404,
-        detail="The item with id={id} does not exist in the system".format(id=id),
-    )
+    return HTTPException(status_code=404, detail="The item with id={id} does not exist in the system".format(id=id),)
 
 
 class AutoAPI:
@@ -25,12 +22,12 @@ class AutoAPI:
         self.crud = getattr(crud, self.name)
 
     def register(
-            self,
-            api_router,
-            *,
-            permissions: Optional[List[str]]=None,
-            custom_get_multi: Optional[Callable] = None,
-            custom_update: Optional[Callable] = None,
+        self,
+        api_router,
+        *,
+        permissions: Optional[List[str]] = None,
+        custom_get_multi: Optional[Callable] = None,
+        custom_update: Optional[Callable] = None,
     ):
         BaseSchema = self.BaseSchema
         CreateSchema = self.CreateSchema
@@ -41,7 +38,7 @@ class AutoAPI:
             skip: int = 0,
             limit: int = 100,
             filter: Optional[str] = None,
-            value: Optional[Any] = None
+            value: Optional[Any] = None,
         ) -> Any:
             """
             Retrieve many {name} items.
@@ -50,65 +47,55 @@ class AutoAPI:
             if filter and value:
                 filter_d = {filter: value}
             return self.crud.get_multi(db, skip=skip, limit=limit, **filter_d)
+
         read_multi.__doc__ = read_multi.__doc__.format(name=self.name)
         if custom_get_multi is not None:
             read_multi = custom_get_multi(read_multi)
 
-        def read(
-            id: int,
-            db: Session = kwik.db,
-        ) -> Any:
+        def read(id: int, db: Session = kwik.db,) -> Any:
             """
             Retrieve a {name}.
             """
             return self.crud.get(db, id=id)
+
         read.__doc__ = read.__doc__.format(name=self.name)
 
-        def create(
-            *,
-            db: Session = kwik.db,
-            obj_in: CreateSchema,
-        ) -> Any:
+        def create(*, db: Session = kwik.db, obj_in: CreateSchema,) -> Any:
             """
             Create a {name}.
             """
             entity = self.crud.get(db, name=obj_in.name)
             if entity:
                 raise HTTPException(
-                    status_code=400,
-                    detail=f"The {self.name} with this name already exists in the system.",
+                    status_code=400, detail=f"The {self.name} with this name already exists in the system.",
                 )
             obj_db = self.crud.create(db, obj_in=obj_in)
             return obj_db
+
         create.__doc__ = create.__doc__.format(name=self.name)
 
-        def update(
-            *,
-            db: Session = kwik.db,
-            id: int,
-            obj_in: UpdateSchema,
-        ) -> Any:
+        def update(*, db: Session = kwik.db, id: int, obj_in: UpdateSchema,) -> Any:
             """
             Update a {name}.
             """
             db_obj = self.crud.get(db, id=id)
-            if not db_obj: raise NotFound(id=id)
+            if not db_obj:
+                raise NotFound(id=id)
             return self.crud.update(db, db_obj=db_obj, obj_in=obj_in)
+
         update.__doc__ = update.__doc__.format(name=self.name)
         if custom_update is not None:
             update = custom_update(update)
 
-        def delete(
-            *,
-            db: Session = kwik.db,
-            id: int,
-        ) -> Any:
+        def delete(*, db: Session = kwik.db, id: int,) -> Any:
             """
             Delete a {name}.
             """
             obj_db = self.crud.get(db=db, id=id)
-            if not obj_db: raise NotFound(id=id)
+            if not obj_db:
+                raise NotFound(id=id)
             return self.crud.remove(db=db, id=id)
+
         delete.__doc__ = delete.__doc__.format(name=self.name)
 
         deps = [kwik.current_user]
@@ -125,20 +112,13 @@ class AutoAPI:
         return self
 
     def add_endpoint(
-            self,
-            *,
-            method: str,
-            path: str,
-            endpoint: Callable,
-            response_model=None,
-            permissions=None
-
+        self, *, method: str, path: str, endpoint: Callable, response_model=None, permissions=None,
     ):
         register = {
-            'get': self.router.get,
-            'post': self.router.post,
-            'put': self.router.put,
-            'delete': self.router.delete,
+            "get": self.router.get,
+            "post": self.router.post,
+            "put": self.router.put,
+            "delete": self.router.delete,
         }
 
         response_model = response_model or self.BaseSchema

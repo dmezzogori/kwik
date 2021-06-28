@@ -15,11 +15,8 @@ def get_request_id() -> str:
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
-
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
-        print('RequestContextMiddleware.dispatch start')
         request_id = _request_id_ctx_var.set(str(uuid4()))
         response = await call_next(request)
-        print('RequestContextMiddleware.dispatch end')
         _request_id_ctx_var.reset(request_id)
         return response

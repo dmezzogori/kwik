@@ -1,10 +1,9 @@
 import typing
 from datetime import datetime
 
-from pydantic import create_model, BaseModel
+from pydantic import BaseModel, create_model
 from sqlalchemy import inspect as ins
-from sqlalchemy.sql.sqltypes import Integer, BigInteger, String, DateTime, Float, JSON
-
+from sqlalchemy.sql.sqltypes import BigInteger, DateTime, Float, Integer, JSON, String
 
 TYPE_MAPPINGS = {
     Integer: int,
@@ -12,7 +11,7 @@ TYPE_MAPPINGS = {
     String: str,
     DateTime: datetime,
     Float: float,
-    JSON: typing.Dict
+    JSON: typing.Dict,
 }
 
 
@@ -36,7 +35,7 @@ def synth_schemas(cls):
     kw = {}
     for col_name, type_, default, nullable in get_column_fields(cls):
         # TODO: trovare giro più carino
-        if col_name == 'creation_time':
+        if col_name == "creation_time":
             kw[col_name] = type_, ...
 
         elif default is not None and not callable(default):
@@ -47,7 +46,7 @@ def synth_schemas(cls):
             kw[col_name] = type_, ...
 
     bkw = dict(kw)
-    BaseSchema: BaseModel = create_model(f'{cls.__name__}Base', __base__=MyBaseModel, **bkw)
-    CreateModel: BaseModel = create_model(f'{cls.__name__}Create', **{k: v for k, v in kw.items() if k != 'id'})
-    UpdateModel: BaseModel = create_model(f'{cls.__name__}Update', **{k: v for k, v in kw.items() if k != 'id'})
+    BaseSchema: BaseModel = create_model(f"{cls.__name__}Base", __base__=MyBaseModel, **bkw)
+    CreateModel: BaseModel = create_model(f"{cls.__name__}Create", **{k: v for k, v in kw.items() if k != "id"})
+    UpdateModel: BaseModel = create_model(f"{cls.__name__}Update", **{k: v for k, v in kw.items() if k != "id"})
     return BaseSchema, CreateModel, UpdateModel

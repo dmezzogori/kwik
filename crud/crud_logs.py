@@ -1,32 +1,17 @@
-from typing import Optional, Dict
-
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
-from app import kwik
-from app.kwik.models.logger import Log
-from app.kwik.schemas import LogCreateSchema, LogUpdateSchema
+from app.kwik import models, schemas
 from .base import CRUDBase
 
 
-class CRUDLogs(CRUDBase[Log, LogCreateSchema, LogUpdateSchema]):
-    def create(
-            self,
-            *,
-            db: Session,
-            entity: str,
-            before: Optional[Dict] = None,
-            after: Dict
-    ) -> Log:
-        log_db = Log(
-            request_id=kwik.middlewares.get_request_id(),
-            entity=entity,
-            before=before,
-            after=after
-        )
-        db.add(log_db)
+class CRUDLogs(CRUDBase[models.Log, schemas.LogCreateSchema, schemas.LogUpdateSchema]):
+    def create(self, *, db: Session, obj_in: schemas.LogCreateSchema) -> models.Log:
+        obj_in_data = jsonable_encoder(obj_in)
+        db_obj = self.model(**obj_in_data)
+        db.add(db_obj)
         db.flush()
-        db.refresh(log_db)
-        return log_db
+        db.refresh(db_obj)
 
 
-logs = CRUDLogs(Log)
+logs = CRUDLogs(models.Log)

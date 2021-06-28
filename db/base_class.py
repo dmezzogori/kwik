@@ -18,7 +18,6 @@ class TimeStampsMixin:
 
 
 class UserMixin:
-
     @declared_attr
     def creator_user_id(self):
         return Column(BigInteger, ForeignKey("users.id"), nullable=False)

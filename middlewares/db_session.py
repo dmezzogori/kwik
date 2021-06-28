@@ -5,7 +5,6 @@ from app.kwik.db.session import DBContextManager
 
 
 class DBSessionMiddleware(BaseHTTPMiddleware):
-
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
         with DBContextManager() as db:
             request.state.db = db
