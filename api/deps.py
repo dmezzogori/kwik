@@ -4,17 +4,16 @@ from jose import jwt
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
+from app.kwik import models, crud
 from app.kwik.core import security
 from app.kwik.core.config import settings
-
-from app.kwik.db.session import get_db
-from app.kwik import models, crud
+from app.kwik.db.session import get_db_from_request
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login/access-token"
 )
 
-db = Depends(get_db)
+db = Depends(get_db_from_request)
 
 
 def get_current_user(
@@ -64,8 +63,8 @@ def has_permission(*permissions: str):
         r = db.query(models.Permission).join(
             models.RolePermission,
             models.Role,
-            models.UserRole,
-            models.User
+            models.UserRole).join(
+            models.User, models.User.id == models.UserRole.user_id
         ).filter(
             models.Permission.name.in_(permissions),
             models.User.id == current_user.id

@@ -5,23 +5,13 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import kwik
-from app.kwik.typings import ParsedSortingQuery
 from app.kwik.core.config import settings
 from app.kwik.db.base_class import Base
-from app.kwik.models import Log
+from app.kwik.typings import ParsedSortingQuery
 
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
-
-
-def log(db: Session, entity: str, before: dict, after: dict):
-    log_db = Log(
-        entity=entity,
-        before=before,
-        after=after
-    )
-    db.add(log_db)
 
 
 class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
@@ -58,6 +48,15 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.add(db_obj)
         db.flush()
         db.refresh(db_obj)
+
+        if settings.DB_LOGGER:
+            kwik.crud.logs.create(
+                db=db,
+                entity=db_obj.__tablename__,
+                before=None,
+                after=jsonable_encoder(db_obj)
+            )
+
         return db_obj
 
     def update(
@@ -80,7 +79,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.refresh(db_obj)
 
         if settings.DB_LOGGER:
-            log(db=db, entity=db_obj.__tablename__, before=obj_data, after=jsonable_encoder(db_obj))
+            kwik.crud.logs.create(
+                db=db,
+                entity=db_obj.__tablename__,
+                before=obj_data,
+                after=jsonable_encoder(db_obj)
+            )
 
         return db_obj
 

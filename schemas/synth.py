@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import create_model, BaseModel
 from sqlalchemy import inspect as ins
-from sqlalchemy.sql.sqltypes import Integer, BigInteger, String, DateTime, Float
+from sqlalchemy.sql.sqltypes import Integer, BigInteger, String, DateTime, Float, JSON
 
 
 TYPE_MAPPINGS = {
@@ -12,6 +12,7 @@ TYPE_MAPPINGS = {
     String: str,
     DateTime: datetime,
     Float: float,
+    JSON: typing.Dict
 }
 
 

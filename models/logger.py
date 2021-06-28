@@ -1,12 +1,13 @@
 from sqlalchemy import Column, Integer, String, JSON
 
-from app.kwik.db import Base, RecordInfoMixin
+from app.kwik.db import Base
 
 
 class Log(Base):
     __tablename__ = 'logs'
 
     id = Column(Integer, primary_key=True, index=True)
+    request_id = Column(String)
     entity = Column(String)
-    before = Column(JSON)
+    before = Column(JSON, nullable=True)
     after = Column(JSON)

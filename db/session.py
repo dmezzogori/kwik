@@ -1,5 +1,6 @@
 from typing import Generator
 
+from fastapi import Request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
@@ -11,11 +12,14 @@ def get_db() -> Generator:
         yield db
 
 
+def get_db_from_request(request: Request):
+    return request.state.db
+
+
 class DBContextManager:
     def __init__(self, db_uri=settings.SQLALCHEMY_DATABASE_URI):
         engine = create_engine(db_uri, pool_pre_ping=True)
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-        self.db = SessionLocal()
+        self.db = sessionmaker(autocommit=False, autoflush=False, bind=engine)()
 
     def __enter__(self) -> Session:
         return self.db

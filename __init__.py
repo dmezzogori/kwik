@@ -10,3 +10,5 @@ from app.kwik.routers.autorouter import AutoRouter
 from app.kwik.websocket.deps import broadcast
 from app.kwik import exceptions
 from app.kwik import utils
+from app.kwik import middlewares
+from app.kwik import core

@@ -8,6 +8,7 @@ class Audit(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     client_host = Column(String, index=True)
+    request_id = Column(String)
     user_id = Column(Integer, index=True, nullable=True)
     impersonator_user_id = Column(Integer, index=True, nullable=True)
     method = Column(String, index=True)

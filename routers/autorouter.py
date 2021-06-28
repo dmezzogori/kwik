@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import inspect
-from typing import List, TypeVar, Optional, Any, Generic, Type, Tuple
+from typing import List, TypeVar, Optional, Any, Generic, Type
 
 from fastapi import APIRouter
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import kwik
-from app.kwik.typings import SortingQuery
-from app.kwik.schemas.synth import MyBaseModel
 from app.kwik.db.base_class import Base
-
+from app.kwik.schemas.synth import MyBaseModel
+from app.kwik.typings import SortingQuery
+from .auditor import AuditorRouter
 
 ModelType = TypeVar("ModelType", bound=Base)
 BaseSchemaType = TypeVar("BaseSchemaType", bound=MyBaseModel)
@@ -38,7 +38,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         if permissions is not None:
             self.deps.append(kwik.has_permission(*permissions))
 
-        self.router = APIRouter()
+        self.router = AuditorRouter()
 
         self.register()
 

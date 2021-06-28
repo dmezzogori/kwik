@@ -16,7 +16,7 @@ class CRUDPermission(CRUDBase[Permission, PermissionCreate, PermissionUpdate]):
 
     def associate_role(self, db: Session, *, role_db: models.Role, permission_db: models.Permission) -> models.Permission:
         role_permission_db = models.RolePermission(
-            permission_id=user_db.id,
+            permission_id=permission_db.id,
             role_id=role_db.id
         )
         db.add(role_permission_db)
