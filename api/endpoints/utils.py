@@ -30,11 +30,11 @@ def test_email(email_to: EmailStr, current_user: models.User = kwik.current_acti
 
 
 @router.post("/test-ws/")
-async def test_ws(message: str) -> Any:
+async def test_ws(message: str, project_id: int) -> Any:
     """
     Test WS.
     """
     from app.kwik.websocket.deps import broadcast
 
-    await broadcast.publish(channel="chatroom", message=message)
+    await broadcast.publish(channel=f"kanban_board_{project_id}", message=message)
     return {"message": f"{message}"}

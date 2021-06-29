@@ -11,12 +11,21 @@ class CRUDUser(CRUDBase[models.User, schemas.UserCreate, schemas.UserUpdate]):
     def get_by_email(self, db: Session, *, email: str) -> Optional[models.User]:
         return db.query(models.User).filter(models.User.email == email).first()
 
+    def get_by_name(self, db: Session, *, name: str) -> Optional[models.User]:
+        return db.query(models.User).filter(models.User.name == name).first()
+
     def create(self, *, db: Session, obj_in: schemas.UserCreate) -> models.User:
         db_obj = models.User(name=obj_in.name, email=obj_in.email, hashed_password=get_password_hash(obj_in.password),)
         db.add(db_obj)
         db.flush()
         db.refresh(db_obj)
         return db_obj
+
+    def create_if_not_exist(self, *, db: Session, obj_in: schemas.UserCreate, **kwargs) -> models.User:
+        obj_db = db.query(self.model).filter_by(**kwargs).one_or_none()
+        if obj_db is None:
+            obj_db = self.create(db=db, obj_in=obj_in)
+        return obj_db
 
     def update(
         self, *, db: Session, db_obj: models.User, obj_in: Union[schemas.UserUpdate, Dict[str, Any]]

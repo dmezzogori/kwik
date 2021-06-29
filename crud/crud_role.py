@@ -16,10 +16,18 @@ class CRUDRole(CRUDBase[models.Role, schemas.RoleCreate, schemas.RoleUpdate]):
     def get_users_by_name(self, db: Session, *, name: str) -> Optional[models.User]:
         return db.query(models.User).join(models.UserRole, models.Role).filter(models.Role.name == name).all()
 
-    def associate_user(self, *, db: Session, role_db: models.Role, user_db: models.User) -> models.Role:
-        user_role_db = models.UserRole(user_id=user_db.id, role_id=role_db.id)
-        db.add(user_role_db)
-        db.flush()
+    def associate_user(
+        self, *, db: Session, role_db: models.Role, user_db: models.User, creator_user: models.User
+    ) -> models.Role:
+        user_role_db = (
+            db.query(models.UserRole)
+            .filter(models.UserRole.user_id == user_db.id, models.UserRole.role_id == role_db.id)
+            .one_or_none()
+        )
+        if user_role_db is None:
+            user_role_db = models.UserRole(user_id=user_db.id, role_id=role_db.id, creator_user_id=creator_user.id)
+            db.add(user_role_db)
+            db.flush()
         return role_db
 
     def purge_user(self, *, db: Session, role_db: models.Role, user_db: models.User) -> models.Role:

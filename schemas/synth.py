@@ -34,16 +34,13 @@ def synth_schemas(cls):
 
     kw = {}
     for col_name, type_, default, nullable in get_column_fields(cls):
-        # TODO: trovare giro più carino
-        if col_name == "creation_time":
-            kw[col_name] = type_, ...
-
-        elif default is not None and not callable(default):
-            kw[col_name] = default
-        elif nullable:
-            kw[col_name] = typing.Optional[type_], None
-        else:
-            kw[col_name] = type_, ...
+        if col_name not in ("creation_time", "creator_user_id"):  # TODO: trovare giro più carino
+            if default is not None and not callable(default):
+                kw[col_name] = default
+            elif nullable:
+                kw[col_name] = typing.Optional[type_], None
+            else:
+                kw[col_name] = type_, ...
 
     bkw = dict(kw)
     BaseSchema: BaseModel = create_model(f"{cls.__name__}Base", __base__=MyBaseModel, **bkw)

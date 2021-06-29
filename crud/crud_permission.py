@@ -11,11 +11,21 @@ class CRUDPermission(CRUDBase[models.Permission, schemas.PermissionCreate, schem
         return db.query(self.model).filter(self.model.name == name).first()
 
     def associate_role(
-        self, *, db: Session, role_db: models.Role, permission_db: models.Permission
+        self, *, db: Session, role_db: models.Role, permission_db: models.Permission, creator_user: models.User
     ) -> models.Permission:
-        role_permission_db = models.RolePermission(permission_id=permission_db.id, role_id=role_db.id)
-        db.add(role_permission_db)
-        db.flush()
+        role_permission_db = (
+            db.query(models.RolePermission)
+            .filter(
+                models.RolePermission.permission_id == permission_db.id, models.RolePermission.role_id == role_db.id
+            )
+            .one_or_none()
+        )
+        if role_permission_db is None:
+            role_permission_db = models.RolePermission(
+                permission_id=permission_db.id, role_id=role_db.id, creator_user_id=creator_user.id
+            )
+            db.add(role_permission_db)
+            db.flush()
         return permission_db
 
     def purge_role(self, *, db: Session, role_db: models.Role, permission_db: models.Permission) -> models.Permission:

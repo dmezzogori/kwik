@@ -4,8 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app import kwik
-from app import models
-from app.kwik import crud, schemas
+from app.kwik import crud, models, schemas
 
 router = kwik.routers.AuditorRouter()
 

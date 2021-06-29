@@ -64,6 +64,14 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         return db_obj
 
+    def create_if_not_exist(
+        self, *, db: Session, obj_in: CreateSchemaType, user: Optional[Any] = None, **kwargs
+    ) -> ModelType:
+        obj_db = db.query(self.model).filter_by(**kwargs).one_or_none()
+        if obj_db is None:
+            obj_db = self.create(db=db, obj_in=obj_in, user=user)
+        return obj_db
+
     def update(
         self,
         *,

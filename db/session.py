@@ -8,6 +8,7 @@ from app.kwik.core.config import settings
 
 
 def get_db() -> Generator:
+    # TODO: deprecated, kept for reference
     with DBContextManager() as db:
         yield db
 
@@ -29,4 +30,5 @@ class DBContextManager:
             self.db.rollback()
         else:
             self.db.commit()
+
         self.db.close()
