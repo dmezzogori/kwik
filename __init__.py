@@ -1,12 +1,20 @@
 # ATTENZIONE ALL'ORDINE DI IMPORT
 # LE DEPS DEVONO SEMPRE VENIRE PER PRIME
 
-from app.kwik.api.deps import current_active_superuser, current_active_user, current_user, db, has_permission
+from app.kwik.api.deps import (
+    FilterQuery,
+    PaginatedQuery,
+    SortingQuery,
+    current_active_superuser,
+    current_active_user,
+    current_user,
+    db,
+    has_permission,
+)
 
 from app.kwik import core
 from app.kwik import crud
 from app.kwik import exceptions
-
 from app.kwik import middlewares
 from app.kwik import models
 from app.kwik import routers

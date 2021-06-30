@@ -1,10 +1,13 @@
-from fastapi import Depends, HTTPException, status
+from typing import Any, Optional
+
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from app.kwik import models, crud
+from app import kwik
+from app.kwik import crud, models
 from app.kwik.core import security
 from app.kwik.core.config import settings
 from app.kwik.db.session import get_db_from_request
@@ -18,12 +21,11 @@ def get_current_user(db: Session = db, token: str = Depends(reusable_oauth2)) ->
     try:
         token_data = security.decode_token(token)
     except (jwt.JWTError, ValidationError):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Could not validate credentials",
-        )
+        raise kwik.exceptions.Forbidden()
+
     user = crud.user.get(db=db, id=token_data.sub)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    if user is None:
+        raise kwik.exceptions.Forbidden()
 
     return user
 
@@ -33,7 +35,7 @@ current_user = Depends(get_current_user)
 
 def get_current_active_user(current_user: models.User = current_user,) -> models.User:
     if not crud.user.is_active(current_user):
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise kwik.exceptions.UserInactive()
     return current_user
 
 
@@ -42,7 +44,7 @@ current_active_user = Depends(get_current_active_user)
 
 def get_current_active_superuser(current_user: models.User = current_user,) -> models.User:
     if not crud.user.is_superuser(current_user):
-        raise HTTPException(status_code=400, detail="The user doesn't have enough privileges")
+        raise kwik.exceptions.Forbidden(detail="The user doesn't have enough privileges")
     return current_user
 
 
@@ -59,6 +61,40 @@ def has_permission(*permissions: str):
             .one_or_none()
         )
         if r is None:
-            raise HTTPException(status_code=403, detail="The user doesn't have enough privileges")
+            raise kwik.exceptions.Forbidden(detail="The user doesn't have enough privileges")
 
     return Depends(inner)
+
+
+def sorting_query(sorting: Optional[kwik.typings.SortingQuery] = None) -> kwik.typings.ParsedSortingQuery:
+    if sorting is not None:
+        sort = []
+        for elem in sorting.split(","):
+            if ":" in elem:
+                attr, order = elem.split(":")
+            else:
+                attr = elem
+                order = "asc"
+            sort.append((attr, order))
+
+        return sort
+
+
+SortingQuery = Depends(sorting_query)
+
+
+def filters(filter: Optional[str] = None, value: Optional[Any] = None):
+    filter_d = {}
+    if filter and value:
+        filter_d = {filter: value}
+    return filter_d
+
+
+FilterQuery = Depends(filters)
+
+
+def paginated(skip: int = 0, limit: int = 100):
+    return {"skip": skip, "limit": limit}
+
+
+PaginatedQuery = Depends(paginated)

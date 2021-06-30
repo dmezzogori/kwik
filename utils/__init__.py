@@ -3,8 +3,9 @@ from uuid import uuid1
 
 import aiofiles
 from fastapi import UploadFile
+from sqlalchemy.orm import Query
 
-from app.kwik.typings import ParsedSortingQuery, SortingQuery
+from app.kwik.typings import ModelType, ParsedSortingQuery, SortingQuery
 
 
 async def store_file(*, in_file: UploadFile) -> Tuple[str, int]:
@@ -24,19 +25,7 @@ async def store_file(*, in_file: UploadFile) -> Tuple[str, int]:
     return file_name, file_size
 
 
-def parse_sorting_query(*, sorting: SortingQuery) -> ParsedSortingQuery:
-    sort = []
-    for elem in sorting.split(","):
-        if ":" in elem:
-            attr, order = elem.split(":")
-        else:
-            attr = elem
-            order = "asc"
-        sort.append((attr, order))
-    return sort
-
-
-def sort_query(*, model, query, sort: ParsedSortingQuery):
+def sort_query(*, model: ModelType, query: Query, sort: ParsedSortingQuery) -> Query:
     order_by = []
     for attr, order in sort:
         model_attr = getattr(model, attr)

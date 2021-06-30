@@ -1,5 +1,4 @@
-from typing import List, TypeVar
-from typing import Tuple
+from typing import Any, Dict, List, Optional, Tuple, TypeVar
 
 from pydantic import BaseModel
 
@@ -12,5 +11,8 @@ BaseSchemaType = TypeVar("BaseSchemaType", bound=MyBaseModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
+
 SortingQuery = str
-ParsedSortingQuery = List[Tuple[str, str]]
+ParsedSortingQuery = Optional[List[Tuple[str, str]]]
+FilterQuery = Dict[str, Any]
+PaginatedQuery = Dict[str, int]

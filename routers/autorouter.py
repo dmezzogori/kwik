@@ -84,24 +84,15 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
     def read_multi(
         self,
         db: Session = kwik.db,
-        skip: int = 0,
-        limit: int = 100,
-        sorting: Optional[SortingQuery] = None,
-        filter: Optional[str] = None,
-        value: Optional[Any] = None,
+        filters: kwik.typings.FilterQuery = kwik.FilterQuery,
+        sorting: kwik.typings.ParsedSortingQuery = kwik.SortingQuery,
+        paginated: kwik.typings.PaginatedQuery = kwik.PaginatedQuery,
     ) -> kwik.schemas.Paginated[BaseSchemaType]:
         """
         Retrieve many {name} items.
         Sorting field:[asc|desc]
         """
-        filter_d = {}
-        if filter and value:
-            filter_d = {filter: value}
-        sort = None
-        if sorting is not None:
-            sort = kwik.utils.parse_sorting_query(sorting=sorting)
-
-        total, result = self.crud.get_multi(db=db, skip=skip, limit=limit, sort=sort, **filter_d)
+        total, result = self.crud.get_multi(db=db, **filters, sort=sorting, **paginated)
         return kwik.schemas.Paginated[self.BaseSchemaType](total=total, data=result)
 
     def read(self, id: int, db: Session = kwik.db) -> ModelType:

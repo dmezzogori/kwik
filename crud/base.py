@@ -31,11 +31,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db.query(self.model).filter(self.model.id == id).first()
 
     def get_multi(
-        self, *, db: Session, skip: int = 0, limit: int = 100, sort: Optional[ParsedSortingQuery] = None, **kwargs
+        self, *, db: Session, skip: int = 0, limit: int = 100, sort: ParsedSortingQuery = None, **filters
     ) -> Tuple[int, List[ModelType]]:
         q = db.query(self.model)
-        if kwargs:
-            q = q.filter_by(**kwargs)
+        if filters:
+            q = q.filter_by(**filters)
         count = q.count()
 
         if sort is not None:
