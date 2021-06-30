@@ -27,6 +27,6 @@ class UserInactive(HTTPException):
         )
 
 
-class NotAllowed(HTTPException):
+class MethodNotAllowed(HTTPException):
     def __init__(self):
         super().__init__(status_code=status.HTTP_405_METHOD_NOT_ALLOWED)
