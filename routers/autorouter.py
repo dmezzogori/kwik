@@ -1,21 +1,13 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Generic, List, Optional, Type, TypeVar
+from typing import Any, Generic, List, Optional, Type
 
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import kwik
-from app.kwik.db.base_class import Base
-from app.kwik.schemas.synth import MyBaseModel
-from app.kwik.typings import SortingQuery
+from app.kwik.typings import ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType, SortingQuery
 from .auditor import AuditorRouter
-
-ModelType = TypeVar("ModelType", bound=Base)
-BaseSchemaType = TypeVar("BaseSchemaType", bound=MyBaseModel)
-CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
-UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
 class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType]):
@@ -97,7 +89,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         sorting: Optional[SortingQuery] = None,
         filter: Optional[str] = None,
         value: Optional[Any] = None,
-    ) -> List[ModelType]:
+    ) -> kwik.schemas.Paginated[BaseSchemaType]:
         """
         Retrieve many {name} items.
         Sorting field:[asc|desc]
@@ -109,8 +101,8 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         if sorting is not None:
             sort = kwik.utils.parse_sorting_query(sorting=sorting)
 
-        _, result = self.crud.get_multi(db, skip=skip, limit=limit, sort=sort, **filter_d)
-        return result
+        total, result = self.crud.get_multi(db=db, skip=skip, limit=limit, sort=sort, **filter_d)
+        return kwik.schemas.Paginated[self.BaseSchemaType](total=total, data=result)
 
     def read(self, id: int, db: Session = kwik.db) -> ModelType:
         """
@@ -121,21 +113,25 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
             raise kwik.exceptions.NotFound(id=id)
         return db_obj
 
-    def create(self, *, db: Session = kwik.db, obj_in: CreateSchemaType) -> Any:
+    def create(
+        self, *, db: Session = kwik.db, obj_in: CreateSchemaType, user: kwik.models.User = kwik.current_user
+    ) -> Any:
         """
         Create a {name}.
         """
-        obj_db = self.crud.create(db, obj_in=obj_in)
+        obj_db = self.crud.create(db=db, obj_in=obj_in, user=user)
         return obj_db
 
-    def update(self, *, db: Session = kwik.db, id: int, obj_in: UpdateSchemaType) -> Any:
+    def update(
+        self, *, db: Session = kwik.db, id: int, obj_in: UpdateSchemaType, user: kwik.models.User = kwik.current_user
+    ) -> Any:
         """
         Update a {name}.
         """
-        db_obj = self.crud.get(db, id=id)
+        db_obj = self.crud.get(db=db, id=id)
         if not db_obj:
             raise kwik.exceptions.NotFound(id=id)
-        return self.crud.update(db, db_obj=db_obj, obj_in=obj_in)
+        return self.crud.update(db=db, db_obj=db_obj, obj_in=obj_in, user=user)
 
     def remove(self, *, db: Session = kwik.db, id: int,) -> Any:
         """
@@ -148,7 +144,9 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
 
     def register(self, *, read_multi=True, read=True, create=True, update=True, delete=True):
         if read_multi:
-            self.router.get("/", response_model=List[self.BaseSchemaType], dependencies=self.deps)(self.read_multi)
+            self.router.get("/", response_model=kwik.schemas.Paginated[self.BaseSchemaType], dependencies=self.deps)(
+                self.read_multi
+            )
         if read:
             self.router.get("/{id}", response_model=self.BaseSchemaType, dependencies=self.deps)(self.read)
         if create:

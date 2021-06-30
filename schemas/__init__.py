@@ -5,3 +5,4 @@ from .permission import Permission, PermissionCreate, PermissionRoleCreate, Perm
 from .role import Role, RoleCreate, RoleInDB, RoleUpdate, UserRoleCreate, UserRoleRemove
 from .token import Token, TokenPayload
 from .user import User, UserCreate, UserInDB, UserUpdate
+from .autorouter import Paginated
