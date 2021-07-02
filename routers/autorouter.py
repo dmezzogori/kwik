@@ -99,7 +99,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         """
         Retrieve a {name}.
         """
-        db_obj = self.crud.get(db, id=id)
+        db_obj = self.crud.get(db=db, id=id)
         if not db_obj:
             raise kwik.exceptions.NotFound(id=id)
         return db_obj
