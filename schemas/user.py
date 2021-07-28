@@ -30,7 +30,8 @@ class UserInDBBase(UserBase):
 
 # Additional properties to return via API
 class User(UserInDBBase):
-    pass
+    name: Optional[str] = None
+    surname: Optional[str] = None
 
 
 # Additional properties stored in DB

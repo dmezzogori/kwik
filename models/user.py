@@ -30,6 +30,9 @@ class UserRole(Base, RecordInfoMixin):
     user_id = Column(Integer, ForeignKey("users.id"))
     role_id = Column(Integer, ForeignKey("roles.id"))
 
+    # user = relationship("User", foreign_keys=[user_id], viewonly=True)
+    # role = relationship("Role", foreign_keys=[role_id])
+
 
 class Permission(Base, RecordInfoMixin):
     __tablename__ = "permissions"

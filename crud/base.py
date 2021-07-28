@@ -117,7 +117,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 before=jsonable_encoder(obj),
                 after=None,
             )
-            kwik.crud.logs.create(db=db, obj_in=log_in, user=user)
+            kwik.crud.logs.create(db=db, obj_in=log_in)
 
         db.delete(obj)
         db.flush()

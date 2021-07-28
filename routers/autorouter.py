@@ -124,14 +124,14 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
             raise kwik.exceptions.NotFound(id=id)
         return self.crud.update(db=db, db_obj=db_obj, obj_in=obj_in, user=user)
 
-    def remove(self, *, db: Session = kwik.db, id: int,) -> Any:
+    def remove(self, *, db: Session = kwik.db, id: int, user: kwik.models.User = kwik.current_user) -> Any:
         """
         Delete a {name}.
         """
         obj_db = self.crud.get(db=db, id=id)
         if not obj_db:
             raise kwik.exceptions.NotFound(id=id)
-        return self.crud.remove(db=db, id=id)
+        return self.crud.remove(db=db, id=id, user=user)
 
     def register(self, *, read_multi=True, read=True, create=True, update=True, delete=True):
         if read_multi:

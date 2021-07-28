@@ -10,19 +10,19 @@ from app import kwik
 from app.kwik.core.config import settings
 from app.utils import send_new_account_email
 
+# TODO switch ad autorouter
 router = kwik.routers.AuditorRouter()
 
 
 @router.get(
-    "/", response_model=List[schemas.User], dependencies=[kwik.has_permission("user_management")],
+    "/", response_model=kwik.schemas.Paginated[schemas.User], dependencies=[kwik.has_permission("user_management")],
 )
-def read_users(db: Session = kwik.db, skip: int = 0, limit: int = 100,) -> Any:
+def read_users(db: Session = kwik.db, paginated=kwik.PaginatedQuery,) -> Any:
     """
     Retrieve users.
     """
-    # TODO total count
-    _, users = crud.user.get_multi(db, skip=skip, limit=limit)
-    return users
+    count, users = crud.user.get_multi(db=db, **paginated)
+    return {"data": users, "total": count}
 
 
 @router.post(
@@ -32,12 +32,12 @@ def create_user(*, db: Session = kwik.db, user_in: schemas.UserCreate,) -> Any:
     """
     Create new user.
     """
-    user = crud.user.get_by_email(db, email=user_in.email)
+    user = crud.user.get_by_email(db=db, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=400, detail="The user with this username already exists in the system.",
         )
-    user = crud.user.create(db, obj_in=user_in)
+    user = crud.user.create(db=db, obj_in=user_in)
     if settings.EMAILS_ENABLED and user_in.email:
         send_new_account_email(email_to=user_in.email, username=user_in.email, password=user_in.password)
     return user
@@ -63,7 +63,7 @@ def update_user_me(
         user_in.full_name = full_name
     if email is not None:
         user_in.email = email
-    user = crud.user.update(db, db_obj=current_user, obj_in=user_in)
+    user = crud.user.update(db=db, db_obj=current_user, obj_in=user_in)
     return user
 
 
@@ -86,13 +86,13 @@ def create_user_open(
         raise HTTPException(
             status_code=403, detail="Open user registration is forbidden on this server",
         )
-    user = crud.user.get_by_email(db, email=email)
+    user = crud.user.get_by_email(db=db, email=email)
     if user:
         raise HTTPException(
             status_code=400, detail="The user with this username already exists in the system",
         )
     user_in = schemas.UserCreate(password=password, email=email, full_name=full_name)
-    user = crud.user.create(db, obj_in=user_in)
+    user = crud.user.create(db=db, obj_in=user_in)
     return user
 
 
@@ -101,7 +101,7 @@ def read_user_by_id(user_id: int, current_user: models.User = kwik.current_activ
     """
     Get a specific user by id.
     """
-    user = crud.user.get(db, id=user_id)
+    user = crud.user.get(db=db, id=user_id)
     if user == current_user:
         return user
     if not crud.user.is_superuser(current_user):
@@ -114,10 +114,10 @@ def update_user(*, db: Session = kwik.db, user_id: int, user_in: schemas.UserUpd
     """
     Update a user.
     """
-    user = crud.user.get(db, id=user_id)
+    user = crud.user.get(db=db, id=user_id)
     if not user:
         raise HTTPException(
             status_code=404, detail="The user with this username does not exist in the system",
         )
-    user = crud.user.update(db, db_obj=user, obj_in=user_in)
+    user = crud.user.update(db=db, db_obj=user, obj_in=user_in)
     return user

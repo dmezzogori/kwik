@@ -8,10 +8,10 @@ from app.kwik.crud.base import CRUDBase
 
 
 class CRUDUser(CRUDBase[models.User, schemas.UserCreate, schemas.UserUpdate]):
-    def get_by_email(self, db: Session, *, email: str) -> Optional[models.User]:
+    def get_by_email(self, *, db: Session, email: str) -> Optional[models.User]:
         return db.query(models.User).filter(models.User.email == email).first()
 
-    def get_by_name(self, db: Session, *, name: str) -> Optional[models.User]:
+    def get_by_name(self, *, db: Session, name: str) -> Optional[models.User]:
         return db.query(models.User).filter(models.User.name == name).first()
 
     def create(self, *, db: Session, obj_in: schemas.UserCreate) -> models.User:
@@ -38,10 +38,10 @@ class CRUDUser(CRUDBase[models.User, schemas.UserCreate, schemas.UserUpdate]):
             hashed_password = get_password_hash(update_data["password"])
             del update_data["password"]
             update_data["hashed_password"] = hashed_password
-        return super().update(db, db_obj=db_obj, obj_in=update_data)
+        return super().update(db=db, db_obj=db_obj, obj_in=update_data)
 
     def authenticate(self, *, db: Session, email: str, password: str) -> Optional[models.User]:
-        user = self.get_by_email(db, email=email)
+        user = self.get_by_email(db=db, email=email)
         if not user:
             return None
         if not verify_password(password, user.hashed_password):

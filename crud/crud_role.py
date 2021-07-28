@@ -14,7 +14,8 @@ class CRUDRole(CRUDBase[models.Role, schemas.RoleCreate, schemas.RoleUpdate]):
         return db.query(self.model).join(models.UserRole).filter(models.UserRole.user_id == user_id).all()
 
     def get_users_by_name(self, db: Session, *, name: str) -> Optional[models.User]:
-        return db.query(models.User).join(models.UserRole, models.Role).filter(models.Role.name == name).all()
+        #
+        return db.query(models.User).join(models.UserRole, models.User.id == models.UserRole.user_id).join(models.Role).filter(models.Role.name == name).all()
 
     def associate_user(
         self, *, db: Session, role_db: models.Role, user_db: models.User, creator_user: models.User
