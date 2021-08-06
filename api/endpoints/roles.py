@@ -29,6 +29,15 @@ def read_role_of_logged_user(db: Session = kwik.db, current_user: kwik.models.Us
     return roles
 
 
+@router.get("/{role_id}/assignable-users", response_model=kwik.schemas.Paginated[schemas.User])
+def read_users_not_in_role(role_id: int, db: Session = kwik.db):
+    """
+    Get all users not involved in the given role
+    """
+    users = crud.role.get_users_not_in_role(db=db, role_id=role_id)
+    return {"data": users, "total": len(users)}
+
+
 @router.get("/{role_id}", response_model=schemas.Role)
 def read_role_by_id(role_id: int, db: Session = kwik.db,) -> Any:
     """
