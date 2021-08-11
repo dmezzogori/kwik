@@ -1,7 +1,9 @@
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, EmailStr
 
+from .role import Role
+from .permission import Permission
 
 # Shared properties
 class UserBase(BaseModel):
@@ -37,3 +39,8 @@ class User(UserInDBBase):
 # Additional properties stored in DB
 class UserInDB(UserInDBBase):
     hashed_password: str
+
+
+class UserWithPermissionsAndRoles(User):
+    roles: List[Role]
+    permissions: List[Permission]

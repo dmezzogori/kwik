@@ -13,6 +13,7 @@ class RoleBase(BaseModel):
 class RoleCreate(RoleBase):
     name: str
     is_active: bool
+    is_locked: bool
 
 
 class UserRoleCreate(BaseModel):

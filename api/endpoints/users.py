@@ -67,7 +67,7 @@ def update_user_me(
     return user
 
 
-@router.get("/me", response_model=schemas.User)
+@router.get("/me", response_model=schemas.UserWithPermissionsAndRoles)
 def read_user_me(current_user: models.User = kwik.current_active_user,) -> Any:
     """
     Get current user.

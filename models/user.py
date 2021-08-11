@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, ForeignKeyConstraint
 from sqlalchemy.orm import relationship
 
 from app.kwik.db import Base, RecordInfoMixin
@@ -14,13 +14,22 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean(), default=True)
 
+    roles = relationship("Role", secondary="users_roles", primaryjoin="User.id==UserRole.user_id", secondaryjoin="UserRole.role_id==Role.id")
+
+    @property
+    def permissions(self):
+        return [permission for role in self.roles for permission in role.permissions]
+
 
 class Role(Base, RecordInfoMixin):
     __tablename__ = "roles"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
-    is_active = Column(Boolean(), default=True)
+    is_active = Column(Boolean(), default=True, nullable=False)
+    is_locked = Column(Boolean(), default=False, nullable=False)
+
+    permissions = relationship("Permission", secondary="roles_permissions")
 
 
 class UserRole(Base, RecordInfoMixin):
