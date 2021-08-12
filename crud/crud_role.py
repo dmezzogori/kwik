@@ -19,6 +19,12 @@ class CRUDRole(CRUDBase[models.Role, schemas.RoleCreate, schemas.RoleUpdate]):
     def get_users_not_in_role(self, db: Session, *, role_id: int) -> Optional[models.User]:
         return db.query(models.User).join(models.UserRole, models.User.id == models.UserRole.user_id).filter(models.UserRole.role_id != role_id).all()
 
+    def get_permissions_not_in_role(self, db: Session, *, role_id: int) -> Optional[models.Permission]:
+        return db.query(models.Permission).join(models.RolePermission).filter(models.RolePermission.role_id != role_id).all()
+
+    def get_permissions_by_role_id(self, db: Session, *, role_id: int) -> Optional[models.Permission]:
+        return db.query(models.Permission).join(models.RolePermission).filter(models.RolePermission.role_id == role_id).all()
+
     def associate_user(
         self, *, db: Session, role_db: models.Role, user_db: models.User, creator_user: models.User
     ) -> models.Role:

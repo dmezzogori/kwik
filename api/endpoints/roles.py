@@ -38,6 +38,24 @@ def read_users_not_in_role(role_id: int, db: Session = kwik.db):
     return {"data": users, "total": len(users)}
 
 
+@router.get("/{role_id}/permissions", response_model=kwik.schemas.Paginated[schemas.Permission])
+def read_users_by_role(*, db: Session = kwik.db, role_id: int,) -> Any:
+    """
+    Get permissions by role
+    """
+    permissions = crud.role.get_permissions_by_role_id(db=db, role_id=role_id)
+    return {"data": permissions, "total": len(permissions)}
+
+
+@router.get("/{role_id}/assignable-permissions", response_model=kwik.schemas.Paginated[schemas.Permission])
+def read_users_not_in_role(role_id: int, db: Session = kwik.db):
+    """
+    Get all permissions not involved in the given role
+    """
+    permissions = crud.role.get_permissions_not_in_role(db=db, role_id=role_id)
+    return {"data": permissions, "total": len(permissions)}
+
+
 @router.get("/{role_id}", response_model=schemas.Role)
 def read_role_by_id(role_id: int, db: Session = kwik.db,) -> Any:
     """
@@ -88,14 +106,14 @@ def delete_role(*, db: Session = kwik.db, role_id: int,) -> Any:
 
 
 @router.post("/associate", response_model=schemas.Role)
-def associate_user_to_role(*, db: Session = kwik.db, user_role_in: schemas.UserRoleCreate) -> Any:
+def associate_user_to_role(*, db: Session = kwik.db, current_user = kwik.current_user, user_role_in: schemas.UserRoleCreate) -> Any:
     user = crud.user.get(db=db, id=user_role_in.user_id)
     if not user:
         raise NotFound(entity="User", id=user_role_in.user_id)
     role = crud.role.get(db=db, id=user_role_in.role_id)
     if not role:
         raise NotFound(entity="Role", id=user_role_in.role_id)
-    role = crud.role.associate_user(db=db, user_db=user, role_db=role)
+    role = crud.role.associate_user(db=db, user_db=user, role_db=role, creator_user=current_user)
     return role
 
 
