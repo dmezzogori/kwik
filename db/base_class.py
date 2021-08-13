@@ -13,14 +13,14 @@ class Base:
 
 
 class TimeStampsMixin:
-    creation_time = Column(DateTime, nullable=False, default=func.now())
+    creation_time = Column(DateTime, nullable=False, default=func.now())  # TODO: mettere default via sql
     last_modification_time = Column(DateTime, onupdate=func.now())
 
 
 class UserMixin:
     @declared_attr
     def creator_user_id(self):
-        return Column(BigInteger, ForeignKey("users.id"), nullable=False)
+        return Column(BigInteger, ForeignKey("users.id"), nullable=False)  # TODO: fix, nullable=True
 
     @declared_attr
     def last_modifier_user_id(self):

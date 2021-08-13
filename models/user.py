@@ -14,7 +14,13 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean(), default=True)
 
-    roles = relationship("Role", secondary="users_roles", primaryjoin="User.id==UserRole.user_id", secondaryjoin="UserRole.role_id==Role.id")
+    roles = relationship(
+        "Role",
+        secondary="users_roles",
+        primaryjoin="User.id==UserRole.user_id",
+        secondaryjoin="UserRole.role_id==Role.id",
+        viewonly=True,
+    )
 
     @property
     def permissions(self):
@@ -29,7 +35,7 @@ class Role(Base, RecordInfoMixin):
     is_active = Column(Boolean(), default=True, nullable=False)
     is_locked = Column(Boolean(), default=False, nullable=False)
 
-    permissions = relationship("Permission", secondary="roles_permissions")
+    permissions = relationship("Permission", secondary="roles_permissions", viewonly=True)
 
 
 class UserRole(Base, RecordInfoMixin):
@@ -38,9 +44,6 @@ class UserRole(Base, RecordInfoMixin):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     role_id = Column(Integer, ForeignKey("roles.id"))
-
-    # user = relationship("User", foreign_keys=[user_id], viewonly=True)
-    # role = relationship("Role", foreign_keys=[role_id])
 
 
 class Permission(Base, RecordInfoMixin):
