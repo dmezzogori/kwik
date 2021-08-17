@@ -22,6 +22,14 @@ class CRUDRole(CRUDBase[models.Role, schemas.RoleCreate, schemas.RoleUpdate]):
             .all()
         )
 
+    def get_users_by_role_id(self, db: Session, *, role_id: int) -> Optional[models.User]:
+        return (
+            db.query(models.User)
+            .join(models.UserRole, models.User.id == models.UserRole.user_id)
+            .filter(models.UserRole.role_id == role_id)
+            .all()
+        )
+
     def get_users_not_in_role(self, db: Session, *, role_id: int) -> Optional[models.User]:
         return (
             db.query(models.User)
