@@ -48,7 +48,7 @@ def is_impersonating(token: str = Depends(reusable_oauth2)):
 
 
 @router.post(
-    "/login/stop_impersonating", response_model=schemas.Token, dependencies=[kwik.has_permission("impersonification")],
+    "/login/stop_impersonating", response_model=schemas.Token,
 )
 def stop_impersonating(token: str = Depends(reusable_oauth2)):
     token_data = decode_token(token)
