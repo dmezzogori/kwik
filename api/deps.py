@@ -10,6 +10,7 @@ from app import kwik
 from app.kwik import crud, models
 from app.kwik.core import security
 from app.kwik.core.config import settings
+from app.kwik.core.enum import PermissionNamesBase
 from app.kwik.db.session import get_db_from_request
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")
@@ -51,13 +52,13 @@ def get_current_active_superuser(current_user: models.User = current_user,) -> m
 current_active_superuser = Depends(get_current_active_superuser)
 
 
-def has_permission(*permissions: str):
+def has_permission(*permissions: PermissionNamesBase):
     def inner(db: Session = db, current_user: models.User = current_user):
         r = (
             db.query(models.Permission)
             .join(models.RolePermission, models.Role, models.UserRole)
             .join(models.User, models.User.id == models.UserRole.user_id)
-            .filter(models.Permission.name.in_(permissions), models.User.id == current_user.id,)
+            .filter(models.Permission.name.in_([p.value for p in permissions]), models.User.id == current_user.id,)
             .one_or_none()
         )
         if r is None:

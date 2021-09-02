@@ -44,19 +44,14 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return count, q.offset(skip).limit(limit).all()
 
     def create(self, *, db: Session, obj_in: CreateSchemaType, user: Optional[Any] = None) -> ModelType:
-        kwik.logger.info(f'user create id: {user.id}')
         obj_in_data = jsonable_encoder(obj_in)
         if user is not None:
-            kwik.logger.info('legger is not none')
             db_obj = self.model(**obj_in_data, creator_user_id=user.id)
         else:
-            kwik.logger.info('legger is none')
             db_obj = self.model(**obj_in_data)
         db.add(db_obj)
         db.flush()
         db.refresh(db_obj)
-
-        kwik.logger.info('created')
 
         if settings.DB_LOGGER:
             log_in = schemas.LogCreateSchema(
@@ -72,7 +67,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def create_if_not_exist(
         self, *, db: Session, obj_in: CreateSchemaType, user: Optional[Any] = None, **kwargs
     ) -> ModelType:
-        kwik.logger.info(f'user id: {user.id}')
         obj_db = db.query(self.model).filter_by(**kwargs).one_or_none()
         if obj_db is None:
             obj_db = self.create(db=db, obj_in=obj_in, user=user)

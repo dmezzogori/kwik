@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app import kwik
 from app.kwik import crud, models, schemas
 from app.kwik.api.deps import reusable_oauth2
+from app.kwik.core.enum import PermissionNames
 from app.kwik.core.security import get_password_hash, decode_token, create_token
 from app.utils import (
     generate_password_reset_token,
@@ -31,7 +32,7 @@ def login_access_token(db: Session = kwik.db, form_data: OAuth2PasswordRequestFo
 
 
 @router.post(
-    "/login/impersonate", response_model=schemas.Token, dependencies=[kwik.has_permission("impersonification")],
+    "/login/impersonate", response_model=schemas.Token, dependencies=[kwik.has_permission(PermissionNames.impersonification)],
 )
 def impersonate(user_id: int, db: Session = kwik.db, current_user: models.User = kwik.current_user):
     user = crud.user.get(db=db, id=user_id)

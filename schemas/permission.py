@@ -1,16 +1,19 @@
-from typing import Optional
+from typing import Optional, Any
 
 from pydantic import BaseModel
 
 
 # Shared properties
+from app.kwik.core.enum import PermissionNamesBase
+
+
 class PermissionBase(BaseModel):
     name: Optional[str] = None
 
 
 # Properties to receive via API on creation
 class PermissionCreate(PermissionBase):
-    name: str
+    name: Any #TODO tipizzare
 
 
 class PermissionRoleCreate(BaseModel):

@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.kwik import crud, models, schemas
 from app import kwik
 from app.kwik.core.config import settings
+from app.kwik.core.enum import PermissionNames
 from app.utils import send_new_account_email
 
 # TODO switch ad autorouter
@@ -15,7 +16,7 @@ router = kwik.routers.AuditorRouter()
 
 
 @router.get(
-    "/", response_model=kwik.schemas.Paginated[schemas.User], dependencies=[kwik.has_permission("user_management")],
+    "/", response_model=kwik.schemas.Paginated[schemas.User], dependencies=[kwik.has_permission(PermissionNames.user_management)],
 )
 def read_users(db: Session = kwik.db, paginated=kwik.PaginatedQuery,) -> Any:
     """
@@ -26,7 +27,7 @@ def read_users(db: Session = kwik.db, paginated=kwik.PaginatedQuery,) -> Any:
 
 
 @router.post(
-    "/", response_model=schemas.User, dependencies=[kwik.has_permission("user_management")],
+    "/", response_model=schemas.User, dependencies=[kwik.has_permission(PermissionNames.user_management)],
 )
 def create_user(*, db: Session = kwik.db, user_in: schemas.UserCreate,) -> Any:
     """
