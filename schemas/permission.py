@@ -13,7 +13,7 @@ class PermissionBase(BaseModel):
 
 # Properties to receive via API on creation
 class PermissionCreate(PermissionBase):
-    name: Any #TODO tipizzare
+    name: Any  # TODO tipizzare
 
 
 class PermissionRoleCreate(BaseModel):

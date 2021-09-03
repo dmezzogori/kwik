@@ -88,7 +88,9 @@ def update_role(*, db: Session = kwik.db, role_id: int, role_in: schemas.RoleUpd
 
 
 @router.post("/associate", response_model=schemas.Role)
-def associate_user_to_role(*, db: Session = kwik.db, current_user = kwik.current_user, user_role_in: schemas.UserRoleCreate) -> Any:
+def associate_user_to_role(
+    *, db: Session = kwik.db, current_user=kwik.current_user, user_role_in: schemas.UserRoleCreate
+) -> Any:
     user = crud.user.get(db=db, id=user_role_in.user_id)
     if not user:
         raise NotFound(entity="User", id=user_role_in.user_id)
@@ -100,7 +102,9 @@ def associate_user_to_role(*, db: Session = kwik.db, current_user = kwik.current
 
 
 @router.post("/purge", response_model=schemas.Role)
-def purge_role_from_user(*, db: Session = kwik.db, current_user=kwik.current_user, user_role_in: schemas.UserRoleRemove) -> Any:
+def purge_role_from_user(
+    *, db: Session = kwik.db, current_user=kwik.current_user, user_role_in: schemas.UserRoleRemove
+) -> Any:
     """
     Remove role from user
     """

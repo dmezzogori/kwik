@@ -16,7 +16,9 @@ router = kwik.routers.AuditorRouter()
 
 
 @router.get(
-    "/", response_model=kwik.schemas.Paginated[schemas.User], dependencies=[kwik.has_permission(PermissionNames.user_management)],
+    "/",
+    response_model=kwik.schemas.Paginated[schemas.User],
+    dependencies=[kwik.has_permission(PermissionNames.user_management)],
 )
 def read_users(db: Session = kwik.db, paginated=kwik.PaginatedQuery,) -> Any:
     """

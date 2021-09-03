@@ -2,7 +2,6 @@ from enum import Enum
 
 
 class PermissionNamesBase(Enum):
-
     def __repr__(self):
         return str(self.value)
 

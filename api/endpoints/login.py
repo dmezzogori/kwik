@@ -32,7 +32,9 @@ def login_access_token(db: Session = kwik.db, form_data: OAuth2PasswordRequestFo
 
 
 @router.post(
-    "/login/impersonate", response_model=schemas.Token, dependencies=[kwik.has_permission(PermissionNames.impersonification)],
+    "/login/impersonate",
+    response_model=schemas.Token,
+    dependencies=[kwik.has_permission(PermissionNames.impersonification)],
 )
 def impersonate(user_id: int, db: Session = kwik.db, current_user: models.User = kwik.current_user):
     user = crud.user.get(db=db, id=user_id)
