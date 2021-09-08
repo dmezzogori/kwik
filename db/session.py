@@ -1,16 +1,13 @@
-from typing import Generator
+import inspect
 
 from fastapi import Request
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import event
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.sql import visitors
 
 from app.kwik.core.config import settings
-
-
-def get_db() -> Generator:
-    # TODO: deprecated, kept for reference
-    with DBContextManager() as db:
-        yield db
+from app.kwik.db.base_class import HasSoftDeleteMixin
 
 
 def get_db_from_request(request: Request):
@@ -20,7 +17,25 @@ def get_db_from_request(request: Request):
 class DBContextManager:
     def __init__(self, db_uri=settings.SQLALCHEMY_DATABASE_URI):
         engine = create_engine(db_uri, pool_pre_ping=True)
-        self.db = sessionmaker(autocommit=False, autoflush=False, bind=engine)()
+        db = sessionmaker(autocommit=False, autoflush=False, bind=engine)()
+        self.db = db
+
+        @event.listens_for(db, "do_orm_execute")
+        def _do_orm_execute(orm_execute_state):
+            tables = set()
+            for visitor in visitors.iterate(orm_execute_state.statement):
+                if (
+                    visitor.__visit_name__ == "table"
+                    and inspect.isclass(visitor.entity_namespace)
+                    and issubclass(visitor.entity_namespace, HasSoftDeleteMixin)
+                ):
+                    tables.add(visitor.entity_namespace)
+
+            tables = list(tables)
+            if tables:
+                orm_execute_state.statement = orm_execute_state.statement.filter(
+                    *(table.deleted == False for table in tables)
+                )
 
     def __enter__(self) -> Session:
         return self.db

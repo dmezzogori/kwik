@@ -1,7 +1,7 @@
 from typing import Any
 
 from sqlalchemy.ext.declarative import as_declarative, declared_attr
-from sqlalchemy import Column, BigInteger, DateTime, func, ForeignKey
+from sqlalchemy import Column, BigInteger, DateTime, func, ForeignKey, Boolean
 
 
 @as_declarative()
@@ -29,3 +29,7 @@ class UserMixin:
 
 class RecordInfoMixin(TimeStampsMixin, UserMixin):
     pass
+
+
+class HasSoftDeleteMixin(RecordInfoMixin):
+    deleted = Column(Boolean, default=False)
