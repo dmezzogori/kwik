@@ -8,6 +8,7 @@ from sqlalchemy.sql import visitors
 
 from app.kwik.core.config import settings
 from app.kwik.db.base_class import SoftDeleteMixin
+from app.kwik.logging import logger
 
 
 def get_db_from_request(request: Request):
@@ -20,22 +21,23 @@ class DBContextManager:
         db = sessionmaker(autocommit=False, autoflush=False, bind=engine)()
         self.db = db
 
-        @event.listens_for(db, "do_orm_execute")
-        def _do_orm_execute(orm_execute_state):
-            tables = set()
-            for visitor in visitors.iterate(orm_execute_state.statement):
-                if (
-                    visitor.__visit_name__ == "table"
-                    and inspect.isclass(visitor.entity_namespace)
-                    and issubclass(visitor.entity_namespace, SoftDeleteMixin)
-                ):
-                    tables.add(visitor.entity_namespace)
-
-            tables = list(tables)
-            if tables:
-                orm_execute_state.statement = orm_execute_state.statement.filter(
-                    *(table.deleted == False for table in tables)
-                )
+        # @event.listens_for(db, "do_orm_execute")
+        # def _do_orm_execute(orm_execute_state):
+        #     tables = set()
+        #     for visitor in visitors.iterate(orm_execute_state.statement):
+        #         if (
+        #             visitor.__visit_name__ == "table"
+        #             and inspect.isclass(visitor.entity_namespace)
+        #             and issubclass(visitor.entity_namespace, SoftDeleteMixin)
+        #         ):
+        #             tables.add(visitor.entity_namespace)
+        #
+        #     tables = list(tables)
+        #     if tables:
+        #         orm_execute_state.statement = orm_execute_state.statement.filter(
+        #             *(table.deleted == False for table in tables)
+        #         )
+        #     logger.error(orm_execute_state.statement)
 
     def __enter__(self) -> Session:
         return self.db
