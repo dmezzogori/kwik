@@ -59,9 +59,9 @@ def has_permission(*permissions: PermissionNamesBase):
             .join(models.RolePermission, models.Role, models.UserRole)
             .join(models.User, models.User.id == models.UserRole.user_id)
             .filter(models.Permission.name.in_([p.value for p in permissions]), models.User.id == current_user.id,)
-            .one_or_none()
+            .count()
         )
-        if r is None:
+        if r == 0:
             raise kwik.exceptions.Forbidden(detail="The user doesn't have enough privileges")
 
     return Depends(inner)

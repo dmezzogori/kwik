@@ -15,7 +15,12 @@ class CRUDUser(CRUDBase[models.User, schemas.UserCreate, schemas.UserUpdate]):
         return db.query(models.User).filter(models.User.name == name).first()
 
     def create(self, *, db: Session, obj_in: schemas.UserCreate) -> models.User:
-        db_obj = models.User(name=obj_in.name, email=obj_in.email, hashed_password=get_password_hash(obj_in.password),)
+        db_obj = models.User(
+            name=obj_in.name,
+            surname=obj_in.surname,
+            email=obj_in.email,
+            hashed_password=get_password_hash(obj_in.password),
+        )
         db.add(db_obj)
         db.flush()
         db.refresh(db_obj)

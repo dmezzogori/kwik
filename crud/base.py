@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app import kwik
 from app.kwik import schemas
 from app.kwik.core.config import settings
-from app.kwik.db.base_class import Base, HasSoftDeleteMixin
+from app.kwik.db.base_class import Base, SoftDeleteMixin
 from app.kwik.typings import ParsedSortingQuery
 
 ModelType = TypeVar("ModelType", bound=Base)
@@ -119,7 +119,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             )
             kwik.crud.logs.create(db=db, obj_in=log_in)
 
-        if issubclass(self.model, HasSoftDeleteMixin):
+        if issubclass(self.model, SoftDeleteMixin):
             # TODO: portare a livello globale
             obj.deleted = True
             obj.last_modifier_user_id = user.id

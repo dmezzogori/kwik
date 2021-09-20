@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Generator, TypeVar
 from uuid import uuid1
 
 import aiofiles
@@ -6,6 +6,19 @@ from fastapi import UploadFile
 from sqlalchemy.orm import Query
 
 from app.kwik.typings import ModelType, ParsedSortingQuery, SortingQuery
+
+T = TypeVar("T")
+
+
+def iter_unique(generator: Generator[T, None, None], *, attr: str) -> T:
+    """restiuisce elementi unici dal generatore, in funzione del valore dell'attributo indicato"""
+    seen = set()
+    for t in generator:
+        x = getattr(t, attr)
+        if x in seen:
+            continue
+        seen.add(x)
+        yield t
 
 
 async def store_file(*, in_file: UploadFile) -> Tuple[str, int]:

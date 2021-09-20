@@ -1,1 +1,1 @@
-from .base_class import Base, TimeStampsMixin, UserMixin, RecordInfoMixin, HasSoftDeleteMixin
+from .base_class import Base, TimeStampsMixin, UserMixin, RecordInfoMixin, SoftDeleteMixin
