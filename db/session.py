@@ -21,6 +21,8 @@ class DBContextManager:
         db = sessionmaker(autocommit=False, autoflush=False, bind=engine)()
         self.db = db
 
+        # https://stackoverflow.com/questions/44522391/implementing-a-soft-delete-system-using-sqlalchemy
+        # https://github.com/sqlalchemy/sqlalchemy/wiki/FilteredQuery
         # @event.listens_for(db, "do_orm_execute")
         # def _do_orm_execute(orm_execute_state):
         #     tables = set()
