@@ -6,3 +6,4 @@ from .role import Role, RoleCreate, RoleInDB, RoleUpdate, UserRoleCreate, UserRo
 from .token import Token, TokenPayload
 from .user import User, UserCreate, UserInDB, UserUpdate, UserWithPermissionsAndRoles
 from .autorouter import Paginated
+from .record_info import RecordInfoMixin
