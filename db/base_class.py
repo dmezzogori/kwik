@@ -12,7 +12,7 @@ class Base:
 
 class TimeStampsMixin:
     creation_time = Column(DateTime, nullable=False, server_default=func.now())
-    last_modification_time = Column(DateTime, server_onupdate=func.now())
+    last_modification_time = Column(DateTime, server_onupdate=func.now(), onupdate=func.now())
 
 
 class UserMixin:
