@@ -53,8 +53,8 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
             cls.create = new_create
 
         def modify_update_sign():
-            async def new_update(*args, **kwargs):
-                await base.update(*args, **kwargs)
+            def new_update(*args, **kwargs):
+                return base.update(*args, **kwargs)
 
             update = base.update
             annotations = update.__annotations__.copy()
