@@ -2,9 +2,9 @@ from typing import Any, Dict, Optional, Union
 
 from sqlalchemy.orm import Session
 
-from app.kwik import models, schemas
-from app.kwik.core.security import get_password_hash, verify_password
-from app.kwik.crud.base import CRUDBase
+from kwik import models, schemas
+from kwik.core.security import get_password_hash, verify_password
+from kwik.crud.base import CRUDBase
 
 
 class CRUDUser(CRUDBase[models.User, schemas.UserCreate, schemas.UserUpdate]):

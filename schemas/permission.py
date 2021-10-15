@@ -1,10 +1,9 @@
-from typing import Optional, Any
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
 
 # Shared properties
-from app.kwik.core.enum import PermissionNamesBase
 
 
 class PermissionBase(BaseModel):

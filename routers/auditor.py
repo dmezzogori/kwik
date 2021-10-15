@@ -5,11 +5,11 @@ from fastapi import APIRouter, Request, Response
 from fastapi.routing import APIRoute
 from jose import jwt
 
-from app.kwik import crud, schemas
-from app.kwik.api.deps import get_current_user
-from app.kwik.core import security
-from app.kwik.core.config import settings
-from app.kwik.middlewares import get_request_id
+from kwik import crud, schemas
+from kwik.api.deps import get_current_user
+from kwik.core import security
+from kwik.core.config import settings
+from kwik.middlewares import get_request_id
 
 
 class KwikRequest(Request):

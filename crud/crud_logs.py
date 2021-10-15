@@ -1,7 +1,7 @@
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
-from app.kwik import models, schemas
+from kwik import models, schemas
 from .base import CRUDBase
 
 

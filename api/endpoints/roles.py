@@ -4,9 +4,9 @@ from typing import Any, List
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app import kwik
-from app.kwik import crud, models, schemas
-from app.kwik.exceptions import NotFound
+import kwik
+from kwik import crud, models, schemas
+from kwik.exceptions import NotFound
 
 # TODO switch ad autorouter
 router = kwik.routers.AuditorRouter()

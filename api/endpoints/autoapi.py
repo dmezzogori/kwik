@@ -3,7 +3,7 @@ from typing import Any, List, Callable, Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app import kwik
+import kwik
 from app import crud, schemas
 
 

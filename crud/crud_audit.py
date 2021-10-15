@@ -1,4 +1,4 @@
-from app.kwik import models, schemas
+from kwik import models, schemas
 from .base import CRUDBase
 
 

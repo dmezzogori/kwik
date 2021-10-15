@@ -4,11 +4,11 @@ from fastapi import Body, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from app import kwik
-from app.kwik import crud, models, schemas
-from app.kwik.api.deps import reusable_oauth2
-from app.kwik.core.enum import PermissionNames
-from app.kwik.core.security import get_password_hash, decode_token, create_token
+import kwik
+from kwik import crud, models, schemas
+from kwik.api.deps import reusable_oauth2
+from kwik.core.enum import PermissionNames
+from kwik.core.security import get_password_hash, decode_token, create_token
 from app.utils import (
     generate_password_reset_token,
     send_reset_password_email,

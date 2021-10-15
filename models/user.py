@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, ForeignKeyConstraint
 from sqlalchemy.orm import relationship
 
-from app.kwik.db import Base, RecordInfoMixin
+from kwik.db import Base, RecordInfoMixin
 
 
 class User(Base):

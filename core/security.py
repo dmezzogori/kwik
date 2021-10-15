@@ -6,7 +6,7 @@ from passlib.context import CryptContext
 
 from .config import settings
 
-from app.kwik import schemas
+from kwik import schemas
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

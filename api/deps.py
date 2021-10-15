@@ -6,12 +6,12 @@ from jose import jwt
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from app import kwik
-from app.kwik import crud, models
-from app.kwik.core import security
-from app.kwik.core.config import settings
-from app.kwik.core.enum import PermissionNamesBase
-from app.kwik.db.session import get_db_from_request
+import kwik
+from kwik import crud, models
+from kwik.core import security
+from kwik.core.config import settings
+from kwik.core.enum import PermissionNamesBase
+from kwik.db.session import get_db_from_request
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")
 

@@ -5,8 +5,8 @@ from typing import Any, Generic, List, Optional, Type
 
 from sqlalchemy.orm import Session
 
-from app import kwik
-from app.kwik.typings import ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType, SortingQuery
+import kwik
+from kwik.typings import ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType, SortingQuery
 from .auditor import AuditorRouter
 
 

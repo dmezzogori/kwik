@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional, Tuple, TypeVar
 
 from pydantic import BaseModel
 
-from app.kwik.db.base_class import Base
-from app.kwik.schemas.synth import MyBaseModel
+from kwik.db.base_class import Base
+from kwik.schemas.synth import MyBaseModel
 
 ModelType = TypeVar("ModelType", bound=Base)
 

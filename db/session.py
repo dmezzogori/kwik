@@ -1,14 +1,8 @@
-import inspect
-
 from fastapi import Request
 from sqlalchemy import create_engine
-from sqlalchemy import event
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.sql import visitors
 
-from app.kwik.core.config import settings
-from app.kwik.db.base_class import SoftDeleteMixin
-from app.kwik.logging import logger
+from kwik.core.config import settings
 
 
 def get_db_from_request(request: Request):

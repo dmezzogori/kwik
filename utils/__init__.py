@@ -5,7 +5,7 @@ import aiofiles
 from fastapi import UploadFile
 from sqlalchemy.orm import Query
 
-from app.kwik.typings import ModelType, ParsedSortingQuery, SortingQuery
+from kwik.typings import ModelType, ParsedSortingQuery, SortingQuery
 
 T = TypeVar("T")
 

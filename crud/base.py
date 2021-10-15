@@ -4,11 +4,11 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app import kwik
-from app.kwik import schemas
-from app.kwik.core.config import settings
-from app.kwik.db.base_class import Base, SoftDeleteMixin
-from app.kwik.typings import ParsedSortingQuery
+import kwik
+from kwik import schemas
+from kwik.core.config import settings
+from kwik.db.base_class import Base, SoftDeleteMixin
+from kwik.typings import ParsedSortingQuery
 
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)

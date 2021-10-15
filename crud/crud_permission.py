@@ -2,7 +2,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from app.kwik import models, schemas
+from kwik import models, schemas
 from .base import CRUDBase
 
 

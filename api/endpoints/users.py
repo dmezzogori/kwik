@@ -1,15 +1,15 @@
-from typing import Any, List
+from typing import Any
 
 from fastapi import Body, HTTPException
 from fastapi.encoders import jsonable_encoder
 from pydantic.networks import EmailStr
 from sqlalchemy.orm import Session
 
-from app.kwik import crud, models, schemas
-from app import kwik
-from app.kwik.core.config import settings
-from app.kwik.core.enum import PermissionNames
+import kwik
 from app.utils import send_new_account_email
+from kwik import crud, models, schemas
+from kwik.core.config import settings
+from kwik.core.enum import PermissionNames
 
 # TODO switch ad autorouter
 router = kwik.routers.AuditorRouter()

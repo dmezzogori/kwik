@@ -3,9 +3,9 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic.networks import EmailStr
 
-from app import kwik
-from app.kwik import models, schemas
-from app.kwik.core.celery_app import celery_app
+import kwik
+from kwik import models, schemas
+from kwik.core.celery_app import celery_app
 from app.utils import send_test_email
 
 router = APIRouter()
@@ -34,7 +34,7 @@ async def test_ws(message: str, project_id: int) -> Any:
     """
     Test WS.
     """
-    from app.kwik.websocket.deps import broadcast
+    from kwik.websocket.deps import broadcast
 
     await broadcast.publish(channel=f"kanban_board_{project_id}", message=message)
     return {"message": f"{message}"}

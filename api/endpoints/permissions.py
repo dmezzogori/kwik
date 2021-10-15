@@ -3,8 +3,8 @@ from typing import Any, List
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app import kwik
-from app.kwik import crud, models, schemas
+import kwik
+from kwik import crud, models, schemas
 
 router = kwik.routers.AuditorRouter()
 
