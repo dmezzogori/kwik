@@ -1,6 +1,10 @@
 from fastapi import HTTPException, status
 
 
+class DuplicatedEntity(Exception):
+    pass
+
+
 class Forbidden(HTTPException):
     def __init__(self, detail=None):
         super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
