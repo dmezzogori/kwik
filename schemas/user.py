@@ -21,6 +21,8 @@ class UserCreate(UserBase):
 
 # Properties to receive via API on update
 class UserUpdate(UserBase):
+    name: Optional[str] = None
+    surname: Optional[str] = None
     password: Optional[str] = None
 
 
