@@ -86,5 +86,8 @@ class CRUDRole(CRUDBase[models.Role, schemas.RoleCreate, schemas.RoleUpdate]):
         db.flush()
         return role_db
 
+    def get_roles_lookup(self, *, db: Session) -> models.Role:
+        return db.query(models.Role).all()
+
 
 role = CRUDRole(models.Role)

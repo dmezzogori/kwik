@@ -45,3 +45,11 @@ class Role(RoleInDBBase):
 # Additional properties stored in DB
 class RoleInDB(RoleInDBBase):
     pass
+
+
+class RoleLookupSchema(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        orm_mode = True
