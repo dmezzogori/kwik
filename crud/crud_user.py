@@ -19,6 +19,7 @@ class CRUDUser(CRUDBase[models.User, schemas.UserCreate, schemas.UserUpdate]):
             name=obj_in.name,
             surname=obj_in.surname,
             email=obj_in.email,
+            is_active=obj_in.is_active,
             hashed_password=get_password_hash(obj_in.password),
         )
         db.add(db_obj)
