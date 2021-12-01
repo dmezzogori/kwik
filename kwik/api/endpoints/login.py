@@ -1,4 +1,5 @@
 from typing import Any
+from kwik.schemas.login import RecoverPassword
 
 from fastapi import Body, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
