@@ -9,11 +9,11 @@ from sqlalchemy.orm import Session
 import kwik
 from kwik import crud, models
 from kwik.core import security
-from kwik.core.config import settings
 from kwik.core.enum import PermissionNamesBase
 from kwik.db.session import get_db_from_request
 
-reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")
+#reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")
+reusable_oauth2 = OAuth2PasswordBearer(tokenUrl="localhost/login/access-token")
 
 db = Depends(get_db_from_request)
 

@@ -9,7 +9,7 @@ from kwik import crud, models, schemas
 from kwik.api.deps import reusable_oauth2
 from kwik.core.enum import PermissionNames
 from kwik.core.security import get_password_hash, decode_token, create_token
-from app.utils import (
+from kwik.utils import (
     generate_password_reset_token,
     send_reset_password_email,
     verify_password_reset_token,

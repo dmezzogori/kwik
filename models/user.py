@@ -28,19 +28,22 @@ class User(Base):
 
 
 class Role(Base, RecordInfoMixin):
+    soft_delete = True
     __tablename__ = "roles"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     is_active = Column(Boolean(), default=True, nullable=False)
     is_locked = Column(Boolean(), default=False, nullable=False)
+    deleted = Column(Boolean())
 
     permissions = relationship("Permission", secondary="roles_permissions", viewonly=True)
 
 
 class UserRole(Base, RecordInfoMixin):
     __tablename__ = "users_roles"
-
+    soft_delete = True
+    deleted = Column(Boolean())
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     role_id = Column(Integer, ForeignKey("roles.id"))

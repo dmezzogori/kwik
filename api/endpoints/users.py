@@ -6,12 +6,12 @@ from pydantic.networks import EmailStr
 from sqlalchemy.orm import Session
 
 import kwik
-from app.utils import send_new_account_email
+from kwik.utils import send_new_account_email
 from kwik import crud, models, schemas
 from kwik.core.config import settings
 from kwik.core.enum import PermissionNames
 
-# TODO switch ad autorouter
+
 router = kwik.routers.AuditorRouter()
 
 

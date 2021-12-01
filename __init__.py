@@ -2,7 +2,7 @@
 # LE DEPS DEVONO SEMPRE VENIRE PER PRIME
 
 from . import core
-from kwik.api.deps import (
+from .api.deps import (
     FilterQuery,
     PaginatedQuery,
     SortingQuery,
