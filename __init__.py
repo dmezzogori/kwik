@@ -1,7 +1,19 @@
+from . import core
+
+settings = None
+
+def set_settings(**kwargs):
+    global settings
+    if kwargs:
+        settings = core.config.Settings.construct(**kwargs)
+    else:
+        settings = core.config.Settings()
+
+set_settings(POSTGRES_PASSWORD='fake')
+
+
 # ATTENZIONE ALL'ORDINE DI IMPORT
 # LE DEPS DEVONO SEMPRE VENIRE PER PRIME
-
-from . import core
 from .api.deps import (
     FilterQuery,
     PaginatedQuery,
@@ -12,17 +24,15 @@ from .api.deps import (
     db,
     has_permission,
 )
-
-
-from kwik import crud
-from kwik import exceptions
-from kwik import middlewares
-from kwik import models
-from kwik import routers
-from kwik import schemas
-from kwik import typings
-from kwik import utils
-from kwik.api.api import api_router
-from kwik.logging import logger
-from kwik.routers.autorouter import AutoRouter
-from kwik.websocket.deps import broadcast
+from . import crud
+from . import exceptions
+from . import middlewares
+from . import models
+from . import routers
+from . import schemas
+from . import typings
+from . import utils
+from .api.api import api_router
+from .logging import logger
+from .routers.autorouter import AutoRouter
+from .websocket.deps import broadcast
