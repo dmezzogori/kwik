@@ -33,9 +33,7 @@ class KwikQuery(Query):
                 self._where_criteria += (criterion,)
 
     def ignore_soft_delete(self) -> KwikQuery:
-        self._where_criteria = [
-            c for c in self._where_criteria if c not in self._soft_delete_criteria
-        ]
+        self._where_criteria = [c for c in self._where_criteria if c not in self._soft_delete_criteria]
         return self
 
     def join(self, target, *args, **kwargs):
@@ -47,13 +45,7 @@ class KwikQuery(Query):
 class DBContextManager:
     def __init__(self, settings: Settings, db_uri: Optional[str] = None) -> None:
         engine = create_engine(db_uri or settings.SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
-        db = sessionmaker(
-            class_=KwikSession,
-            query_cls=KwikQuery,
-            autocommit=False,
-            autoflush=False,
-            bind=engine,
-        )()
+        db = sessionmaker(class_=KwikSession, query_cls=KwikQuery, autocommit=False, autoflush=False, bind=engine,)()
         self.db = db
 
     def __enter__(self) -> Session:

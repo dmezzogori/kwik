@@ -2,6 +2,7 @@ from . import core
 
 settings = None
 
+
 def set_settings(**kwargs):
     global settings
     if kwargs:
@@ -9,7 +10,8 @@ def set_settings(**kwargs):
     else:
         settings = core.config.Settings()
 
-set_settings(POSTGRES_PASSWORD='fake')
+
+set_settings(POSTGRES_PASSWORD="fake")
 
 
 # ATTENZIONE ALL'ORDINE DI IMPORT

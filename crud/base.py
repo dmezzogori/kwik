@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 import kwik
 from kwik import schemas
+
 # from kwik.core.config import settings
 from kwik.db.base_class import Base, SoftDeleteMixin
 from kwik.typings import ParsedSortingQuery
