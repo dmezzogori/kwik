@@ -82,6 +82,3 @@ class Settings(BaseSettings):
 
     class Config:
         case_sensitive = True
-
-
-settings = Settings.construct(POSTGRES_PASSWORD='fake')

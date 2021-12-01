@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 import kwik
 from kwik import schemas
-from kwik.core.config import settings
+# from kwik.core.config import settings
 from kwik.db.base_class import Base, SoftDeleteMixin
 from kwik.typings import ParsedSortingQuery
 
@@ -58,7 +58,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.flush()
         db.refresh(db_obj)
 
-        if settings.DB_LOGGER:
+        if kwik.settings.DB_LOGGER:
             log_in = schemas.LogCreateSchema(
                 request_id=kwik.middlewares.get_request_id(),
                 entity=db_obj.__tablename__,
@@ -103,7 +103,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.flush()
         db.refresh(db_obj)
 
-        if settings.DB_LOGGER:
+        if kwik.settings.DB_LOGGER:
             log_in = schemas.LogCreateSchema(
                 request_id=kwik.middlewares.get_request_id(),
                 entity=db_obj.__tablename__,
@@ -117,7 +117,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def remove(self, *, db: Session, id: int, user: Optional[Any] = None) -> ModelType:
         obj = db.query(self.model).get(id)
 
-        if settings.DB_LOGGER:
+        if kwik.settings.DB_LOGGER:
             log_in = schemas.LogCreateSchema(
                 request_id=kwik.middlewares.get_request_id(),
                 entity=obj.__tablename__,

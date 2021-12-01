@@ -12,13 +12,12 @@ from kwik.core import security
 from kwik.core.enum import PermissionNamesBase
 from kwik.db.session import get_db_from_request
 
-#reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")
-reusable_oauth2 = OAuth2PasswordBearer(tokenUrl="localhost/login/access-token")
+reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{kwik.settings.API_V1_STR}/login/access-token")
 
 db = Depends(get_db_from_request)
 
 
-def get_current_user(db: Session = db, token: str = Depends(reusable_oauth2)) -> models.User:
+def _get_current_user(db: Session = db, token: str = Depends(reusable_oauth2)) -> models.User:
     try:
         token_data = security.decode_token(token)
     except (jwt.JWTError, ValidationError):
@@ -31,25 +30,25 @@ def get_current_user(db: Session = db, token: str = Depends(reusable_oauth2)) ->
     return user
 
 
-current_user = Depends(get_current_user)
+current_user = Depends(_get_current_user)
 
 
-def get_current_active_user(current_user: models.User = current_user,) -> models.User:
+def _get_current_active_user(current_user: models.User = current_user) -> models.User:
     if not crud.user.is_active(current_user):
         raise kwik.exceptions.UserInactive()
     return current_user
 
 
-current_active_user = Depends(get_current_active_user)
+current_active_user = Depends(_get_current_active_user)
 
 
-def get_current_active_superuser(current_user: models.User = current_user,) -> models.User:
+def _get_current_active_superuser(current_user: models.User = current_user) -> models.User:
     if not crud.user.is_superuser(current_user):
         raise kwik.exceptions.Forbidden(detail="The user doesn't have enough privileges")
     return current_user
 
 
-current_active_superuser = Depends(get_current_active_superuser)
+current_active_superuser = Depends(_get_current_active_superuser)
 
 
 def has_permission(*permissions: PermissionNamesBase):
@@ -67,7 +66,7 @@ def has_permission(*permissions: PermissionNamesBase):
     return Depends(inner)
 
 
-def sorting_query(sorting: Optional[kwik.typings.SortingQuery] = None) -> kwik.typings.ParsedSortingQuery:
+def _sorting_query(sorting: Optional[kwik.typings.SortingQuery] = None,) -> kwik.typings.ParsedSortingQuery:
     if sorting is not None:
         sort = []
         for elem in sorting.split(","):
@@ -81,21 +80,21 @@ def sorting_query(sorting: Optional[kwik.typings.SortingQuery] = None) -> kwik.t
         return sort
 
 
-SortingQuery = Depends(sorting_query)
+SortingQuery = Depends(_sorting_query)
 
 
-def filters(filter: Optional[str] = None, value: Optional[Any] = None):
+def _filters(filter: Optional[str] = None, value: Optional[Any] = None):
     filter_d = {}
     if filter and value:
         filter_d = {filter: value}
     return filter_d
 
 
-FilterQuery = Depends(filters)
+FilterQuery = Depends(_filters)
 
 
-def paginated(skip: int = 0, limit: int = 100):
+def _paginated(skip: int = 0, limit: int = 100):
     return {"skip": skip, "limit": limit}
 
 
-PaginatedQuery = Depends(paginated)
+PaginatedQuery = Depends(_paginated)

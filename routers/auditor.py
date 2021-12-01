@@ -6,9 +6,9 @@ from fastapi.routing import APIRoute
 from jose import jwt
 
 from kwik import crud, schemas
-from kwik.api.deps import get_current_user
+from kwik.api.deps import _get_current_user
 from kwik.core import security
-from kwik.core.config import settings
+import kwik
 from kwik.middlewares import get_request_id
 
 
@@ -42,10 +42,10 @@ class AuditorRoute(APIRoute):
             user_id = None
             impersonator_user_id = None
             if request.token is not None:
-                user = get_current_user(request.state.db, request.token)
+                user = _get_current_user(request.state.db, request.token)
                 user_id = user.id
 
-                payload = jwt.decode(request.token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
+                payload = jwt.decode(request.token, kwik.settings.SECRET_KEY, algorithms=[security.ALGORITHM])
                 token_data = schemas.TokenPayload(**payload)
 
                 if token_data.kwik_impersonate != "":

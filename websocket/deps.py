@@ -1,4 +1,4 @@
 from broadcaster import Broadcast
-from kwik.core.config import settings
+from kwik import settings
 
 broadcast = Broadcast(f"postgres://postgres:{settings.POSTGRES_PASSWORD}@db/app")

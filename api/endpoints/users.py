@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 import kwik
 from kwik.utils import send_new_account_email
 from kwik import crud, models, schemas
-from kwik.core.config import settings
 from kwik.core.enum import PermissionNames
 
 
@@ -41,7 +40,7 @@ def create_user(*, db: Session = kwik.db, user_in: schemas.UserCreate,) -> Any:
             status_code=400, detail="The user with this username already exists in the system.",
         )
     user = crud.user.create(db=db, obj_in=user_in)
-    if settings.EMAILS_ENABLED and user_in.email:
+    if kwik.settings.EMAILS_ENABLED and user_in.email:
         send_new_account_email(email_to=user_in.email, username=user_in.email, password=user_in.password)
     return user
 
@@ -85,7 +84,7 @@ def create_user_open(
     """
     Create new user without the need to be logged in.
     """
-    if not settings.USERS_OPEN_REGISTRATION:
+    if not kwik.settings.USERS_OPEN_REGISTRATION:
         raise HTTPException(
             status_code=403, detail="Open user registration is forbidden on this server",
         )
