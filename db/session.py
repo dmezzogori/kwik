@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Type
+from typing import Type, Optional
 
 from fastapi import Request
 from sqlalchemy import create_engine
@@ -13,7 +13,7 @@ from kwik.db import SoftDeleteMixin, Base
 class KwikSession(Session):
     def delete(self, instances) -> None:
         for instance in instances:
-            if hasattr(type(instance), "soft_delete"):
+            if _has_soft_delete(type(instance)):
                 instance.deleted = True
 
 
@@ -45,8 +45,8 @@ class KwikQuery(Query):
 
 
 class DBContextManager:
-    def __init__(self, settings: Settings) -> None:
-        engine = create_engine(settings.SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
+    def __init__(self, settings: Settings, db_uri: Optional[str] = None) -> None:
+        engine = create_engine(db_uri or settings.SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
         db = sessionmaker(
             class_=KwikSession,
             query_cls=KwikQuery,
