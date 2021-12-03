@@ -28,19 +28,21 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self.model = model
 
     def get(self, *, db: Session, id: Any) -> Optional[ModelType]:
-        if issubclass(self.model, SoftDeleteMixin):
-            return db.query(self.model).filter(self.model.id == id, self.model.deleted == False).first()
-        else:
-            return db.query(self.model).filter(self.model.id == id).first()
+        return db.query(self.model).filter(self.model.id == id).first()
 
     def get_multi(
-        self, *, db: Session, skip: int = 0, limit: int = 100, sort: ParsedSortingQuery = None, **filters
+        self,
+        *,
+        db: Session,
+        skip: int = 0,
+        limit: int = 100,
+        sort: ParsedSortingQuery = None,
+        **filters
     ) -> Tuple[int, List[ModelType]]:
         q = db.query(self.model)
         if filters:
             q = q.filter_by(**filters)
-        if issubclass(self.model, SoftDeleteMixin):
-            q = q.filter(self.model.deleted == False)
+
         count = q.count()
 
         if sort is not None:
@@ -133,11 +135,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             )
             kwik.crud.logs.create(db=db, obj_in=log_in)
 
-        if issubclass(self.model, SoftDeleteMixin):
-            # TODO: portare a livello globale
-            obj.deleted = True
-            obj.last_modifier_user_id = user.id
-        else:
-            db.delete(obj)
+        db.delete(obj)
         db.flush()
         return obj
