@@ -2,11 +2,12 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 
 from kwik.db.session import DBContextManager
+import kwik
 
 
 class DBSessionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
-        with DBContextManager() as db:
+        with DBContextManager(settings=kwik.settings) as db:
             request.state.db = db
             response = await call_next(request)
         return response

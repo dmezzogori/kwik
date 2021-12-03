@@ -35,7 +35,9 @@ class Role(Base, RecordInfoMixin):
     is_active = Column(Boolean(), default=True, nullable=False)
     is_locked = Column(Boolean(), default=False, nullable=False)
 
-    permissions = relationship("Permission", secondary="roles_permissions", viewonly=True)
+    permissions = relationship(
+        "Permission", secondary="roles_permissions", viewonly=True
+    )
 
 
 class UserRole(Base, RecordInfoMixin):
