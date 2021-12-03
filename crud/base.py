@@ -6,9 +6,8 @@ from sqlalchemy.orm import Session
 
 import kwik
 from kwik import schemas
-
-# from kwik.core.config import settings
-from kwik.db.base_class import Base, SoftDeleteMixin
+from kwik.core.config import settings
+from kwik.db.base_class import Base
 from kwik.typings import ParsedSortingQuery
 
 ModelType = TypeVar("ModelType", bound=Base)
@@ -29,19 +28,21 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self.model = model
 
     def get(self, *, db: Session, id: Any) -> Optional[ModelType]:
-        if issubclass(self.model, SoftDeleteMixin):
-            return db.query(self.model).filter(self.model.id == id, self.model.deleted == False).first()
-        else:
-            return db.query(self.model).filter(self.model.id == id).first()
+        return db.query(self.model).filter(self.model.id == id).first()
 
     def get_multi(
-        self, *, db: Session, skip: int = 0, limit: int = 100, sort: ParsedSortingQuery = None, **filters
+        self,
+        *,
+        db: Session,
+        skip: int = 0,
+        limit: int = 100,
+        sort: ParsedSortingQuery = None,
+        **filters
     ) -> Tuple[int, List[ModelType]]:
         q = db.query(self.model)
         if filters:
             q = q.filter_by(**filters)
-        if issubclass(self.model, SoftDeleteMixin):
-            q = q.filter(self.model.deleted == False)
+
         count = q.count()
 
         if sort is not None:
@@ -49,7 +50,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         return count, q.offset(skip).limit(limit).all()
 
-    def create(self, *, db: Session, obj_in: CreateSchemaType, user: Optional[Any] = None) -> ModelType:
+    def create(
+        self, *, db: Session, obj_in: CreateSchemaType, user: Optional[Any] = None
+    ) -> ModelType:
         obj_in_data = jsonable_encoder(obj_in)
         if user is not None:
             db_obj = self.model(**obj_in_data, creator_user_id=user.id)
@@ -71,7 +74,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db_obj
 
     def create_if_not_exist(
-        self, *, db: Session, obj_in: CreateSchemaType, user: Optional[Any] = None, raise_on_error=False, **kwargs
+        self,
+        *,
+        db: Session,
+        obj_in: CreateSchemaType,
+        user: Optional[Any] = None,
+        raise_on_error=False,
+        **kwargs
     ) -> ModelType:
         obj_db = db.query(self.model).filter_by(**kwargs).one_or_none()
         if obj_db is None:
@@ -127,11 +136,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             )
             kwik.crud.logs.create(db=db, obj_in=log_in)
 
-        if issubclass(self.model, SoftDeleteMixin):
-            # TODO: portare a livello globale
-            obj.deleted = True
-            obj.last_modifier_user_id = user.id
-        else:
-            db.delete(obj)
+        db.delete(obj)
         db.flush()
         return obj
