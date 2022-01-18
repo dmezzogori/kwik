@@ -1,21 +1,21 @@
-from typing import Any, Dict, Generic, List, Optional, Tuple, Type, TypeVar, Union
+import abc
+from typing import Any, Type, TypeVar
 
-from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 
-import kwik
-from kwik import schemas
-# from kwik.core.config import settings
-from kwik.db.base_class import Base, SoftDeleteMixin
-from kwik.typings import ParsedSortingQuery
+from kwik.database.base import Base
+from kwik.database.session import KwikSession
+from kwik.models import User
+from kwik.typings import ParsedSortingQuery, PaginatedCRUDResult
 
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
-class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
+class CRUDBase(abc.ABC):
+    model: Type[ModelType]
+
     def __init__(self, model: Type[ModelType]):
         """
         CRUD object with default methods to Create, Read, Update, Delete (CRUD).
@@ -27,114 +27,67 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
-    def get(self, *, db: Session, id: Any) -> Optional[ModelType]:
-        return db.query(self.model).filter(self.model.id == id).first()
 
+class CRUDReadBase(CRUDBase):
+    @abc.abstractmethod
+    def get(self, *, db: KwikSession, id: int) -> ModelType | None:
+        pass
+
+    @abc.abstractmethod
     def get_multi(
         self,
         *,
-        db: Session,
+        db: KwikSession,
         skip: int = 0,
         limit: int = 100,
-        sort: ParsedSortingQuery = None,
+        sort: ParsedSortingQuery | None = None,
         **filters
-    ) -> Tuple[int, List[ModelType]]:
-        q = db.query(self.model)
-        if filters:
-            q = q.filter_by(**filters)
+    ) -> PaginatedCRUDResult:
+        pass
 
-        count = q.count()
 
-        if sort is not None:
-            q = kwik.utils.sort_query(model=self.model, query=q, sort=sort)
+class CRUDCreateBase(CRUDBase):
+    @abc.abstractmethod
+    def create(
+        self, *, db: KwikSession, obj_in: CreateSchemaType, user: User | None = None
+    ) -> ModelType:
+        pass
 
-        return count, q.offset(skip).limit(limit).all()
-
-    def create(self, *, db: Session, obj_in: CreateSchemaType, user: Optional[Any] = None, **kwargs) -> ModelType:
-        obj_in_data = dict(obj_in)
-        if user is not None:
-            obj_in_data["creator_user_id"] = user.id
-
-        db_obj = self.model(**obj_in_data)
-        db.add(db_obj)
-        db.flush()
-        db.refresh(db_obj)
-
-        if kwik.settings.DB_LOGGER:
-            log_in = schemas.LogCreateSchema(
-                request_id=kwik.middlewares.get_request_id(),
-                entity=db_obj.__tablename__,
-                before=None,
-                after=jsonable_encoder(db_obj),
-            )
-            kwik.crud.logs.create(db=db, obj_in=log_in)
-
-        return db_obj
-
+    @abc.abstractmethod
     def create_if_not_exist(
         self,
         *,
-        db: Session,
-        filters: dict,
+        db: KwikSession,
         obj_in: CreateSchemaType,
-        user: Optional[Any] = None,
-        raise_on_error=False,
+        user: User | None = None,
+        raise_on_error: bool = False,
         **kwargs
     ) -> ModelType:
-        obj_db = db.query(self.model).filter_by(**filters).one_or_none()
-        if obj_db is None:
-            obj_db = self.create(db=db, obj_in=obj_in, user=user, **kwargs)
-        elif raise_on_error:
-            raise kwik.exceptions.DuplicatedEntity()
-        return obj_db
+        pass
 
+
+class CRUDUpdateBase(CRUDBase):
+    @abc.abstractmethod
     def update(
         self,
         *,
-        db: Session,
+        db: KwikSession,
         db_obj: ModelType,
-        obj_in: Union[UpdateSchemaType, Dict[str, Any]],
-        user: Optional[Any] = None
+        obj_in: UpdateSchemaType | dict[str, Any],
+        user: User | None = None
     ) -> ModelType:
-        obj_data = jsonable_encoder(db_obj)
-        if isinstance(obj_in, dict):
-            update_data = obj_in
-        else:
-            update_data = obj_in.dict(exclude_unset=True)
+        pass
 
-        if user is not None:
-            update_data["last_modifier_user_id"] = user.id
 
-        for field in obj_data:
-            if field in update_data:
-                setattr(db_obj, field, update_data[field])
-        db.add(db_obj)
-        db.flush()
-        db.refresh(db_obj)
+class CRUDDeleteBase(CRUDBase):
+    @abc.abstractmethod
+    def delete(
+        self, *, db: KwikSession, id: int, user: User | None = None
+    ) -> ModelType:
+        pass
 
-        if kwik.settings.DB_LOGGER:
-            log_in = schemas.LogCreateSchema(
-                request_id=kwik.middlewares.get_request_id(),
-                entity=db_obj.__tablename__,
-                before=obj_data,
-                after=jsonable_encoder(db_obj),
-            )
-            kwik.crud.logs.create(db=db, obj_in=log_in)
 
-        return db_obj
-
-    def remove(self, *, db: Session, id: int, user: Optional[Any] = None) -> ModelType:
-        obj = db.query(self.model).get(id)
-
-        if kwik.settings.DB_LOGGER:
-            log_in = schemas.LogCreateSchema(
-                request_id=kwik.middlewares.get_request_id(),
-                entity=obj.__tablename__,
-                before=jsonable_encoder(obj),
-                after=None,
-            )
-            kwik.crud.logs.create(db=db, obj_in=log_in)
-
-        db.delete(obj)
-        db.flush()
-        return obj
+class AutoCRUDBase(
+    CRUDCreateBase, CRUDReadBase, CRUDUpdateBase, CRUDDeleteBase, abc.ABC
+):
+    pass

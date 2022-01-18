@@ -29,14 +29,18 @@ class AutoCRUDUser(auto_crud.AutoCRUD):
         db.refresh(db_obj)
         return db_obj
 
-    def create_if_not_exist(self, *, db: Session, obj_in: schemas.UserCreate, **kwargs) -> models.User:
-        obj_db = db.query(self.model).filter_by(**kwargs).one_or_none()
+    def create_if_not_exist(self, *, db: Session, filters: dict, obj_in: schemas.UserCreate, **kwargs) -> models.User:
+        obj_db = db.query(self.model).filter_by(**filters).one_or_none()
         if obj_db is None:
             obj_db = self.create(db=db, obj_in=obj_in)
         return obj_db
 
     def update(
-        self, *, db: Session, db_obj: models.User, obj_in: Union[schemas.UserUpdate, Dict[str, Any]]
+        self,
+        *,
+        db: Session,
+        db_obj: models.User,
+        obj_in: Union[schemas.UserUpdate, Dict[str, Any]]
     ) -> models.User:
         if isinstance(obj_in, dict):
             update_data = obj_in
