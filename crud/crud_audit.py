@@ -1,9 +1,9 @@
-from kwik import models, schemas
-from .base import CRUDBase
+from auto_crud import AutoCRUD
+from kwik.models import Audit
 
 
-class CRUDAudit(CRUDBase[models.Audit, schemas.AuditCreateSchema, schemas.AuditUpdateSchema]):
+class CRUDAudit(AutoCRUD):
     pass
 
 
-audit = CRUDAudit(models.Audit)
+audit = CRUDAudit(Audit)

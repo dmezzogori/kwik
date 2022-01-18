@@ -1,18 +1,26 @@
-from typing import Any, Dict, List, Optional, Tuple, TypeVar
+from typing import Any, Optional, TypeVar
 
-from pydantic import BaseModel
+import pydantic
 
-from kwik.db.base_class import Base
-from kwik.schemas.synth import MyBaseModel
+from kwik.database.base import Base
+
+
+class BaseModel(pydantic.BaseModel):
+    class Config:
+        orm_mode = True
+
 
 ModelType = TypeVar("ModelType", bound=Base)
 
-BaseSchemaType = TypeVar("BaseSchemaType", bound=MyBaseModel)
-CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
-UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
+BaseSchemaType = TypeVar("BaseSchemaType", bound=BaseModel)
+CreateSchemaType = TypeVar("CreateSchemaType", bound=pydantic.BaseModel)
+UpdateSchemaType = TypeVar("UpdateSchemaType", bound=pydantic.BaseModel)
 
 
 SortingQuery = str
-ParsedSortingQuery = Optional[List[Tuple[str, str]]]
-FilterQuery = Dict[str, Any]
-PaginatedQuery = Dict[str, int]
+ParsedSortingQuery = Optional[list[tuple[str, str]]]
+FilterQuery = dict[str, Any]
+PaginatedQuery = dict[str, int]
+
+
+PaginatedCRUDResult = tuple[int, list[ModelType]]

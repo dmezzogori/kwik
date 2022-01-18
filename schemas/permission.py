@@ -1,18 +1,22 @@
-from typing import Any, Optional
-
 from pydantic import BaseModel
 
-
-# Shared properties
-
-
-class PermissionBase(BaseModel):
-    name: Optional[str] = None
+from kwik.schemas.mixins.orm import ORMMixin
 
 
-# Properties to receive via API on creation
-class PermissionCreate(PermissionBase):
-    name: Any  # TODO tipizzare
+class _BaseSchema(BaseModel):
+    name: str
+
+
+class PermissionORMSchema(ORMMixin, _BaseSchema):
+    pass
+
+
+class PermissionCreate(_BaseSchema):
+    pass
+
+
+class PermissionUpdate(_BaseSchema):
+    pass
 
 
 class PermissionRoleCreate(BaseModel):
@@ -21,26 +25,4 @@ class PermissionRoleCreate(BaseModel):
 
 
 class PermissionRoleRemove(PermissionRoleCreate):
-    pass
-
-
-# Properties to receive via API on update
-class PermissionUpdate(PermissionBase):
-    pass
-
-
-class PermissionInDBBase(PermissionBase):
-    id: Optional[int] = None
-
-    class Config:
-        orm_mode = True
-
-
-# Additional properties to return via API
-class Permission(PermissionInDBBase):
-    pass
-
-
-# Additional properties stored in DB
-class PermisisonInDB(PermissionInDBBase):
     pass

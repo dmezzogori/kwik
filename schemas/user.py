@@ -1,9 +1,10 @@
-from typing import Optional, List
+from typing import Optional
 
 from pydantic import BaseModel, EmailStr
 
+from .permission import PermissionORMSchema
 from .role import Role
-from .permission import Permission
+
 
 # Shared properties
 class UserBase(BaseModel):
@@ -45,5 +46,5 @@ class UserInDB(UserInDBBase):
 
 
 class UserWithPermissionsAndRoles(User):
-    roles: List[Role]
-    permissions: List[Permission]
+    roles: list[Role]
+    permissions: list[PermissionORMSchema]

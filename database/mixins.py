@@ -1,18 +1,12 @@
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, func
-from sqlalchemy.ext.declarative import as_declarative, declared_attr
-
-
-@as_declarative()
-class Base:
-
-    id: int
-    __name__: str
-    __tablename__: str
+from sqlalchemy.ext.declarative import declared_attr
 
 
 class TimeStampsMixin:
     creation_time = Column(DateTime, nullable=False, server_default=func.now())
-    last_modification_time = Column(DateTime, server_onupdate=func.now(), onupdate=func.now())
+    last_modification_time = Column(
+        DateTime, server_onupdate=func.now(), onupdate=func.now()
+    )
 
 
 class UserMixin:
@@ -33,3 +27,7 @@ class SoftDeleteMixin(RecordInfoMixin):
     @declared_attr
     def deleted(self):
         return Column(Boolean, default=False)
+
+
+class LogMixin:
+    pass

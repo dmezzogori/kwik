@@ -1,4 +1,20 @@
-from kwik import models
-from kwik.schemas.synth import synth_schemas
+from typing import Optional, Any
 
-LogBaseSchema, LogCreateSchema, LogUpdateSchema = synth_schemas(models.Log)
+from pydantic import BaseModel
+
+from kwik.schemas.mixins.orm import ORMMixin
+
+
+class _BaseSchema(BaseModel):
+    request_id: Optional[int] = None
+    entity: Optional[str] = None
+    before: Optional[Any] = None
+    after: Optional[Any] = None
+
+
+class LogORMSchema(ORMMixin, _BaseSchema):
+    pass
+
+
+class LogCreateSchema(_BaseSchema):
+    pass

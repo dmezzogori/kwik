@@ -1,15 +1,16 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
-from kwik.db import Base, RecordInfoMixin
+from kwik.database.base import Base
+from kwik.database.mixins import RecordInfoMixin
 
 
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    surname = Column(String, index=True)
+    name = Column(String, index=True, nullable=False)
+    surname = Column(String, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean(), default=True)
@@ -52,7 +53,7 @@ class Permission(Base, RecordInfoMixin):
     __tablename__ = "permissions"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
+    name = Column(String, index=True, nullable=False)
 
 
 class RolePermission(Base, RecordInfoMixin):

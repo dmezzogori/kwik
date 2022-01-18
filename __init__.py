@@ -27,7 +27,7 @@ from .api.deps import (
     has_permission,
 )
 
-from . import core
+
 from . import crud
 from . import exceptions
 from . import middlewares
