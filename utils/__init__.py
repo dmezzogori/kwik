@@ -1,4 +1,6 @@
-from typing import Tuple, Generator, TypeVar
+from pathlib import Path
+
+from typing import Tuple, Generator, TypeVar, Optional
 from uuid import uuid1
 
 import aiofiles
@@ -21,9 +23,18 @@ def iter_unique(generator: Generator[T, None, None], *, attr: str) -> T:
         yield t
 
 
-async def store_file(*, in_file: UploadFile) -> Tuple[str, int]:
+async def store_file(*, in_file: UploadFile, path: Optional[str] = None) -> Tuple[str, int]:
     # ...
     root_upload_directory = "/uploads"
+    if path is not None and len(path) > 1:
+        if path[0] != "/":
+            path = "/" + path
+        #TODO: verificare i permessi
+        root_upload_directory += path
+        if root_upload_directory[-1] == "/":
+            root_upload_directory = root_upload_directory[:-1]
+        Path(root_upload_directory).mkdir(parents=True, exist_ok=True)
+
     file_name = str(uuid1())
     out_file_path = root_upload_directory + "/" + file_name
     file_size = 0
