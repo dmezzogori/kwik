@@ -24,7 +24,10 @@ class UserCreate(UserBase):
 class UserUpdate(UserBase):
     name: Optional[str] = None
     surname: Optional[str] = None
-    password: Optional[str] = None
+
+class UserChangePassword(BaseModel):
+    old_password: str
+    new_password: str
 
 
 class UserInDBBase(UserBase):

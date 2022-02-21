@@ -1,6 +1,8 @@
 from typing import Any, Dict, Optional, Union
 
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from starlette import status
 
 from kwik import models, schemas
 from kwik.core.security import get_password_hash, verify_password
@@ -45,6 +47,22 @@ class AutoCRUDUser(auto_crud.AutoCRUD):
             del update_data["password"]
             update_data["hashed_password"] = hashed_password
         return super().update(db=db, db_obj=db_obj, obj_in=update_data)
+
+    def change_password(self, *, db: Session, user_id: int, obj_in: schemas.UserChangePassword) -> Optional[models.User]:
+        user = self.get(db=db, id=user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_412_PRECONDITION_FAILED, detail="The provided user does not exist",
+            )
+        if not self.authenticate(db=db, email=user.email, password=obj_in.old_password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="The provided password is wrong",
+            )
+        else:
+            hashed_password = get_password_hash(obj_in.new_password)
+            user.hashed_password = hashed_password
+            db.flush()
+            return user
 
     def authenticate(self, *, db: Session, email: str, password: str) -> Optional[models.User]:
         user = self.get_by_email(db=db, email=email)
