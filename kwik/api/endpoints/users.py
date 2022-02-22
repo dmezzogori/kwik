@@ -6,21 +6,19 @@ from pydantic.networks import EmailStr
 from sqlalchemy.orm import Session
 
 import kwik
+from kwik.routers import AuditorRouter
 from kwik.utils import send_new_account_email
-from kwik import crud, models, schemas
-from kwik.core.config import settings
+from kwik import crud, models, schemas, PaginatedQuery, has_permission
 from kwik.core.enum import PermissionNames
 
 
-router = kwik.routers.AuditorRouter()
+router = AuditorRouter()
 
 
 @router.get(
-    "/",
-    response_model=kwik.schemas.Paginated[schemas.User],
-    dependencies=[kwik.has_permission(PermissionNames.user_management)],
+    "/", response_model=schemas.Paginated[schemas.User], dependencies=[has_permission(PermissionNames.user_management)],
 )
-def read_users(db: Session = kwik.db, paginated=kwik.PaginatedQuery,) -> Any:
+def read_users(db: Session = kwik.db, paginated=PaginatedQuery) -> Any:
     """
     Retrieve users.
     """
