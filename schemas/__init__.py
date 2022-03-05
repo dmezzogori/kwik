@@ -7,3 +7,4 @@ from .token import Token, TokenPayload
 from .user import User, UserCreate, UserInDB, UserUpdate, UserChangePassword, UserWithPermissionsAndRoles
 from .autorouter import Paginated
 from .record_info import RecordInfoMixin
+from .login import RecoverPassword

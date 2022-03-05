@@ -1,12 +1,13 @@
 from pathlib import Path
-
+from datetime import datetime, timedelta
 from typing import Tuple, Generator, TypeVar, Optional
 from uuid import uuid1
-
 import aiofiles
 from fastapi import UploadFile
 from sqlalchemy.orm import Query
+from jose import jwt
 
+from kwik.core.config import settings
 from kwik.typings import ModelType, ParsedSortingQuery, SortingQuery
 
 T = TypeVar("T")
@@ -62,3 +63,21 @@ def sort_query(*, model: ModelType, query: Query, sort: ParsedSortingQuery) -> Q
             else:
                 order_by.append(model_attr.desc())
     return query.order_by(*order_by)
+
+def generate_password_reset_token(email: str) -> str:
+    delta = timedelta(hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS)
+    now = datetime.utcnow()
+    expires = now + delta
+    exp = expires.timestamp()
+    encoded_jwt = jwt.encode({"exp": exp, "nbf": now, "sub": email}, settings.SECRET_KEY, algorithm="HS256",)
+    return encoded_jwt
+
+def verify_password_reset_token(token: str) -> Optional[str]:
+    try:
+        print(token)
+        decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        print(decoded_token)
+        return decoded_token["sub"]
+    except jwt.JWTError:
+        return None
+

@@ -68,12 +68,13 @@ def test_token(current_user: models.User = kwik.current_user) -> Any:
     return current_user
 
 
-@router.post("/password-recovery/{email}", response_model=schemas.Msg)
-def recover_password(email: str, db: Session = kwik.db) -> Any:
+@router.post("/login/password-recovery", response_model=schemas.Msg)
+def recover_password(obj_in: RecoverPassword, db: Session = kwik.db) -> Any:
     """
     Password Recovery
     """
-    user = crud.user.get_by_email(db, email=email)
+    email = obj_in.email
+    user = crud.user.get_by_email(db=db, email=email)
 
     if not user:
         raise HTTPException(
@@ -84,22 +85,22 @@ def recover_password(email: str, db: Session = kwik.db) -> Any:
     return {"msg": "Password recovery email sent"}
 
 
-@router.post("/reset-password/", response_model=schemas.Msg)
-def reset_password(token: str = Body(...), new_password: str = Body(...), db: Session = kwik.db,) -> Any:
+@router.post("/login/reset-password", response_model=schemas.Msg)
+def reset_password(token: str = Body(...), password: str = Body(...), db: Session = kwik.db,) -> Any:
     """
     Reset password
     """
     email = verify_password_reset_token(token)
     if not email:
         raise HTTPException(status_code=400, detail="Invalid token")
-    user = crud.user.get_by_email(db, email=email)
+    user = crud.user.get_by_email(db=db, email=email)
     if not user:
         raise HTTPException(
             status_code=404, detail="The user with this username does not exist in the system.",
         )
     elif not crud.user.is_active(user):
         raise HTTPException(status_code=400, detail="Inactive user")
-    hashed_password = get_password_hash(new_password)
+    hashed_password = get_password_hash(password)
     user.hashed_password = hashed_password
     db.add(user)
     db.flush()
