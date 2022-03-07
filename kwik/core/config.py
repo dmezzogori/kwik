@@ -73,7 +73,7 @@ class Settings(BaseSettings):
         return v
 
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
-    EMAIL_TEMPLATES_DIR: str = "/src/app/email-templates/build"
+    EMAIL_TEMPLATES_DIR: str = "/src/app/email-templates"
     EMAILS_ENABLED: bool = False
 
     @validator("EMAILS_ENABLED", pre=True)
