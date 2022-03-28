@@ -1,6 +1,15 @@
 from fastapi import HTTPException, status
 
 
+class KwikException(Exception):
+    status_code: int
+    detail: str
+
+    @property
+    def http_exc(self):
+        return HTTPException(status_code=self.status_code, detail=self.detail)
+
+
 class DuplicatedEntity(Exception):
     pass
 
