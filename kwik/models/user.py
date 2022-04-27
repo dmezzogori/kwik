@@ -38,9 +38,7 @@ class Role(Base, RecordInfoMixin):
     is_locked = Column(Boolean(), default=False, nullable=False)
     deleted = Column(Boolean())
 
-    permissions = relationship(
-        "Permission", secondary="roles_permissions", viewonly=True
-    )
+    permissions = relationship("Permission", secondary="roles_permissions", viewonly=True)
 
 
 class UserRole(Base, RecordInfoMixin):

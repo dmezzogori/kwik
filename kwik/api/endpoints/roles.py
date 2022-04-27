@@ -1,4 +1,3 @@
-import logging
 from typing import Any, List
 
 from fastapi import HTTPException
@@ -13,7 +12,7 @@ router = AuditorRouter()
 
 
 @router.get("/", response_model=schemas.Paginated[schemas.Role])
-def read_roles(db: Session = kwik.db, paginated=kwik.PaginatedQuery,) -> Any:
+def read_roles(db: Session = kwik.db, paginated=kwik.PaginatedQuery) -> Any:
     """
     Retrieve roles.
     """
@@ -80,9 +79,10 @@ def update_role(*, db: Session = kwik.db, role_id: int, role_in: schemas.RoleUpd
     """
     Update a role.
     """
-    role = crud.role.get(db=db, id=role_id)
-    if not role:
-        raise NotFound(entity="Role", id=role_id)
+    try:
+        role = crud.role.get_if_exist(db=db, id=role_id)
+    except NotFound as e:
+        raise e.http_exc
     role = crud.role.update(db=db, db_obj=role, obj_in=role_in)
     return role
 
@@ -91,12 +91,16 @@ def update_role(*, db: Session = kwik.db, role_id: int, role_in: schemas.RoleUpd
 def associate_user_to_role(
     *, db: Session = kwik.db, current_user=kwik.current_user, user_role_in: schemas.UserRoleCreate
 ) -> Any:
-    user = crud.user.get(db=db, id=user_role_in.user_id)
-    if not user:
-        raise NotFound(entity="User", id=user_role_in.user_id)
-    role = crud.role.get(db=db, id=user_role_in.role_id)
-    if not role:
-        raise NotFound(entity="Role", id=user_role_in.role_id)
+    try:
+        user = crud.user.get_if_exist(db=db, id=user_role_in.user_id)
+    except NotFound as e:
+        raise e.http_exc
+
+    try:
+        role = crud.role.get_if_exist(db=db, id=user_role_in.role_id)
+    except NotFound as e:
+        raise e.http_exc
+
     role = crud.role.associate_user(db=db, user_db=user, role_db=role, creator_user=current_user)
     return role
 
@@ -108,12 +112,15 @@ def purge_role_from_user(
     """
     Remove role from user
     """
-    user = crud.user.get(db=db, id=user_role_in.user_id)
-    if not user:
-        raise NotFound(entity="User", id=user_role_in.user_id)
-    role = crud.role.get(db=db, id=user_role_in.role_id)
-    if not role:
-        raise NotFound(entity="Role", id=user_role_in.role_id)
+    try:
+        user = crud.user.get_if_exist(db=db, id=user_role_in.user_id)
+    except NotFound as e:
+        raise e.http_exc
+
+    try:
+        role = crud.role.get_if_exist(db=db, id=user_role_in.role_id)
+    except NotFound as e:
+        raise e.http_exc
     role = crud.role.purge_user(db=db, user_db=user, role_db=role)
     return role
 
@@ -127,6 +134,7 @@ def create_role(
     """
     role = crud.role.get_by_name(db=db, name=role_in.name)
     if role:
+        # TODO: raise custom exception
         raise HTTPException(
             status_code=400, detail="The role with this name already exists in the system.",
         )
@@ -139,9 +147,11 @@ def delete_role(*, db: Session = kwik.db, role_id: int,) -> Any:
     """
     Delete a role.
     """
-    role = crud.role.get(db=db, id=role_id)
-    if not role:
-        raise NotFound(entity="Role", id=role_id)
+    try:
+        crud.role.get_if_exist(db=db, id=role_id)
+    except NotFound as e:
+        raise e.http_exc
+
     role = crud.role.remove(db=db, id=role_id)
     return role
 

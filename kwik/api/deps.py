@@ -24,11 +24,11 @@ def get_current_user(db: KwikSession = db, token: str = Depends(reusable_oauth2)
     try:
         token_data = security.decode_token(token)
     except (jwt.JWTError, ValidationError):
-        raise Forbidden()
+        raise Forbidden().http_exc
 
     user = crud.user.get(db=db, id=token_data.sub)
     if user is None:
-        raise Forbidden()
+        raise Forbidden().http_exc
 
     return user
 
@@ -37,8 +37,11 @@ current_user = Depends(get_current_user)
 
 
 def get_current_active_user(current_user: User = current_user) -> User:
-    if not crud.user.is_active(current_user):
-        raise UserInactive()
+    try:
+        crud.user.is_active(current_user)
+    except UserInactive as e:
+        raise e.http_exc
+
     return current_user
 
 
@@ -47,7 +50,7 @@ current_active_user = Depends(get_current_active_user)
 
 def _get_current_active_superuser(current_user: User = current_user) -> User:
     if not crud.user.is_superuser(current_user):
-        raise Forbidden(detail="The user doesn't have enough privileges")
+        raise Forbidden().http_exc
     return current_user
 
 
@@ -64,7 +67,7 @@ def has_permission(*permissions: PermissionNamesBase):
             .count()
         )
         if r == 0:
-            raise Forbidden(detail="The user doesn't have enough privileges")
+            raise Forbidden().http_exc
 
     return Depends(inner)
 

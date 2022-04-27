@@ -35,22 +35,14 @@ class CRUDReadBase(CRUDBase):
 
     @abc.abstractmethod
     def get_multi(
-        self,
-        *,
-        db: KwikSession,
-        skip: int = 0,
-        limit: int = 100,
-        sort: ParsedSortingQuery | None = None,
-        **filters
+        self, *, db: KwikSession, skip: int = 0, limit: int = 100, sort: ParsedSortingQuery | None = None, **filters
     ) -> PaginatedCRUDResult:
         pass
 
 
 class CRUDCreateBase(CRUDBase):
     @abc.abstractmethod
-    def create(
-        self, *, db: KwikSession, obj_in: CreateSchemaType, user: User | None = None
-    ) -> ModelType:
+    def create(self, *, db: KwikSession, obj_in: CreateSchemaType, user: User | None = None) -> ModelType:
         pass
 
     @abc.abstractmethod
@@ -69,25 +61,16 @@ class CRUDCreateBase(CRUDBase):
 class CRUDUpdateBase(CRUDBase):
     @abc.abstractmethod
     def update(
-        self,
-        *,
-        db: KwikSession,
-        db_obj: ModelType,
-        obj_in: UpdateSchemaType | dict[str, Any],
-        user: User | None = None
+        self, *, db: KwikSession, db_obj: ModelType, obj_in: UpdateSchemaType | dict[str, Any], user: User | None = None
     ) -> ModelType:
         pass
 
 
 class CRUDDeleteBase(CRUDBase):
     @abc.abstractmethod
-    def delete(
-        self, *, db: KwikSession, id: int, user: User | None = None
-    ) -> ModelType:
+    def delete(self, *, db: KwikSession, id: int, user: User | None = None) -> ModelType:
         pass
 
 
-class AutoCRUDBase(
-    CRUDCreateBase, CRUDReadBase, CRUDUpdateBase, CRUDDeleteBase, abc.ABC
-):
+class AutoCRUDBase(CRUDCreateBase, CRUDReadBase, CRUDUpdateBase, CRUDDeleteBase, abc.ABC):
     pass

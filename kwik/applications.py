@@ -48,10 +48,3 @@ class Kwik:
         from kwik import logger
 
         logger.info("Kwik App instantiated")
-
-    def __call__(self):
-
-        # self._pre_start()
-        # self._alembic()
-        # self._init_db()
-        pass

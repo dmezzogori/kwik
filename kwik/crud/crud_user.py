@@ -76,8 +76,10 @@ class AutoCRUDUser(auto_crud.AutoCRUD):
             return None
         return user
 
-    def is_active(self, user: models.User) -> bool:
-        return user.is_active
+    def is_active(self, user: models.User):
+        if not user.is_active:
+            raise UserInactive
+        return user
 
     def is_superuser(self, user: models.User) -> bool:
         return True  # TODO: fix user.is_superuser

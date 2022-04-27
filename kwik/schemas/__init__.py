@@ -12,4 +12,4 @@ from .permission import (
 )
 from .role import Role, RoleCreate, RoleInDB, RoleUpdate, UserRoleCreate, UserRoleRemove
 from .token import Token, TokenPayload
-from .user import User, UserCreate, UserInDB, UserUpdate, UserWithPermissionsAndRoles
+from .user import User, UserCreate, UserInDB, UserUpdate, UserWithPermissionsAndRoles, UserChangePassword

@@ -1,5 +1,4 @@
 from typing import Any
-from kwik.schemas.login import RecoverPassword
 
 from fastapi import Body, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
@@ -11,6 +10,7 @@ from kwik.api.deps import reusable_oauth2
 from kwik.core.enum import PermissionNames
 from kwik.core.security import get_password_hash, decode_token, create_token
 from kwik.routers import AuditorRouter
+from kwik.schemas.login import RecoverPassword
 from kwik.utils import (
     generate_password_reset_token,
     send_reset_password_email,
@@ -52,9 +52,7 @@ def is_impersonating(token: str = Depends(reusable_oauth2)):
     return token_data.kwik_impersonate != ""
 
 
-@router.post(
-    "/login/stop_impersonating", response_model=schemas.Token,
-)
+@router.post("/login/stop_impersonating", response_model=schemas.Token)
 def stop_impersonating(token: str = Depends(reusable_oauth2)):
     token_data = decode_token(token)
     original_user_id = int(token_data.kwik_impersonate)

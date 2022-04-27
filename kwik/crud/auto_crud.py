@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from kwik import settings
 from kwik.database.base import Base
 from kwik.database.session import KwikSession
-from kwik.exceptions import DuplicatedEntity
+from kwik.exceptions import DuplicatedEntity, NotFound
 from kwik.middlewares import get_request_id
 from kwik.models import User
 from kwik.schemas import LogCreateSchema
@@ -33,7 +33,7 @@ class AutoCRUDRead(CRUDReadBase):
         skip: int = 0,
         limit: int = 100,
         sort: ParsedSortingQuery | None = None,
-        **filters: dict[str, str]
+        **filters: dict[str, str],
     ) -> PaginatedCRUDResult:
         q = db.query(self.model)
         if filters:
@@ -45,6 +45,13 @@ class AutoCRUDRead(CRUDReadBase):
             q = sort_query(model=self.model, query=q, sort=sort)
 
         return count, q.offset(skip).limit(limit).all()
+
+    def get_if_exist(self, *, db: KwikSession, id: int) -> ModelType | None:
+        r = self.get(db=db, id=id)
+        if r is None:
+            return r
+        else:
+            raise NotFound(detail=f"Entity with id={id} does not exist")
 
 
 class AutoCRUDCreate(CRUDCreateBase):
@@ -73,13 +80,13 @@ class AutoCRUDCreate(CRUDCreateBase):
         obj_in: CreateSchemaType,
         user: User | None = None,
         raise_on_error: bool = False,
-        **kwargs: dict[str, str]
+        **kwargs: dict[str, str],
     ) -> ModelType:
         obj_db: ModelType | None = db.query(self.model).filter_by(**kwargs).one_or_none()
         if obj_db is None:
             obj_db: ModelType = self.create(db=db, obj_in=obj_in, user=user)
         elif raise_on_error:
-            raise DuplicatedEntity()
+            raise DuplicatedEntity
         return obj_db
 
 
