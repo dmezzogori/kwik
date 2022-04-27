@@ -1,63 +1,12 @@
 version: "3.3"
 
-networks:
-  traefik-public:
-    external: true
-  internal:
-    external: false
-
 services:
 
-  proxy:
-    restart: unless-stopped
-    image: traefik:v2.2
-    networks:
-      - traefik-public
-      - internal
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command:
-      - --providers.docker
-      - --providers.docker.constraints=Label(`traefik.constraint-label-stack`, `${STACK_NAME?Variable not set}`)
-      - --providers.docker.exposedbydefault=false
-      - --accesslog
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=${TRAEFIK_PUBLIC_NETWORK?Variable not set}
-      - traefik.constraint-label=${TRAEFIK_PUBLIC_TAG?Variable not set}
-
-      # HTTP -> HTTPS redirect
-      - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
-      - traefik.http.middlewares.https-redirect.redirectscheme.permanent=true
-
-      # HTTP settings
-      - traefik.http.routers.${STACK_NAME?Variable not set}-proxy-http.entrypoints=http
-      - traefik.http.routers.${STACK_NAME?Variable not set}-proxy-http.middlewares=https-redirect
-      - traefik.http.routers.${STACK_NAME?Variable not set}-proxy-http.rule=Host(`${DOMAIN?Variable not set}`)
-
-      # HTTPS settings
-      - traefik.http.routers.${STACK_NAME?Variable not set}-proxy-https.entrypoints=https
-      - traefik.http.routers.${STACK_NAME?Variable not set}-proxy-https.rule=Host(`${DOMAIN?Variable not set}`)
-      - traefik.http.routers.${STACK_NAME?Variable not set}-proxy-https.tls=true
-      - traefik.http.routers.${STACK_NAME?Variable not set}-proxy-https.tls.certresolver=le
-
-      - traefik.http.services.${STACK_NAME?Variable not set}-proxy.loadbalancer.server.port=80
-
-  handbook:
-    image: handbook:1.0
-    restart: unless-stopped
+  kwik-docs:
+    image: "kwik-docs"
     build:
-      context: ./handbook
-    networks:
-      - internal
+      context: .
+    ports:
+      - "8000:8000"
     volumes:
       -  ./handbook:/docs
-    labels:
-      - traefik.enable=true
-      - traefik.constraint-label-stack=${STACK_NAME?Variable not set}
-      - traefik.docker.network=internal
-
-      - traefik.http.routers.${STACK_NAME?Variable not set}-handbook-http.entrypoints=http
-      - traefik.http.routers.${STACK_NAME?Variable not set}-handbook-http.rule=Host(`${DOMAIN?Variable not set}`)
-
-      - traefik.http.services.${STACK_NAME?Variable not set}-handbook.loadbalancer.server.port=80
