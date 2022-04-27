@@ -30,17 +30,13 @@ class AutoCRUDUser(auto_crud.AutoCRUD):
         return db_obj
 
     def create_if_not_exist(self, *, db: Session, filters: dict, obj_in: schemas.UserCreate, **kwargs) -> models.User:
-        obj_db = db.query(self.model).filter_by(**filters).one_or_none()
+        obj_db = db.query(models.User).filter_by(**filters).one_or_none()
         if obj_db is None:
             obj_db = self.create(db=db, obj_in=obj_in)
         return obj_db
 
     def update(
-        self,
-        *,
-        db: Session,
-        db_obj: models.User,
-        obj_in: Union[schemas.UserUpdate, Dict[str, Any]]
+        self, *, db: Session, db_obj: models.User, obj_in: Union[schemas.UserUpdate, Dict[str, Any]]
     ) -> models.User:
         if isinstance(obj_in, dict):
             update_data = obj_in
@@ -52,7 +48,9 @@ class AutoCRUDUser(auto_crud.AutoCRUD):
             update_data["hashed_password"] = hashed_password
         return super().update(db=db, db_obj=db_obj, obj_in=update_data)
 
-    def change_password(self, *, db: Session, user_id: int, obj_in: schemas.UserChangePassword) -> Optional[models.User]:
+    def change_password(
+        self, *, db: Session, user_id: int, obj_in: schemas.UserChangePassword
+    ) -> Optional[models.User]:
         user = self.get(db=db, id=user_id)
         if not user:
             raise HTTPException(

@@ -80,9 +80,9 @@ class AutoCRUDCreate(CRUDCreateBase):
         obj_in: CreateSchemaType,
         user: User | None = None,
         raise_on_error: bool = False,
-        **kwargs: dict[str, str],
+        **filters: dict[str, str],
     ) -> ModelType:
-        obj_db: ModelType | None = db.query(self.model).filter_by(**kwargs).one_or_none()
+        obj_db: ModelType | None = db.query(self.model).filter_by(**filters).one_or_none()
         if obj_db is None:
             obj_db: ModelType = self.create(db=db, obj_in=obj_in, user=user)
         elif raise_on_error:

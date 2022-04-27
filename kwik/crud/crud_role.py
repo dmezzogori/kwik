@@ -1,12 +1,13 @@
 from typing import Optional
 
-from auto_crud import AutoCRUD
 from kwik.database.session import KwikSession
 from kwik.models import Role, UserRole, User, Permission, RolePermission
 from kwik.schemas import RoleCreate, RoleUpdate
 
+from .auto_crud import AutoCRUD
 
-class AutoCRUDRole(AutoCRUD[Role, RoleCreate, RoleUpdate]):
+
+class AutoCRUDRole(AutoCRUD):
     def get_by_name(self, *, db: KwikSession, name: str) -> Role | None:
         return db.query(Role).filter(Role.name == name).first()
 

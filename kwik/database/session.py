@@ -21,7 +21,7 @@ class KwikSession(Session):
     """
 
     def query(self, *entities, **kwargs) -> KwikQuery:
-        ...
+        return super().query(*entities, **kwargs)
 
     def delete(self, instances: kwik.typings.ModelType | Sequence[kwik.typings.ModelType]) -> None:
         if not isinstance(instances, Iterable):
@@ -121,11 +121,11 @@ def _has_soft_delete(model: kwik.typings.ModelType) -> bool:
     Checks if an entity (model class) is marked to implement
     the soft delete pattern (i.e. is a subclass of SoftDeleteMixin)
     """
-    return issubclass(model, kwik.db.mixins.SoftDeleteMixin)
+    return issubclass(model, kwik.database.mixins.SoftDeleteMixin)
 
 
 def _to_be_logged(model: kwik.typings.ModelType) -> bool:
-    return issubclass(model, kwik.db.mixins.LogMixin)
+    return issubclass(model, kwik.database.mixins.LogMixin)
 
 
 def get_db_from_request(request: Request) -> KwikSession:

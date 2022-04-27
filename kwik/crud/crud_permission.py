@@ -1,10 +1,11 @@
-from auto_crud import AutoCRUD
 from kwik.database.session import KwikSession
 from kwik.models import Permission, Role, User, RolePermission
 from kwik.schemas import PermissionCreate, PermissionUpdate
 
+from .auto_crud import AutoCRUD
 
-class CRUDPermission(AutoCRUD[Permission, PermissionCreate, PermissionUpdate]):
+
+class CRUDPermission(AutoCRUD):
     def get_by_name(self, *, db: KwikSession, name: str) -> Permission | None:
         return db.query(Permission).filter(Permission.name == name).one_or_none()
 
