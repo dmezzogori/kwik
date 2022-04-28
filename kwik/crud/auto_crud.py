@@ -55,12 +55,12 @@ class AutoCRUDRead(CRUDReadBase):
 
 
 class AutoCRUDCreate(CRUDCreateBase):
-    def create(self, *, db: KwikSession, obj_in: CreateSchemaType, user: User | None = None) -> ModelType:
-        obj_in_data = jsonable_encoder(obj_in)
+    def create(self, *, db: KwikSession, obj_in: CreateSchemaType, user: User | None = None, **kwargs) -> ModelType:
+        obj_in_data = dict(obj_in)
         if user is not None:
-            db_obj: ModelType = self.model(**obj_in_data, creator_user_id=user.id)
-        else:
-            db_obj: ModelType = self.model(**obj_in_data)
+            obj_in_data["creator_user_id"] = user.id
+
+        db_obj = self.model(**obj_in_data)
         db.add(db_obj)
         db.flush()
         db.refresh(db_obj)
@@ -78,13 +78,14 @@ class AutoCRUDCreate(CRUDCreateBase):
         *,
         db: KwikSession,
         obj_in: CreateSchemaType,
+        filters: dict[str, str],
         user: User | None = None,
         raise_on_error: bool = False,
-        **filters: dict[str, str],
+        **kwargs: Any,
     ) -> ModelType:
         obj_db: ModelType | None = db.query(self.model).filter_by(**filters).one_or_none()
         if obj_db is None:
-            obj_db: ModelType = self.create(db=db, obj_in=obj_in, user=user)
+            obj_db: ModelType = self.create(db=db, obj_in=obj_in, user=user, **kwargs)
         elif raise_on_error:
             raise DuplicatedEntity
         return obj_db

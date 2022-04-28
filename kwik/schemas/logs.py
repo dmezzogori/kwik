@@ -6,7 +6,7 @@ from kwik.schemas.mixins.orm import ORMMixin
 
 
 class _BaseSchema(BaseModel):
-    request_id: Optional[int] = None
+    request_id: Optional[str] = None
     entity: Optional[str] = None
     before: Optional[Any] = None
     after: Optional[Any] = None

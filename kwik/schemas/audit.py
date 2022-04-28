@@ -9,7 +9,7 @@ class _BaseSchema(BaseModel):
     client_host: str
     request_id: Optional[str] = None
     user_id: Optional[int] = None
-    impersonator_user_id: int
+    impersonator_user_id: Optional[int] = None
     method: str
     headers: str
     url: str
