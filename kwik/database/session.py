@@ -48,7 +48,7 @@ class KwikQuery(Query):
     Needed to override the instantiation of the class (i.e. database.query(some_model)),
     and the join method(i.e. database.query(some_model).join(other_model)),
     to implement the Soft Delete pattern.
-    It is automatically registered by the DBContextManager.
+    It is automatically registered by the Kwik DBContextManager.
     """
 
     def __init__(self, entities: tuple[kwik.typings.ModelType, ...], session: Session = None) -> None:
@@ -69,6 +69,10 @@ class KwikQuery(Query):
                 self._soft_delete_criteria += (criterion,)
                 self._where_criteria += (criterion,)
 
+    @property
+    def soft_delete_enabled(self) -> bool:
+        return len(self._soft_delete_criteria) > 0
+
     def ignore_soft_delete(self) -> KwikQuery:
         """
         Additional method to explicitly disable the application
@@ -78,6 +82,16 @@ class KwikQuery(Query):
         """
         self._where_criteria = [c for c in self._where_criteria if c not in self._soft_delete_criteria]
         return self
+
+    def get(self, ident: int):
+        if self.soft_delete_enabled:
+            orig_where_criteria = list(self._where_criteria)
+            self._where_criteria = []
+            result = super().get(ident)
+            self._where_criteria = orig_where_criteria
+            return result if not result.deleted else None
+        else:
+            return super().get(ident)
 
     def join(self, target, *args, **kwargs):
         """
