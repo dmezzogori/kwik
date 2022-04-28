@@ -1,16 +1,44 @@
-from fastapi import FastAPI
-from starlette.middleware.cors import CORSMiddleware
+from __future__ import annotations
 
-from kwik import api_router
+from fastapi import FastAPI, APIRouter
 from kwik import settings
 from kwik.api.endpoints.docs import get_swagger_ui_html
 from kwik.middlewares import RequestContextMiddleware, DBSessionMiddleware
 from kwik.websocket.deps import broadcast
+from starlette.middleware.cors import CORSMiddleware
+
+
+def run(kwik_app: str | Kwik):
+    import uvicorn
+
+    reload = settings.HOTRELOAD
+    if isinstance(kwik_app, str):
+        kwik_app = f"{kwik_app}._app"
+    else:
+        reload = False
+
+    uvicorn.run(
+        kwik_app,
+        host=settings.HOST,
+        port=settings.PORT,
+        log_level=settings.LOG_LEVEL.lower(),
+        reload=reload,
+        http="httptools",
+        ws="websockets",
+        proxy_headers=True,
+    )
 
 
 class Kwik:
-    def __init__(self):
+    """
+    Kwik Application is a thin and opinionated wrapper around FastAPI.
+    It instantiates the FastAPI application and adds some middlewares (CORS,
+    RequestContextMiddleware, DBSessionMiddleware).
+    It automatically registers all the endpoints from the api_router.
+    It also patches the FastAPI docs endpoint to have collapsable sections in the swagger UI.
+    """
 
+    def __init__(self, api_router: APIRouter):
         on_startup = []
         on_shutdown = []
         if settings.WEBSOCKET_ENABLED:

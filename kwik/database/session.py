@@ -3,13 +3,12 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Sequence
 
+import kwik.typings
 from fastapi import Request
 from fastapi.encoders import jsonable_encoder
+from kwik.core.config import Settings
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker, Query
-
-import kwik.typings
-from kwik.core.config import Settings
 
 
 class KwikSession(Session):
