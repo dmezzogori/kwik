@@ -49,9 +49,8 @@ class AutoCRUDRead(CRUDReadBase):
     def get_if_exist(self, *, db: KwikSession, id: int) -> ModelType | None:
         r = self.get(db=db, id=id)
         if r is None:
-            return r
-        else:
             raise NotFound(detail=f"Entity with id={id} does not exist")
+        return r
 
 
 class AutoCRUDCreate(CRUDCreateBase):
