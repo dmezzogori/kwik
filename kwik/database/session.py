@@ -116,7 +116,7 @@ class DBContextManager:
     ) -> None:
         url = db_uri or settings.SQLALCHEMY_DATABASE_URI
         engine = create_engine(url, pool_pre_ping=True, connect_args=connect_args if connect_args else {})
-        db = sessionmaker(class_=KwikSession, query_cls=KwikQuery, autocommit=False, autoflush=False, bind=engine,)()
+        db = sessionmaker(class_=KwikSession, query_cls=Query, autocommit=False, autoflush=False, bind=engine,)()
         self.db: KwikSession = db
 
     def __enter__(self) -> KwikSession:
