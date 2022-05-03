@@ -1,14 +1,14 @@
 import time
 from typing import Callable, Optional
 
+import kwik
 from fastapi import APIRouter, Request, Response
 from fastapi.routing import APIRoute
 from jose import jwt
-
 from kwik import crud, schemas
 from kwik.api.deps import get_current_user
 from kwik.core import security
-import kwik
+from kwik.database.session import get_db_from_request
 from kwik.middlewares import get_request_id
 
 
@@ -39,10 +39,16 @@ class AuditorRoute(APIRoute):
             process_time = time.time() - start
             response.headers["X-Response-Time"] = str(process_time)
 
+            _running_app = kwik.get_running_app()
+            if _running_app.dependency_overrides.get(get_db_from_request):
+                db = list(_running_app.dependency_overrides.get(get_db_from_request)())[0]
+            else:
+                db = get_db_from_request(request)
+
             user_id = None
             impersonator_user_id = None
             if request.token is not None:
-                user = get_current_user(request.state.db, request.token)
+                user = get_current_user(db, request.token)
                 user_id = user.id
 
                 payload = jwt.decode(request.token, kwik.settings.SECRET_KEY, algorithms=[security.ALGORITHM])
@@ -65,8 +71,7 @@ class AuditorRoute(APIRoute):
                 process_time=process_time * 1000,
                 status_code=response.status_code,
             )
-
-            crud.audit.create(db=request.state.db, obj_in=audit_in)
+            crud.audit.create(db=db, obj_in=audit_in)
             return response
 
         return custom_route_handler

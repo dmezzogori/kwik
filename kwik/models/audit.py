@@ -1,9 +1,8 @@
+from kwik.database.base import Base
 from sqlalchemy import Column, Float, Integer, String
 
-from .. import database
 
-
-class Audit(database.base.Base):
+class Audit(Base):
     __tablename__ = "audits"
 
     id = Column(Integer, primary_key=True, index=True)

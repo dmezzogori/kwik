@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Sequence, Dict
 
-import kwik.typings
+import kwik
 from fastapi import Request
 from fastapi.encoders import jsonable_encoder
 from kwik.core.config import Settings

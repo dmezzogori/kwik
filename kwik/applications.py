@@ -6,6 +6,15 @@ from kwik.api.endpoints.docs import get_swagger_ui_html
 from kwik.middlewares import RequestContextMiddleware, DBSessionMiddleware
 from kwik.websocket.deps import broadcast
 from starlette.middleware.cors import CORSMiddleware
+import kwik
+
+
+def set_running_app(app: FastAPI):
+    kwik._running_app = app
+
+
+def get_running_app() -> FastAPI | None:
+    return kwik._running_app
 
 
 def run(kwik_app: str | Kwik):
@@ -72,6 +81,8 @@ class Kwik:
         @self._app.get("/docs", include_in_schema=False)
         async def custom_swagger_ui_html():
             return get_swagger_ui_html(openapi_url=self._app.openapi_url, title=self._app.title + " - Swagger UI")
+
+        set_running_app(self._app)
 
         from kwik import logger
 
