@@ -80,12 +80,14 @@ class Settings(BaseSettings):
     def get_emails_enabled(cls, v: bool, values: dict[str, Any]) -> bool:
         return bool(values.get("SMTP_HOST") and values.get("SMTP_PORT") and values.get("EMAILS_FROM_EMAIL"))
 
-    #EMAIL_TEST_USER: EmailStr = "test@example.com"  # type: ignore
+    # EMAIL_TEST_USER: EmailStr = "test@example.com"  # type: ignore
     FIRST_SUPERUSER: EmailStr = "admin@example.com"
     FIRST_SUPERUSER_PASSWORD: str = "admin"
     USERS_OPEN_REGISTRATION: bool = False
 
     DB_LOGGER: bool = True
+
+    ENABLE_SOFT_DELETE: bool = False
 
     class Config:
         case_sensitive = True
