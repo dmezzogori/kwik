@@ -1,0 +1,8 @@
+{
+  "assets/javascripts/bundle.js": "assets/javascripts/bundle.js",
+  "assets/javascripts/vendor.js": "assets/javascripts/vendor.js",
+  "assets/javascripts/worker/search.js": "assets/javascripts/worker/search.js",
+  "assets/stylesheets/main.css": "assets/stylesheets/main.css",
+  "assets/stylesheets/overrides.css": "assets/stylesheets/overrides.css",
+  "assets/stylesheets/palette.css": "assets/stylesheets/palette.css"
+}

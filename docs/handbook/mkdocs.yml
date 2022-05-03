@@ -1,0 +1,112 @@
+site_name: Kwik
+site_description: Kwik web framework, modern, concise, opinionated API for batteries-included RESTful backends
+site_url: https://kwik.rocks
+site_author: Davide Mezzogori
+theme:
+  name: material
+  include_search_page: false
+  search_index_only: true
+
+  features:
+    - navigation.instant
+    - navigation.sections
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+#  logo: img/icon-white.svg
+#  favicon: img/favicon.png
+  language: en
+repo_name: dmezzogori/kwik
+repo_url: https://github.com/dmezzogori/kwik
+edit_uri: ""
+plugins:
+  - search
+  - minify:
+      minify_html: true
+nav:
+  - Kwik: index.md
+  - Languages:
+      - en: /
+      - it: /it/
+  - features.md
+  - Tutorial - User Guide:
+      - tutorial/index.md
+      - tutorial/first-steps.md
+      - tutorial/configuration.md
+      - tutorial/database.md
+      - tutorial/models.md
+      - tutorial/schemas.md
+      - tutorial/crud.md
+      - tutorial/permissions.md
+      - tutorial/guards.md
+      - tutorial/auditing.md
+      - tutorial/utilities.md
+copyright: Copyright &copy; 2022 Davide Mezzogori
+
+extra:
+  alternate:
+    - name: Italian
+      link: https://kwik.rocks/it/
+      lang: it
+    - name: English
+      link: https://kwik.rocks/en/
+      lang: en
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/dmezzogori/kwik
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/kwik.rocks
+    - icon: fontawesome/brands/linkedin
+      link: https://linkedin.com/in/davidemezzogori/
+    - icon: material/web
+      link: https://davide.mezzogori.com
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - abbr
+  - attr_list
+  - def_list
+  - footnotes
+  - meta
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: squidfunk
+      repo: mkdocs-material
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra_css:
+  - css/termynal.css
+
+extra_javascript:
+  - js/termynal.js
+  - js/custom.js
