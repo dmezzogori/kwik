@@ -123,14 +123,15 @@ def update_user(*, db: Session = kwik.db, user_id: int, user_in: schemas.UserUpd
     user = crud.user.update(db=db, db_obj=user, obj_in=user_in)
     return user
 
+
 @router.put("/{user_id}/update_password", response_model=schemas.User)
-def update_user(
-        *,
-        db: Session = kwik.db,
-        user_id: int,
-        obj_in: schemas.UserChangePassword,
-        current_user: models.User = kwik.current_active_user
-) -> Any:
+def update_password(
+    *,
+    db: Session = kwik.db,
+    user_id: int,
+    obj_in: schemas.UserChangePassword,
+    current_user: models.User = kwik.current_active_user,
+) -> models.User:
     """
     Update the provided user's password.
     At the moment, it doesn't check that the current user is the one changing its own password because in the future

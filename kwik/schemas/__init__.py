@@ -1,5 +1,6 @@
 from .audit import AuditBaseSchema, AuditCreateSchema
 from .autorouter import Paginated
+from .login import RecoverPassword
 from .logs import LogORMSchema, LogCreateSchema
 from .mixins.record_info import RecordInfoMixin
 from .msg import Msg
