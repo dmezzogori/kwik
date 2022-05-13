@@ -2,7 +2,9 @@ from .audit import AuditBaseSchema, AuditCreateSchema
 from .autorouter import Paginated
 from .login import RecoverPassword
 from .logs import LogORMSchema, LogCreateSchema
+from .mixins.orm import ORMMixin
 from .mixins.record_info import RecordInfoMixin
+from .mixins.soft_delete import SoftDeleteMixin
 from .msg import Msg
 from .permission import (
     PermissionORMSchema,
