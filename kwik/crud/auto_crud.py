@@ -20,6 +20,7 @@ UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
 from .base import CRUDCreateBase, CRUDReadBase, CRUDUpdateBase, CRUDDeleteBase
+from ..logging import logger
 
 
 class AutoCRUDRead(CRUDReadBase):
@@ -94,7 +95,6 @@ class AutoCRUDUpdate(CRUDUpdateBase):
     def update(
         self, *, db: KwikSession, db_obj: ModelType, obj_in: UpdateSchemaType | dict[str, Any], user: User | None = None
     ) -> ModelType:
-        obj_data = jsonable_encoder(db_obj)
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
@@ -103,19 +103,17 @@ class AutoCRUDUpdate(CRUDUpdateBase):
         if user is not None:
             update_data["last_modifier_user_id"] = user.id
 
-        for field in obj_data:
-            if field in update_data:
+        for field in update_data:
+            if hasattr(db_obj, field):
                 setattr(db_obj, field, update_data[field])
+
         db.add(db_obj)
         db.flush()
         db.refresh(db_obj)
 
         if settings.DB_LOGGER:
             log_in = LogCreateSchema(
-                request_id=get_request_id(),
-                entity=db_obj.__tablename__,
-                before=obj_data,
-                after=jsonable_encoder(db_obj),
+                request_id=get_request_id(), entity=db_obj.__tablename__, before={}, after=jsonable_encoder(db_obj),
             )
             crud_logs.logs.create(db=db, obj_in=log_in)
 
