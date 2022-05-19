@@ -102,6 +102,16 @@ class KwikQuery(Query):
             self._where_criteria += (target.deleted == False,)
         return super().join(target, *args, **kwargs)
 
+    def outerjoin(self, target, *props, **kwargs):
+        """
+        Automatically inject soft delete filters for target models involved in a join.
+        i.e. database.query(some_model).outerjoin(other_model_with_soft_delete) automatically add
+        a filter condition on the joined table.
+        """
+        if _has_soft_delete(target):
+            self._where_criteria += (target.deleted == False,)
+        return super().outerjoin(target, *props, **kwargs)
+
 
 class DBContextManager:
     """
@@ -141,7 +151,17 @@ def _has_soft_delete(model: kwik.typings.ModelType) -> bool:
     Checks if an entity (model class) is marked to implement
     the soft delete pattern (i.e. is a subclass of SoftDeleteMixin)
     """
-    return issubclass(model, kwik.database.mixins.SoftDeleteMixin)
+    t = model
+    if hasattr(t, "class_"):
+        t = model.class_
+
+    if issubclass(t, ...):
+        for col in t._element.table.columns:
+            *_, col_name = col.name.split(".")
+            if col_name == "deleted":
+                return True
+
+    return issubclass(t, kwik.database.mixins.SoftDeleteMixin)
 
 
 def _to_be_logged(model: kwik.typings.ModelType) -> bool:
