@@ -9,6 +9,7 @@ from fastapi.encoders import jsonable_encoder
 from kwik.core.config import Settings
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker, Query
+from sqlalchemy.sql.elements import Label
 
 
 class KwikSession(Session):
@@ -154,12 +155,18 @@ def _has_soft_delete(model: kwik.typings.ModelType) -> bool:
     t = model
     if hasattr(t, "class_"):
         t = model.class_
-
-    if issubclass(t, ...):
-        for col in t._element.table.columns:
+    elif isinstance(t, Label):
+        return False
+        # noinspection PyProtectedMember
+        if hasattr(t._element, "table"):
+            columns = t._element.table.columns
+        else:
+            columns = t._element.columns
+        for col in columns:
             *_, col_name = col.name.split(".")
             if col_name == "deleted":
                 return True
+        return False
 
     return issubclass(t, kwik.database.mixins.SoftDeleteMixin)
 
