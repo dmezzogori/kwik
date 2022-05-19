@@ -156,7 +156,6 @@ def _has_soft_delete(model: kwik.typings.ModelType) -> bool:
     if hasattr(t, "class_"):
         t = model.class_
     elif isinstance(t, Label):
-        return False
         # noinspection PyProtectedMember
         if hasattr(t._element, "table"):
             columns = t._element.table.columns
