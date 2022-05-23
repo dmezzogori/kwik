@@ -1,8 +1,6 @@
 from typing import Any, TypeVar
 
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
-
 from kwik import settings
 from kwik.database.base import Base
 from kwik.database.session import KwikSession
@@ -12,18 +10,18 @@ from kwik.models import User
 from kwik.schemas import LogCreateSchema
 from kwik.typings import ParsedSortingQuery, PaginatedCRUDResult
 from kwik.utils import sort_query
+from pydantic import BaseModel
+
 from . import crud_logs
+from .base import CRUDCreateBase, CRUDReadBase, CRUDUpdateBase, CRUDDeleteBase
 
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
-from .base import CRUDCreateBase, CRUDReadBase, CRUDUpdateBase, CRUDDeleteBase
-from ..logging import logger
-
-
 class AutoCRUDRead(CRUDReadBase):
+    # noinspection PyShadowingBuiltins
     def get(self, *, db: KwikSession, id: int) -> ModelType | None:
         return db.query(self.model).get(id)
 
@@ -47,6 +45,7 @@ class AutoCRUDRead(CRUDReadBase):
 
         return count, q.offset(skip).limit(limit).all()
 
+    # noinspection PyShadowingBuiltins
     def get_if_exist(self, *, db: KwikSession, id: int) -> ModelType | None:
         r = self.get(db=db, id=id)
         if r is None:
@@ -121,6 +120,7 @@ class AutoCRUDUpdate(CRUDUpdateBase):
 
 
 class AutoCRUDDelete(CRUDDeleteBase):
+    # noinspection PyShadowingBuiltins
     def delete(self, *, db: KwikSession, id: int, user: User | None = None) -> ModelType:
         obj: ModelType = db.query(self.model).get(id)
 

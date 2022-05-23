@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Generic, List, Optional, Type
-
-from sqlalchemy.orm import Session
+from typing import Any, Generic, Type
 
 import kwik
-from kwik.typings import ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType, SortingQuery
+import kwik.exceptions
+import kwik.models
+import kwik.schemas
+from kwik.typings import ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType
+from sqlalchemy.orm import Session
+
 from .auditor import AuditorRouter
 
 
 class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType]):
     def __init__(
-        self, model: Type[ModelType], schemas, crud, *args, permissions: Optional[List[str]] = None, **kwargs,
+        self, model: Type[ModelType], schemas, crud, *args, permissions: list[str] | None = None, **kwargs,
     ):
 
         super().__init__(*args, **kwargs)
@@ -95,13 +98,14 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         total, result = self.crud.get_multi(db=db, **filters, sort=sorting, **paginated)
         return kwik.schemas.Paginated[self.BaseSchemaType](total=total, data=result)
 
+    # noinspection PyShadowingBuiltins
     def read(self, id: int, db: Session = kwik.db) -> ModelType:
         """
         Retrieve a {name}.
         """
         db_obj = self.crud.get(db=db, id=id)
         if not db_obj:
-            raise kwik.exceptions.NotFound(id=id)
+            raise kwik.exceptions.NotFound
         return db_obj
 
     def create(
@@ -113,6 +117,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         obj_db = self.crud.create(db=db, obj_in=obj_in, user=user)
         return obj_db
 
+    # noinspection PyShadowingBuiltins
     def update(
         self, *, db: Session = kwik.db, id: int, obj_in: UpdateSchemaType, user: kwik.models.User = kwik.current_user
     ) -> Any:
@@ -121,17 +126,18 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         """
         db_obj = self.crud.get(db=db, id=id)
         if not db_obj:
-            raise kwik.exceptions.NotFound(id=id)
+            raise kwik.exceptions.NotFound
         return self.crud.update(db=db, db_obj=db_obj, obj_in=obj_in, user=user)
 
-    def remove(self, *, db: Session = kwik.db, id: int, user: kwik.models.User = kwik.current_user) -> Any:
+    # noinspection PyShadowingBuiltins
+    def delete(self, *, db: Session = kwik.db, id: int, user: kwik.models.User = kwik.current_user) -> Any:
         """
         Delete a {name}.
         """
         obj_db = self.crud.get(db=db, id=id)
         if not obj_db:
-            raise kwik.exceptions.NotFound(id=id)
-        return self.crud.remove(db=db, id=id, user=user)
+            raise kwik.exceptions.NotFound
+        return self.crud.delete(db=db, id=id, user=user)
 
     def register(self, *, read_multi=True, read=True, create=True, update=True, delete=True):
         if read_multi:
@@ -145,4 +151,4 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         if update:
             self.router.put("/{id}", response_model=self.BaseSchemaType, dependencies=self.deps)(self.update)
         if delete:
-            self.router.delete("/{id}", dependencies=self.deps)(self.remove)
+            self.router.delete("/{id}", dependencies=self.deps)(self.delete)
