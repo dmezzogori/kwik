@@ -55,7 +55,7 @@ def read_users_by_role(*, db: Session = kwik.db, role_id: int,) -> dict:
 
 
 @router.get("/{role_id}/assignable-permissions", response_model=schemas.Paginated[schemas.PermissionORMSchema])
-def read_users_not_in_role(role_id: int, db: kwik.KwikSession = kwik.db) -> dict:
+def read_users_not_in_role(role_id: int, db: Session = kwik.db) -> dict:
     """
     Get all permissions not involved in the given role
     """
@@ -64,7 +64,7 @@ def read_users_not_in_role(role_id: int, db: kwik.KwikSession = kwik.db) -> dict
 
 
 @router.get("/{role_id}", response_model=schemas.Role)
-def read_role_by_id(role_id: int, db: kwik.KwikSession = kwik.db) -> models.Role:
+def read_role_by_id(role_id: int, db: Session = kwik.db) -> models.Role:
     """
     Get a specific role by id.
     """
@@ -72,7 +72,7 @@ def read_role_by_id(role_id: int, db: kwik.KwikSession = kwik.db) -> models.Role
 
 
 @router.put("/{role_id}", response_model=schemas.Role)
-def update_role(*, db: kwik.KwikSession = kwik.db, role_id: int, role_in: schemas.RoleUpdate) -> Any:
+def update_role(*, db: Session = kwik.db, role_id: int, role_in: schemas.RoleUpdate) -> Any:
     """
     Update a role.
     """
