@@ -1,11 +1,10 @@
 from typing import Any
 
-from fastapi import HTTPException
-from sqlalchemy.orm import Session
-
 import kwik
+from fastapi import HTTPException
 from kwik import crud, models, schemas
 from kwik.routers import AuditorRouter
+from sqlalchemy.orm import Session
 
 router = AuditorRouter()
 

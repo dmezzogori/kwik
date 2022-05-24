@@ -1,15 +1,14 @@
-from typing import Optional, Any
-
-from pydantic import BaseModel
+from typing import Any
 
 from kwik.schemas.mixins.orm import ORMMixin
+from pydantic import BaseModel
 
 
 class _BaseSchema(BaseModel):
-    request_id: Optional[str] = None
-    entity: Optional[str] = None
-    before: Optional[Any] = None
-    after: Optional[Any] = None
+    request_id: str | None = None
+    entity: str | None = None
+    before: Any | None = None
+    after: Any | None = None
 
 
 class LogORMSchema(ORMMixin, _BaseSchema):

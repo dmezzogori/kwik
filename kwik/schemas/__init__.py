@@ -1,4 +1,4 @@
-from .audit import AuditBaseSchema, AuditCreateSchema
+from .audit import AuditORMSchema, AuditCreateSchema
 from .autorouter import Paginated
 from .login import RecoverPassword
 from .logs import LogORMSchema, LogCreateSchema

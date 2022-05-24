@@ -1,6 +1,5 @@
-from sqlalchemy import Column, Integer, JSON, String
-
 import kwik
+from sqlalchemy import Column, Integer, JSON, String
 
 
 class Log(kwik.database.base.Base):

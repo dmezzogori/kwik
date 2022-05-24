@@ -1,18 +1,14 @@
-from typing import Optional
-
 from pydantic import BaseModel, EmailStr
 
 from .permission import PermissionORMSchema
 from .role import Role
 
 
-# Shared properties
 class UserBase(BaseModel):
-    email: Optional[EmailStr] = None
-    is_active: Optional[bool] = True
+    email: EmailStr | None = None
+    is_active: bool | None = True
 
 
-# Properties to receive via API on creation
 class UserCreate(UserBase):
     name: str
     surname: str
@@ -20,10 +16,9 @@ class UserCreate(UserBase):
     password: str
 
 
-# Properties to receive via API on update
 class UserUpdate(UserBase):
-    name: Optional[str] = None
-    surname: Optional[str] = None
+    name: str | None = None
+    surname: str | None = None
 
 
 class UserChangePassword(BaseModel):
@@ -32,19 +27,17 @@ class UserChangePassword(BaseModel):
 
 
 class UserInDBBase(UserBase):
-    id: Optional[int] = None
+    id: int | None = None
 
     class Config:
         orm_mode = True
 
 
-# Additional properties to return via API
 class User(UserInDBBase):
-    name: Optional[str] = None
-    surname: Optional[str] = None
+    name: str | None = None
+    surname: str | None = None
 
 
-# Additional properties stored in DB
 class UserInDB(UserInDBBase):
     hashed_password: str
 

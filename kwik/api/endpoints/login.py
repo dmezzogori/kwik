@@ -1,10 +1,6 @@
-from typing import Any
-
+import kwik
 from fastapi import Body, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-
-import kwik
 from kwik import crud, models, schemas
 from kwik.api.deps import reusable_oauth2
 from kwik.core.enum import PermissionNames
@@ -16,12 +12,13 @@ from kwik.utils import (
     send_reset_password_email,
     verify_password_reset_token,
 )
+from sqlalchemy.orm import Session
 
 router = AuditorRouter()
 
 
 @router.post("/login/access-token", response_model=schemas.Token)
-def login_access_token(db: Session = kwik.db, form_data: OAuth2PasswordRequestForm = Depends()) -> Any:
+def login_access_token(db: Session = kwik.db, form_data: OAuth2PasswordRequestForm = Depends()) -> dict:
     """
     OAuth2 compatible token login, get an access token for future requests
     """
@@ -60,7 +57,7 @@ def stop_impersonating(token: str = Depends(reusable_oauth2)):
 
 
 @router.post("/login/test-token", response_model=schemas.User)
-def test_token(current_user: models.User = kwik.current_user) -> Any:
+def test_token(current_user: models.User = kwik.current_user) -> models.User:
     """
     Test access token
     """
@@ -68,7 +65,7 @@ def test_token(current_user: models.User = kwik.current_user) -> Any:
 
 
 @router.post("/login/password-recovery", response_model=schemas.Msg)
-def recover_password(obj_in: RecoverPassword, db: Session = kwik.db) -> Any:
+def recover_password(obj_in: RecoverPassword, db: Session = kwik.db) -> dict:
     """
     Password Recovery
     """
@@ -85,7 +82,7 @@ def recover_password(obj_in: RecoverPassword, db: Session = kwik.db) -> Any:
 
 
 @router.post("/login/reset-password", response_model=schemas.Msg)
-def reset_password(token: str = Body(...), password: str = Body(...), db: Session = kwik.db,) -> Any:
+def reset_password(token: str = Body(...), password: str = Body(...), db: Session = kwik.db,) -> dict:
     """
     Reset password
     """

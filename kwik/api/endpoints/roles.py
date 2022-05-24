@@ -1,18 +1,17 @@
 from typing import Any, List
 
-from fastapi import HTTPException
-from sqlalchemy.orm import Session
-
 import kwik
+from fastapi import HTTPException
 from kwik import crud, models, schemas
 from kwik.exceptions import NotFound
 from kwik.routers import AuditorRouter
+from sqlalchemy.orm import Session
 
 router = AuditorRouter()
 
 
 @router.get("/", response_model=schemas.Paginated[schemas.Role])
-def read_roles(db: Session = kwik.db, paginated=kwik.PaginatedQuery) -> Any:
+def read_roles(db: Session = kwik.db, paginated=kwik.PaginatedQuery) -> dict:
     """
     Retrieve roles.
     """
@@ -21,16 +20,15 @@ def read_roles(db: Session = kwik.db, paginated=kwik.PaginatedQuery) -> Any:
 
 
 @router.get("/me", response_model=List[schemas.Role])
-def read_role_of_logged_user(db: Session = kwik.db, current_user: models.User = kwik.current_user) -> Any:
+def read_role_of_logged_user(db: Session = kwik.db, current_user: models.User = kwik.current_user) -> list[models.Role]:
     """
     Get roles of logged in user.
     """
-    roles = crud.role.get_multi_by_user_id(db=db, user_id=current_user.id)
-    return roles
+    return crud.role.get_multi_by_user_id(db=db, user_id=current_user.id)
 
 
 @router.get("/{role_id}/users", response_model=schemas.Paginated[schemas.User])
-def read_users_by_role(*, db: Session = kwik.db, role_id: int,) -> Any:
+def read_users_by_role(*, db: Session = kwik.db, role_id: int,) -> dict:
     """
     Get users by role
     """
@@ -39,7 +37,7 @@ def read_users_by_role(*, db: Session = kwik.db, role_id: int,) -> Any:
 
 
 @router.get("/{role_id}/assignable-users", response_model=schemas.Paginated[schemas.User])
-def read_users_not_in_role(role_id: int, db: Session = kwik.db):
+def read_users_not_in_role(role_id: int, db: Session = kwik.db) -> dict:
     """
     Get all users not involved in the given role
     """
@@ -48,7 +46,7 @@ def read_users_not_in_role(role_id: int, db: Session = kwik.db):
 
 
 @router.get("/{role_id}/permissions", response_model=schemas.Paginated[schemas.PermissionORMSchema])
-def read_users_by_role(*, db: Session = kwik.db, role_id: int,) -> Any:
+def read_users_by_role(*, db: Session = kwik.db, role_id: int,) -> dict:
     """
     Get permissions by role
     """
@@ -57,7 +55,7 @@ def read_users_by_role(*, db: Session = kwik.db, role_id: int,) -> Any:
 
 
 @router.get("/{role_id}/assignable-permissions", response_model=schemas.Paginated[schemas.PermissionORMSchema])
-def read_users_not_in_role(role_id: int, db: Session = kwik.db):
+def read_users_not_in_role(role_id: int, db: kwik.KwikSession = kwik.db) -> dict:
     """
     Get all permissions not involved in the given role
     """
@@ -66,25 +64,23 @@ def read_users_not_in_role(role_id: int, db: Session = kwik.db):
 
 
 @router.get("/{role_id}", response_model=schemas.Role)
-def read_role_by_id(role_id: int, db: Session = kwik.db) -> Any:
+def read_role_by_id(role_id: int, db: kwik.KwikSession = kwik.db) -> models.Role:
     """
     Get a specific role by id.
     """
-    role = crud.role.get(db=db, id=role_id)
-    return role
+    return crud.role.get(db=db, id=role_id)
 
 
 @router.put("/{role_id}", response_model=schemas.Role)
-def update_role(*, db: Session = kwik.db, role_id: int, role_in: schemas.RoleUpdate) -> Any:
+def update_role(*, db: kwik.KwikSession = kwik.db, role_id: int, role_in: schemas.RoleUpdate) -> Any:
     """
     Update a role.
     """
     try:
         role = crud.role.get_if_exist(db=db, id=role_id)
+        return crud.role.update(db=db, db_obj=role, obj_in=role_in)
     except NotFound as e:
         raise e.http_exc
-    role = crud.role.update(db=db, db_obj=role, obj_in=role_in)
-    return role
 
 
 @router.post("/associate", response_model=schemas.Role)

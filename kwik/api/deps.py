@@ -1,11 +1,9 @@
-from typing import Any, Optional
+from typing import Any
 
+import kwik
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
-from pydantic import ValidationError
-
-import kwik
 from kwik import crud
 from kwik.core import security
 from kwik.core.enum import PermissionNamesBase
@@ -13,7 +11,7 @@ from kwik.database.session import KwikSession, get_db_from_request
 from kwik.exceptions import Forbidden, UserInactive
 from kwik.models import User, Permission, RolePermission, Role, UserRole
 from kwik.typings import ParsedSortingQuery, SortingQuery
-
+from pydantic import ValidationError
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{kwik.settings.API_V1_STR}/login/access-token")
 
@@ -72,7 +70,7 @@ def has_permission(*permissions: PermissionNamesBase):
     return Depends(inner)
 
 
-def sorting_query(sorting: Optional[SortingQuery] = None,) -> ParsedSortingQuery:
+def sorting_query(sorting: SortingQuery | None = None,) -> ParsedSortingQuery:
     if sorting is not None:
         sort = []
         for elem in sorting.split(","):
@@ -89,7 +87,7 @@ def sorting_query(sorting: Optional[SortingQuery] = None,) -> ParsedSortingQuery
 SortingQuery = Depends(sorting_query)
 
 
-def _filters(filter: Optional[str] = None, value: Optional[Any] = None):
+def _filters(filter: str | None = None, value: Any | None = None):
     filter_d = {}
     if filter and value:
         filter_d = {filter: value}

@@ -1,6 +1,5 @@
-from pydantic import BaseModel
-
 from kwik.schemas.mixins.orm import ORMMixin
+from pydantic import BaseModel
 
 
 class _BaseSchema(BaseModel):

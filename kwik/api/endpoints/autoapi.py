@@ -1,14 +1,13 @@
-from typing import Any, List, Callable, Optional
-
-from fastapi import HTTPException
-from sqlalchemy.orm import Session
+from typing import Any, Callable
 
 import kwik
+from fastapi import HTTPException
+
 from app import crud, schemas
 
 
 def NotFound(id):
-    return HTTPException(status_code=404, detail="The item with id={id} does not exist in the system".format(id=id),)
+    return HTTPException(status_code=404, detail="The item with id={id} does not exist in the system".format(id=id))
 
 
 class AutoAPI:
@@ -25,20 +24,20 @@ class AutoAPI:
         self,
         api_router,
         *,
-        permissions: Optional[List[str]] = None,
-        custom_get_multi: Optional[Callable] = None,
-        custom_update: Optional[Callable] = None,
+        permissions: list[str] | None = None,
+        custom_get_multi: Callable | None = None,
+        custom_update: Callable | None = None,
     ):
         BaseSchema = self.BaseSchema
         CreateSchema = self.CreateSchema
         UpdateSchema = self.UpdateSchema
 
         def read_multi(
-            db: Session = kwik.db,
+            db: kwik.KwikSession = kwik.db,
             skip: int = 0,
             limit: int = 100,
-            filter: Optional[str] = None,
-            value: Optional[Any] = None,
+            filter: str | None = None,
+            value: Any | None = None,
         ) -> Any:
             """
             Retrieve many {name} items.
@@ -52,7 +51,7 @@ class AutoAPI:
         if custom_get_multi is not None:
             read_multi = custom_get_multi(read_multi)
 
-        def read(id: int, db: Session = kwik.db,) -> Any:
+        def read(id: int, db: kwik.KwikSession = kwik.db) -> Any:
             """
             Retrieve a {name}.
             """
@@ -60,7 +59,7 @@ class AutoAPI:
 
         read.__doc__ = read.__doc__.format(name=self.name)
 
-        def create(*, db: Session = kwik.db, obj_in: CreateSchema,) -> Any:
+        def create(*, db: kwik.KwikSession = kwik.db, obj_in: CreateSchema) -> Any:
             """
             Create a {name}.
             """
@@ -74,7 +73,7 @@ class AutoAPI:
 
         create.__doc__ = create.__doc__.format(name=self.name)
 
-        def update(*, db: Session = kwik.db, id: int, obj_in: UpdateSchema,) -> Any:
+        def update(*, db: kwik.KwikSession = kwik.db, id: int, obj_in: UpdateSchema) -> Any:
             """
             Update a {name}.
             """
@@ -87,7 +86,7 @@ class AutoAPI:
         if custom_update is not None:
             update = custom_update(update)
 
-        def delete(*, db: Session = kwik.db, id: int,) -> Any:
+        def delete(*, db: kwik.KwikSession = kwik.db, id: int) -> Any:
             """
             Delete a {name}.
             """
@@ -102,7 +101,7 @@ class AutoAPI:
         if permissions is not None:
             deps.append(kwik.has_permission(*permissions))
 
-        self.router.get("/", response_model=List[BaseSchema], dependencies=deps)(read_multi)
+        self.router.get("/", response_model=list[BaseSchema], dependencies=deps)(read_multi)
         self.router.get("/{id}", response_model=BaseSchema, dependencies=deps)(read)
         self.router.post("/", response_model=BaseSchema, dependencies=deps)(create)
         self.router.put("/{id}", response_model=BaseSchema, dependencies=deps)(update)

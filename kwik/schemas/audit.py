@@ -1,26 +1,23 @@
-from typing import Optional
-
-from pydantic import BaseModel
-
 from kwik.schemas.mixins.orm import ORMMixin
+from pydantic import BaseModel
 
 
 class _BaseSchema(BaseModel):
     client_host: str
-    request_id: Optional[str] = None
-    user_id: Optional[int] = None
-    impersonator_user_id: Optional[int] = None
+    request_id: str | None = None
+    user_id: int | None = None
+    impersonator_user_id: int | None = None
     method: str
     headers: str
     url: str
-    query_params: Optional[str] = None
-    path_params: Optional[str] = None
-    body: Optional[str] = None
-    process_time: Optional[str] = None
-    status_code: Optional[str] = None
+    query_params: str | None = None
+    path_params: str | None = None
+    body: str | None = None
+    process_time: str | None = None
+    status_code: str | None = None
 
 
-class AuditBaseSchema(ORMMixin, _BaseSchema):
+class AuditORMSchema(ORMMixin, _BaseSchema):
     pass
 
 
