@@ -69,6 +69,22 @@ class KwikQuery(Query):
                 self._soft_delete_criteria += (criterion,)
                 self._where_criteria += (criterion,)
 
+    def filter(self, *criterion) -> KwikQuery:
+        super().filter(*criterion)
+        return self
+
+    def order_by(self, *clauses) -> KwikQuery:
+        super().order_by(*clauses)
+        return self
+
+    def limit(self, limit) -> KwikQuery:
+        super().limit(limit)
+        return self
+
+    def offset(self, offset) -> KwikQuery:
+        super().offset(offset)
+        return self
+
     @property
     def soft_delete_enabled(self) -> bool:
         return len(self._soft_delete_criteria) > 0
@@ -93,7 +109,7 @@ class KwikQuery(Query):
         else:
             return super().get(ident)
 
-    def join(self, target, *args, **kwargs):
+    def join(self, target, *args, **kwargs) -> KwikQuery:
         """
         Automatically inject soft delete filters for target models involved in a join.
         i.e. database.query(some_model).join(other_model_with_soft_delete) automatically add
@@ -103,7 +119,7 @@ class KwikQuery(Query):
             self._where_criteria += (target.deleted == False,)
         return super().join(target, *args, **kwargs)
 
-    def outerjoin(self, target, *props, **kwargs):
+    def outerjoin(self, target, *props, **kwargs) -> KwikQuery:
         """
         Automatically inject soft delete filters for target models involved in a join.
         i.e. database.query(some_model).outerjoin(other_model_with_soft_delete) automatically add
