@@ -44,3 +44,8 @@ class UserInactive(KwikException):
 class MethodNotAllowed(HTTPException):
     def __init__(self):
         super().__init__(status_code=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class ExporterLimitExceeded(HTTPException):
+    def __init__(self):
+        super().__init__(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
