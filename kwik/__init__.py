@@ -8,8 +8,6 @@ from .api.deps import (
     FilterQuery,
     PaginatedQuery,
     SortingQuery,
-    current_active_superuser,
-    current_active_user,
     current_user,
     db,
     has_permission,

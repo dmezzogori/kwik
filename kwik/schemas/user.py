@@ -7,6 +7,7 @@ from .role import Role
 class UserBase(BaseModel):
     email: EmailStr | None = None
     is_active: bool | None = True
+    is_superuser: bool | None = True
 
 
 class UserCreate(UserBase):

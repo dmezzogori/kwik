@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Callable
 
 import kwik
 from fastapi import Depends
@@ -8,7 +8,7 @@ from kwik import crud
 from kwik.core import security
 from kwik.core.enum import PermissionNamesBase
 from kwik.database.session import KwikSession, get_db_from_request
-from kwik.exceptions import Forbidden, UserInactive
+from kwik.exceptions import Forbidden
 from kwik.models import User, Permission, RolePermission, Role, UserRole
 from kwik.typings import ParsedSortingQuery, SortingQuery
 from pydantic import ValidationError
@@ -18,6 +18,7 @@ reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{kwik.settings.API_V1_STR}/log
 db = Depends(get_db_from_request)
 
 
+# noinspection PyShadowingNames
 def get_current_user(db: KwikSession = db, token: str = Depends(reusable_oauth2)) -> User:
     try:
         token_data = security.decode_token(token)
@@ -34,34 +35,17 @@ def get_current_user(db: KwikSession = db, token: str = Depends(reusable_oauth2)
 current_user = Depends(get_current_user)
 
 
-def get_current_active_user(current_user: User = current_user) -> User:
-    try:
-        crud.user.is_active(current_user)
-    except UserInactive as e:
-        raise e.http_exc
-
-    return current_user
-
-
-current_active_user = Depends(get_current_active_user)
-
-
-def _get_current_active_superuser(current_user: User = current_user) -> User:
-    if not crud.user.is_superuser(current_user):
-        raise Forbidden().http_exc
-    return current_user
-
-
-current_active_superuser = Depends(_get_current_active_superuser)
-
-
-def has_permission(*permissions: PermissionNamesBase):
-    def inner(db: KwikSession = db, current_user: User = current_user):
+def has_permission(*permissions: PermissionNamesBase) -> Callable:
+    # noinspection PyShadowingNames
+    def inner(db: KwikSession = db, user: User = current_user) -> None:
         r = (
             db.query(Permission)
             .join(RolePermission, Role, UserRole)
             .join(User, User.id == UserRole.user_id)
-            .filter(Permission.name.in_([p.value for p in permissions]), User.id == current_user.id,)
+            .filter(
+                Permission.name.in_([p.value for p in permissions]),
+                User.id == user.id,
+            )
             .count()
         )
         if r == 0:
@@ -70,7 +54,9 @@ def has_permission(*permissions: PermissionNamesBase):
     return Depends(inner)
 
 
-def sorting_query(sorting: SortingQuery | None = None,) -> ParsedSortingQuery:
+def sorting_query(
+    sorting: SortingQuery | None = None,
+) -> ParsedSortingQuery:
     if sorting is not None:
         sort = []
         for elem in sorting.split(","):
@@ -87,6 +73,7 @@ def sorting_query(sorting: SortingQuery | None = None,) -> ParsedSortingQuery:
 SortingQuery = Depends(sorting_query)
 
 
+# noinspection PyShadowingBuiltins
 def _filters(filter: str | None = None, value: Any | None = None):
     filter_d = {}
     if filter and value:

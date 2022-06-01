@@ -1,24 +1,24 @@
 from typing import Any
 
+import kwik
 from fastapi import Body, HTTPException
 from fastapi.encoders import jsonable_encoder
-from pydantic.networks import EmailStr
-from sqlalchemy.orm import Session
-
-import kwik
-from kwik.routers import AuditorRouter
-from kwik.utils import send_new_account_email
 from kwik import crud, models, schemas, PaginatedQuery, has_permission
 from kwik.core.enum import PermissionNames
-
+from kwik.database.session import KwikSession
+from kwik.routers import AuditorRouter
+from kwik.utils import send_new_account_email
+from pydantic.networks import EmailStr
 
 router = AuditorRouter()
 
 
 @router.get(
-    "/", response_model=schemas.Paginated[schemas.User], dependencies=[has_permission(PermissionNames.user_management)],
+    "/",
+    response_model=schemas.Paginated[schemas.User],
+    dependencies=[has_permission(PermissionNames.user_management)],
 )
-def read_users(db: Session = kwik.db, paginated=PaginatedQuery) -> Any:
+def read_users(*, db: KwikSession = kwik.db, paginated=PaginatedQuery) -> Any:
     """
     Retrieve users.
     """
@@ -27,16 +27,23 @@ def read_users(db: Session = kwik.db, paginated=PaginatedQuery) -> Any:
 
 
 @router.post(
-    "/", response_model=schemas.User, dependencies=[kwik.has_permission(PermissionNames.user_management)],
+    "/",
+    response_model=schemas.User,
+    dependencies=[kwik.has_permission(PermissionNames.user_management)],
 )
-def create_user(*, db: Session = kwik.db, user_in: schemas.UserCreate,) -> Any:
+def create_user(
+    *,
+    db: KwikSession = kwik.db,
+    user_in: schemas.UserCreate,
+) -> Any:
     """
     Create new user.
     """
     user = crud.user.get_by_email(db=db, email=user_in.email)
     if user:
         raise HTTPException(
-            status_code=400, detail="The user with this username already exists in the system.",
+            status_code=400,
+            detail="The user with this username already exists in the system.",
         )
     user = crud.user.create(db=db, obj_in=user_in)
     if kwik.settings.EMAILS_ENABLED and user_in.email:
@@ -47,16 +54,16 @@ def create_user(*, db: Session = kwik.db, user_in: schemas.UserCreate,) -> Any:
 @router.put("/me", response_model=schemas.User)
 def update_user_me(
     *,
-    db: Session = kwik.db,
+    db: KwikSession = kwik.db,
     password: str = Body(None),
     full_name: str = Body(None),
     email: EmailStr = Body(None),
-    current_user: models.User = kwik.current_active_user,
+    user: models.User = kwik.current_user,
 ) -> Any:
     """
     Update own user.
     """
-    current_user_data = jsonable_encoder(current_user)
+    current_user_data = jsonable_encoder(user)
     user_in = schemas.UserUpdate(**current_user_data)
     if password is not None:
         user_in.password = password
@@ -64,33 +71,39 @@ def update_user_me(
         user_in.full_name = full_name
     if email is not None:
         user_in.email = email
-    user = crud.user.update(db=db, db_obj=current_user, obj_in=user_in)
+    user = crud.user.update(db=db, db_obj=user, obj_in=user_in)
     return user
 
 
 @router.get("/me", response_model=schemas.UserWithPermissionsAndRoles)
-def read_user_me(current_user: models.User = kwik.current_active_user,) -> Any:
+def read_user_me(*, user: models.User = kwik.current_user) -> models.User:
     """
     Get current user.
     """
-    return current_user
+    return user
 
 
 @router.post("/open", response_model=schemas.User)
 def create_user_open(
-    *, db: Session = kwik.db, password: str = Body(...), email: EmailStr = Body(...), full_name: str = Body(None),
-) -> Any:
+    *,
+    db: KwikSession = kwik.db,
+    password: str = Body(...),
+    email: EmailStr = Body(...),
+    full_name: str = Body(None),
+) -> models.User:
     """
     Create new user without the need to be logged in.
     """
     if not kwik.settings.USERS_OPEN_REGISTRATION:
         raise HTTPException(
-            status_code=403, detail="Open user registration is forbidden on this server",
+            status_code=403,
+            detail="Open user registration is forbidden on this server",
         )
     user = crud.user.get_by_email(db=db, email=email)
     if user:
         raise HTTPException(
-            status_code=400, detail="The user with this username already exists in the system",
+            status_code=400,
+            detail="The user with this username already exists in the system",
         )
     user_in = schemas.UserCreate(password=password, email=email, full_name=full_name)
     user = crud.user.create(db=db, obj_in=user_in)
@@ -98,27 +111,38 @@ def create_user_open(
 
 
 @router.get("/{user_id}", response_model=schemas.User)
-def read_user_by_id(user_id: int, current_user: models.User = kwik.current_active_user, db: Session = kwik.db,) -> Any:
+def read_user_by_id(
+    *,
+    db: KwikSession = kwik.db,
+    user_id: int,
+    user: models.User = kwik.current_user,
+) -> models.User:
     """
     Get a specific user by id.
     """
-    user = crud.user.get(db=db, id=user_id)
-    if user == current_user:
-        return user
-    if not crud.user.is_superuser(current_user):
+    user_db = crud.user.get(db=db, id=user_id)
+    if user_db == user:
+        return user_db
+    if not crud.user.is_superuser(db=db, user_id=user.id):
         raise HTTPException(status_code=400, detail="The user doesn't have enough privileges")
-    return user
+    return user_db
 
 
 @router.put("/{user_id}", response_model=schemas.User)
-def update_user(*, db: Session = kwik.db, user_id: int, user_in: schemas.UserUpdate,) -> Any:
+def update_user(
+    *,
+    db: KwikSession = kwik.db,
+    user_id: int,
+    user_in: schemas.UserUpdate,
+) -> models.User:
     """
     Update a user.
     """
     user = crud.user.get(db=db, id=user_id)
     if not user:
         raise HTTPException(
-            status_code=404, detail="The user with this username does not exist in the system",
+            status_code=404,
+            detail="The user with this username does not exist in the system",
         )
     user = crud.user.update(db=db, db_obj=user, obj_in=user_in)
     return user
@@ -127,10 +151,10 @@ def update_user(*, db: Session = kwik.db, user_id: int, user_in: schemas.UserUpd
 @router.put("/{user_id}/update_password", response_model=schemas.User)
 def update_password(
     *,
-    db: Session = kwik.db,
+    db: KwikSession = kwik.db,
     user_id: int,
     obj_in: schemas.UserChangePassword,
-    current_user: models.User = kwik.current_active_user,
+    user: models.User = kwik.current_user,
 ) -> models.User:
     """
     Update the provided user's password.
