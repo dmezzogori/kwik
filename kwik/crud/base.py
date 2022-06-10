@@ -14,6 +14,8 @@ UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
 class CRUDBase(abc.ABC):
+    db: KwikSession | None = None
+    user: User | None = None
     model: Type[ModelType]
 
     def __init__(self, model: Type[ModelType]):
