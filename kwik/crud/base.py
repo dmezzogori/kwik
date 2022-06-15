@@ -1,12 +1,18 @@
+from __future__ import annotations
+
 import abc
-from typing import Any, Type, TypeVar
+from typing import Any, Type, TypeVar, TYPE_CHECKING
 
-from pydantic import BaseModel
-
+from kwik.database import db_context_manager
 from kwik.database.base import Base
-from kwik.database.session import KwikSession
+
+if TYPE_CHECKING:
+    from kwik.database.session import KwikSession
+
+
 from kwik.models import User
 from kwik.typings import ParsedSortingQuery, PaginatedCRUDResult
+from pydantic import BaseModel
 
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -14,8 +20,8 @@ UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
 class CRUDBase(abc.ABC):
-    db: KwikSession | None = None
-    user: User | None = None
+    db: KwikSession = db_context_manager.DBSession()
+    user: User | None = db_context_manager.CurrentUser()
     model: Type[ModelType]
 
     def __init__(self, model: Type[ModelType]):
@@ -32,30 +38,40 @@ class CRUDBase(abc.ABC):
 
 class CRUDReadBase(CRUDBase):
     @abc.abstractmethod
-    def get(self, *, db: KwikSession, id: int) -> ModelType | None:
+    def get(self, *, db: KwikSession | None = None, id: int) -> ModelType | None:
+        pass
+
+    @abc.abstractmethod
+    def get_all(self, *, db: KwikSession | None = None, id: int) -> list[ModelType]:
         pass
 
     @abc.abstractmethod
     def get_multi(
-        self, *, db: KwikSession, skip: int = 0, limit: int = 100, sort: ParsedSortingQuery | None = None, **filters
+        self,
+        *,
+        db: KwikSession | None = None,
+        skip: int = 0,
+        limit: int = 100,
+        sort: ParsedSortingQuery | None = None,
+        **filters,
     ) -> PaginatedCRUDResult:
         pass
 
 
 class CRUDCreateBase(CRUDBase):
     @abc.abstractmethod
-    def create(self, *, db: KwikSession, obj_in: CreateSchemaType, user: User | None = None) -> ModelType:
+    def create(self, *, db: KwikSession | None = None, obj_in: CreateSchemaType, user: User | None = None) -> ModelType:
         pass
 
     @abc.abstractmethod
     def create_if_not_exist(
         self,
         *,
-        db: KwikSession,
+        db: KwikSession | None = None,
         obj_in: CreateSchemaType,
         user: User | None = None,
         raise_on_error: bool = False,
-        **kwargs
+        **kwargs,
     ) -> ModelType:
         pass
 
@@ -63,14 +79,19 @@ class CRUDCreateBase(CRUDBase):
 class CRUDUpdateBase(CRUDBase):
     @abc.abstractmethod
     def update(
-        self, *, db: KwikSession, db_obj: ModelType, obj_in: UpdateSchemaType | dict[str, Any], user: User | None = None
+        self,
+        *,
+        db: KwikSession | None = None,
+        db_obj: ModelType,
+        obj_in: UpdateSchemaType | dict[str, Any],
+        user: User | None = None,
     ) -> ModelType:
         pass
 
 
 class CRUDDeleteBase(CRUDBase):
     @abc.abstractmethod
-    def delete(self, *, db: KwikSession, id: int, user: User | None = None) -> ModelType:
+    def delete(self, *, db: KwikSession | None = None, id: int, user: User | None = None) -> ModelType:
         pass
 
 

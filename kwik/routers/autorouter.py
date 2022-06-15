@@ -7,15 +7,21 @@ import kwik
 import kwik.exceptions
 import kwik.models
 import kwik.schemas
+from fastapi import Depends
 from kwik.typings import ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType
-from sqlalchemy.orm import Session
 
 from .auditor import AuditorRouter
 
 
 class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType]):
     def __init__(
-        self, model: Type[ModelType], schemas, crud, *args, permissions: list[str] | None = None, **kwargs,
+        self,
+        model: Type[ModelType],
+        schemas,
+        crud,
+        *args,
+        permissions: list[str] | None = None,
+        **kwargs,
     ):
 
         super().__init__(*args, **kwargs)
@@ -23,7 +29,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         self.BaseSchemaType, self.CreateSchemaType, self.UpdateSchemaType = schemas
         self.crud = crud
         self.permissions = permissions
-        self.deps = [kwik.current_user]
+        self.deps: list[Depends] = [kwik.current_user]
 
         if permissions is not None:
             self.deps.append(kwik.has_permission(*permissions))
@@ -86,7 +92,6 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
 
     def read_multi(
         self,
-        db: Session = kwik.db,
         filters: kwik.typings.FilterQuery = kwik.FilterQuery,
         sorting: kwik.typings.ParsedSortingQuery = kwik.SortingQuery,
         paginated: kwik.typings.PaginatedQuery = kwik.PaginatedQuery,
@@ -95,49 +100,47 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         Retrieve many {name} items.
         Sorting field:[asc|desc]
         """
-        total, result = self.crud.get_multi(db=db, **filters, sort=sorting, **paginated)
+        total, result = self.crud.get_multi(**filters, sort=sorting, **paginated)
         return kwik.schemas.Paginated[self.BaseSchemaType](total=total, data=result)
 
     # noinspection PyShadowingBuiltins
-    def read(self, id: int, db: Session = kwik.db) -> ModelType:
+    def read(self, id: int) -> ModelType:
         """
         Retrieve a {name}.
         """
-        db_obj = self.crud.get(db=db, id=id)
-        if not db_obj:
-            raise kwik.exceptions.NotFound
+        try:
+            db_obj = self.crud.get_if_exist(id=id)
+        except kwik.exceptions.NotFound as e:
+            raise e.http_exc
         return db_obj
 
-    def create(
-        self, *, db: Session = kwik.db, obj_in: CreateSchemaType, user: kwik.models.User = kwik.current_user
-    ) -> Any:
+    def create(self, *, obj_in: CreateSchemaType, user: kwik.models.User = kwik.current_user) -> ModelType:
         """
         Create a {name}.
         """
-        obj_db = self.crud.create(db=db, obj_in=obj_in, user=user)
-        return obj_db
+        return self.crud.create(obj_in=obj_in, user=user)
 
     # noinspection PyShadowingBuiltins
-    def update(
-        self, *, db: Session = kwik.db, id: int, obj_in: UpdateSchemaType, user: kwik.models.User = kwik.current_user
-    ) -> Any:
+    def update(self, *, id: int, obj_in: UpdateSchemaType, user: kwik.models.User = kwik.current_user) -> Any:
         """
         Update a {name}.
         """
-        db_obj = self.crud.get(db=db, id=id)
-        if not db_obj:
-            raise kwik.exceptions.NotFound
-        return self.crud.update(db=db, db_obj=db_obj, obj_in=obj_in, user=user)
+        try:
+            db_obj = self.crud.get_if_exist(id=id)
+        except kwik.exceptions.NotFound as e:
+            raise e.http_exc
+        return self.crud.update(db_obj=db_obj, obj_in=obj_in, user=user)
 
     # noinspection PyShadowingBuiltins
-    def delete(self, *, db: Session = kwik.db, id: int, user: kwik.models.User = kwik.current_user) -> Any:
+    def delete(self, *, id: int, user: kwik.models.User = kwik.current_user) -> Any:
         """
         Delete a {name}.
         """
-        obj_db = self.crud.get(db=db, id=id)
-        if not obj_db:
-            raise kwik.exceptions.NotFound
-        return self.crud.delete(db=db, id=id, user=user)
+        try:
+            self.crud.get_if_exist(id=id)
+        except kwik.exceptions.NotFound as e:
+            raise e.http_exc
+        return self.crud.delete(id=id, user=user)
 
     def register(self, *, read_multi=True, read=True, create=True, update=True, delete=True):
         if read_multi:

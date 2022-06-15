@@ -25,7 +25,7 @@ def get_current_user(db: KwikSession = db, token: str = Depends(reusable_oauth2)
     except (jwt.JWTError, ValidationError):
         raise Forbidden().http_exc
 
-    user = crud.user.get(db=db, id=token_data.sub)
+    user = crud.user.get(id=token_data.sub)
     if user is None:
         raise Forbidden().http_exc
 

@@ -7,7 +7,7 @@ from starlette.requests import Request
 
 REQUEST_ID_CTX_KEY = "request_id"
 
-_request_id_ctx_var: ContextVar[str] = ContextVar(REQUEST_ID_CTX_KEY, default=None)
+_request_id_ctx_var: ContextVar[str | None] = ContextVar(REQUEST_ID_CTX_KEY, default=None)
 
 
 def get_request_id() -> str:
@@ -16,7 +16,7 @@ def get_request_id() -> str:
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
-        request_id = _request_id_ctx_var.set(str(uuid4()))
+        token = _request_id_ctx_var.set(str(uuid4()))
         response = await call_next(request)
-        _request_id_ctx_var.reset(request_id)
+        _request_id_ctx_var.reset(token)
         return response

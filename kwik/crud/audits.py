@@ -1,5 +1,6 @@
 from . import auto_crud
-from .. import models
+
+from kwik import models
 
 
 class CRUDAudit(auto_crud.AutoCRUD):

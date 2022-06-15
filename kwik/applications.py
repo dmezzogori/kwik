@@ -86,4 +86,4 @@ class Kwik:
 
         from kwik import logger
 
-        logger.info("Kwik App instantiated")
+        logger.info("Kwik App ready")

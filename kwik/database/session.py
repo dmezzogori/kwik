@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Sequence, Dict
+from typing import Sequence
 
 import kwik
+import kwik.crud
+import kwik.crud.base
+import kwik.schemas
+import kwik.typings
 from fastapi import Request
 from fastapi.encoders import jsonable_encoder
-from kwik.core.config import Settings
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker, Query
+from sqlalchemy.orm import Session, Query
 from sqlalchemy.sql.elements import Label
 
 
@@ -130,39 +132,6 @@ class KwikQuery(Query):
         return super().outerjoin(target, *props, **kwargs)
 
 
-class DBContextManager:
-    """
-    DB Session Context Manager.
-    Correctly initialize the session by overriding the Session and Query class.
-    Implemented as a python context manager, automatically rollback a transaction
-    if any exception is raised by the application.
-    """
-
-    def __init__(
-        self, *, settings: Settings | None = None, db_uri: str | None = None, connect_args: Dict | None = None
-    ) -> None:
-        url = db_uri or settings.SQLALCHEMY_DATABASE_URI
-        engine = create_engine(url, pool_pre_ping=True, connect_args=connect_args if connect_args else {})
-        if settings.ENABLE_SOFT_DELETE:
-            db = sessionmaker(
-                class_=KwikSession, query_cls=KwikQuery, autocommit=False, autoflush=False, bind=engine,
-            )()
-        else:
-            db = sessionmaker(class_=Session, query_cls=Query, autocommit=False, autoflush=False, bind=engine,)()
-        self.db: KwikSession = db
-
-    def __enter__(self) -> KwikSession:
-        return self.db
-
-    def __exit__(self, exception_type, exception_value, exception_traceback) -> None:
-        if exception_type is not None:
-            self.db.rollback()
-        else:
-            self.db.commit()
-
-        self.db.close()
-
-
 def _has_soft_delete(model: kwik.typings.ModelType) -> bool:
     """
     Checks if an entity (model class) is marked to implement
@@ -174,8 +143,10 @@ def _has_soft_delete(model: kwik.typings.ModelType) -> bool:
     elif isinstance(t, Label):
         # noinspection PyProtectedMember
         if hasattr(t._element, "table"):
+            # noinspection PyProtectedMember
             columns = t._element.table.columns
         else:
+            # noinspection PyProtectedMember
             columns = t._element.columns
         for col in columns:
             *_, col_name = col.name.split(".")
@@ -188,6 +159,10 @@ def _has_soft_delete(model: kwik.typings.ModelType) -> bool:
 
 def _to_be_logged(model: kwik.typings.ModelType) -> bool:
     return issubclass(model, kwik.database.mixins.LogMixin)
+
+
+def _to_be_audited(model: kwik.typings.ModelType) -> bool:
+    return issubclass(model, kwik.database.mixins.RecordInfoMixin)
 
 
 def get_db_from_request(request: Request) -> KwikSession:

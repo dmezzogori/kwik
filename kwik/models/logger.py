@@ -1,8 +1,8 @@
-import kwik
+import kwik.database.base as base
 from sqlalchemy import Column, Integer, JSON, String
 
 
-class Log(kwik.database.base.Base):
+class Log(base.Base):
     __tablename__ = "logs"
 
     id = Column(Integer, primary_key=True, index=True)
