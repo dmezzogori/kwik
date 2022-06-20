@@ -49,7 +49,7 @@ class AuditorRoute(APIRoute):
             user_id = None
             impersonator_user_id = None
             if request.token is not None:
-                user = get_current_user(db, request.token)
+                user = get_current_user(request.token)
                 user_ctx_token = current_user_ctx_var.set(user)
                 user_id = user.id
 
