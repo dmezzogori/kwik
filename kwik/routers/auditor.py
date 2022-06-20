@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request, Response
 from fastapi.routing import APIRoute
 from jose import jwt
 from kwik import crud, schemas
-from kwik.api.deps import get_current_user
+from kwik.api.deps import get_current_user, current_token, get_token
 from kwik.core import security
 from kwik.middlewares import get_request_id
 
@@ -32,10 +32,7 @@ class AuditorRoute(APIRoute):
         original_route_handler = super().get_route_handler()
 
         async def custom_route_handler(request: Request) -> Response:
-            from kwik.database.db_context_var import current_user_ctx_var, db_conn_ctx_var
-
-            # we get the current db connection from the context variable
-            db = db_conn_ctx_var.get()
+            from kwik.database.db_context_var import current_user_ctx_var
 
             # start the timer
             start = time.time()
@@ -49,7 +46,7 @@ class AuditorRoute(APIRoute):
             user_id = None
             impersonator_user_id = None
             if request.token is not None:
-                user = get_current_user(request.token)
+                user = get_current_user(token=get_token(request.token))
                 user_ctx_token = current_user_ctx_var.set(user)
                 user_id = user.id
 
@@ -93,4 +90,5 @@ class AuditorRoute(APIRoute):
 
 class AuditorRouter(APIRouter):
     def __init__(self, *args, **kwargs):
+        kwargs.setdefault("dependencies", []).append(current_token)
         super().__init__(*args, route_class=AuditorRoute, **kwargs)

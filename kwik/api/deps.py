@@ -10,6 +10,7 @@ from kwik.core.enum import PermissionNamesBase
 from kwik.database.session import get_db_from_request
 from kwik.exceptions import Forbidden
 from kwik.models import User
+from kwik.schemas import TokenPayload
 from kwik.typings import ParsedSortingQuery, SortingQuery
 from pydantic import ValidationError
 
@@ -18,17 +19,20 @@ reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{kwik.settings.API_V1_STR}/log
 db = Depends(get_db_from_request)
 
 
-# noinspection PyShadowingNames
-def get_current_user(token: str = Depends(reusable_oauth2)) -> User:
+def get_token(token: str = Depends(reusable_oauth2)) -> TokenPayload:
     try:
-        token_data = security.decode_token(token)
-    except (jwt.JWTError, ValidationError):
-        raise Forbidden().http_exc
+        return security.decode_token(token)
+    except Forbidden as e:
+        raise e.http_exc
 
-    user = crud.user.get(id=token_data.sub)
+
+current_token = Depends(get_token)
+
+
+def get_current_user(token: TokenPayload = current_token) -> User:
+    user = crud.user.get(id=token.sub)
     if user is None:
         raise Forbidden().http_exc
-
     return user
 
 
@@ -36,13 +40,13 @@ current_user = Depends(get_current_user)
 
 
 def has_permission(*permissions: PermissionNamesBase) -> Depends:
-    def inner(user: User = current_user) -> None:
+    def check_permissions(user: User = current_user) -> None:
         try:
             crud.user.has_permissions(user_id=user.id, permissions=permissions)
         except Forbidden as e:
             raise e.http_exc
 
-    return Depends(inner)
+    return Depends(check_permissions)
 
 
 def sorting_query(

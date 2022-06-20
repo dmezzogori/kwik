@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
-from typing import Any, Union, Optional
-
-from jose import jwt
-from passlib.context import CryptContext
+from typing import Any
 
 import kwik
-
+from jose import jwt
 from kwik import schemas
+from kwik.exceptions import Forbidden
+from passlib.context import CryptContext
+from pydantic import ValidationError
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -15,7 +15,9 @@ ALGORITHM = "HS256"
 
 
 def create_access_token(
-    subject: Union[str, Any], expires_delta: timedelta = None, impersonator_user_id: Optional[int] = None,
+    subject: str | Any,
+    expires_delta: timedelta = None,
+    impersonator_user_id: int | None = None,
 ) -> str:
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -29,20 +31,28 @@ def create_access_token(
     return encoded_jwt
 
 
-def create_token(user_id: int, impersonator_user_id: Optional[int] = None,) -> dict:
+def create_token(
+    user_id: int,
+    impersonator_user_id: int | None = None,
+) -> dict:
     access_token_expires = timedelta(minutes=kwik.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return {
         "access_token": create_access_token(
-            user_id, expires_delta=access_token_expires, impersonator_user_id=impersonator_user_id,
+            user_id,
+            expires_delta=access_token_expires,
+            impersonator_user_id=impersonator_user_id,
         ),
         "token_type": "bearer",
     }
 
 
-def decode_token(token: str):
-    payload = jwt.decode(token, kwik.settings.SECRET_KEY, algorithms=[ALGORITHM])
-    token_data = schemas.TokenPayload(**payload)
-    return token_data
+def decode_token(token: str) -> schemas.TokenPayload:
+    try:
+        payload = jwt.decode(token, kwik.settings.SECRET_KEY, algorithms=[ALGORITHM])
+        token_data = schemas.TokenPayload(**payload)
+        return token_data
+    except (jwt.JWTError, ValidationError):
+        raise Forbidden()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

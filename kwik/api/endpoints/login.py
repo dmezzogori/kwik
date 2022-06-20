@@ -1,5 +1,5 @@
 import kwik
-from fastapi import Body, Depends, HTTPException
+from fastapi import Body, Depends, HTTPException, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
 from kwik import crud, models, schemas
 from kwik.api.deps import reusable_oauth2
@@ -14,7 +14,7 @@ from kwik.utils import (
 )
 from sqlalchemy.orm import Session
 
-router = AuditorRouter()
+router = APIRouter()
 
 
 @router.post("/access-token", response_model=schemas.Token)
