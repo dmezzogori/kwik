@@ -13,6 +13,19 @@ from .db_context_var import db_conn_ctx_var, current_user_ctx_var
 if TYPE_CHECKING:
     from .session import KwikSession, KwikQuery
 
+from contextlib import contextmanager
+
+
+@contextmanager
+def db_context_switcher():
+    from kwik import settings
+
+    prev_db_conn_ctx_var = db_conn_ctx_var.get()
+    with DBContextManager(settings=settings.alternate_db) as db:
+        yield db
+
+    db_conn_ctx_var.set(prev_db_conn_ctx_var)
+
 
 class DBSession:
     def __get__(self, obj, objtype=None) -> KwikSession:

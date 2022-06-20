@@ -28,3 +28,17 @@ async def test_ws(message: str, project_id: int) -> Any:
 
     await broadcast.publish(channel=f"kanban_board_{project_id}", message=message)
     return {"message": f"{message}"}
+
+
+@router.post("/test-db-switcher/")
+def test_db_switcher() -> Any:
+    """
+    Test DB Switcher.
+    """
+
+    user_db = kwik.crud.user.get(id=1)
+    with kwik.database.db_context_switcher() as db:
+        db = db
+    kwik.logger.error(kwik.crud.user.db.get_bind())
+    kwik.logger.error(db.get_bind())
+    return {"user": user_db.name}

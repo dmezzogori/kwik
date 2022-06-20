@@ -4,11 +4,38 @@ from typing import Any, Optional, Union
 from pydantic import AnyHttpUrl, BaseSettings, EmailStr, HttpUrl, PostgresDsn, validator
 
 
+class AlternateDBSettings(BaseSettings):
+    """
+    Alternate DB settings.
+    """
+
+    ALTERNATE_DB_SCHEME: str = "postgresql"
+    ALTERNATE_DB_SERVER: str = "db"
+    ALTERNATE_DB_USER: str = "postgres"
+    ALTERNATE_DB_PASSWORD: str = "root"
+    ALTERNATE_DB: str = "alt_db"
+    SQLALCHEMY_DATABASE_URI: PostgresDsn | None = None
+
+    ENABLE_SOFT_DELETE: bool = False
+
+    @validator("SQLALCHEMY_DATABASE_URI", pre=True)
+    def assemble_db_connection(cls, v: str | None, values: dict[str, Any]) -> Any:
+        if isinstance(v, str):
+            return v
+        ret = PostgresDsn.build(
+            scheme=values.get("ALTERNATE_DB_SCHEME"),
+            user=values.get("ALTERNATE_DB_USER"),
+            password=values.get("ALTERNATE_DB_PASSWORD"),
+            host=values.get("ALTERNATE_DB_SERVER"),
+            path=f"/{values.get('ALTERNATE_DB') or ''}",
+        )
+        return ret
+
+
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = secrets.token_urlsafe(32)
-    # 60 minutes * 24 hours * 8 days = 8 days
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 60 minutes * 24 hours * 8 days = 8 days
     SERVER_NAME: str = "backend"
     SERVER_HOST: AnyHttpUrl = "http://localhost"
     # BACKEND_CORS_ORIGINS is a JSON-formatted list of origins
@@ -31,22 +58,15 @@ class Settings(BaseSettings):
         raise ValueError(v)
 
     PROJECT_NAME: str = "kwik"
-    # SENTRY_DSN: Optional[HttpUrl] = None
-
-    # @validator("SENTRY_DSN", pre=True)
-    # def sentry_dsn_can_be_blank(cls, v: str) -> Optional[str]:
-    #     if len(v) == 0:
-    #         return None
-    #     return v
 
     POSTGRES_SERVER: str = "db"
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "root"
     POSTGRES_DB: str = "db"
-    SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
+    SQLALCHEMY_DATABASE_URI: PostgresDsn | None = None
 
     @validator("SQLALCHEMY_DATABASE_URI", pre=True)
-    def assemble_db_connection(cls, v: Optional[str], values: dict[str, Any]) -> Any:
+    def assemble_db_connection(cls, v: str | None, values: dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
         ret = PostgresDsn.build(
@@ -58,16 +78,18 @@ class Settings(BaseSettings):
         )
         return ret
 
+    alternate_db: AlternateDBSettings = AlternateDBSettings()
+
     SMTP_TLS: bool = True
-    SMTP_PORT: Optional[int] = None
-    SMTP_HOST: Optional[str] = None
-    SMTP_USER: Optional[str] = None
-    SMTP_PASSWORD: Optional[str] = None
-    EMAILS_FROM_EMAIL: Optional[EmailStr] = None
-    EMAILS_FROM_NAME: Optional[str] = None
+    SMTP_PORT: int | None = None
+    SMTP_HOST: str | None = None
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: str | None = None
+    EMAILS_FROM_EMAIL: EmailStr | None = None
+    EMAILS_FROM_NAME: str | None = None
 
     @validator("EMAILS_FROM_NAME")
-    def get_project_name(cls, v: Optional[str], values: dict[str, Any]) -> str:
+    def get_project_name(cls, v: str | None, values: dict[str, Any]) -> str:
         if not v:
             return values["PROJECT_NAME"]
         return v
