@@ -2,8 +2,10 @@ from typing import Any
 
 from fastapi import HTTPException
 from kwik import models, schemas
+from kwik.core.enum import PermissionNamesBase
 from kwik.core.security import get_password_hash, verify_password
 from kwik.database.session import KwikSession
+from kwik.exceptions import Forbidden
 from kwik.exceptions import UserInactive
 from starlette import status
 
@@ -91,6 +93,21 @@ class AutoCRUDUser(auto_crud.AutoCRUD):
     def is_superuser(self, *, db: KwikSession = None, user_id: int) -> bool:
         user_db = self.get_if_exist(id=user_id)
         return user_db.is_superuser
+
+    def has_permissions(self, *, user_id: int, permissions: PermissionNamesBase) -> bool:
+        r = (
+            self.db.query(models.Permission)
+            .join(models.RolePermission, models.Role, models.UserRole)
+            .join(models.User, models.User.id == models.UserRole.user_id)
+            .filter(
+                models.Permission.name.in_([p.value for p in permissions]),
+                models.User.id == user_id,
+            )
+            .count()
+        )
+        if r == 0:
+            raise Forbidden()
+        return True
 
 
 user = AutoCRUDUser(models.User)

@@ -26,7 +26,7 @@ class AutoCRUDRead(CRUDReadBase):
         _db = db if db is not None else self.db
         return _db.query(self.model).get(id)
 
-    def get_all(self, *, db: KwikSession | None = None, id: int) -> list[ModelType]:
+    def get_all(self, *, db: KwikSession | None = None) -> list[ModelType]:
         _db = db if db is not None else self.db
         return _db.query(self.model).all()
 

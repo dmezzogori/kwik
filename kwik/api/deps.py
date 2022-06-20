@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any
 
 import kwik
 from fastapi import Depends
@@ -7,9 +7,9 @@ from jose import jwt
 from kwik import crud
 from kwik.core import security
 from kwik.core.enum import PermissionNamesBase
-from kwik.database.session import KwikSession, get_db_from_request
+from kwik.database.session import get_db_from_request
 from kwik.exceptions import Forbidden
-from kwik.models import User, Permission, RolePermission, Role, UserRole
+from kwik.models import User
 from kwik.typings import ParsedSortingQuery, SortingQuery
 from pydantic import ValidationError
 
@@ -19,7 +19,7 @@ db = Depends(get_db_from_request)
 
 
 # noinspection PyShadowingNames
-def get_current_user(db: KwikSession = db, token: str = Depends(reusable_oauth2)) -> User:
+def get_current_user(token: str = Depends(reusable_oauth2)) -> User:
     try:
         token_data = security.decode_token(token)
     except (jwt.JWTError, ValidationError):
@@ -35,21 +35,12 @@ def get_current_user(db: KwikSession = db, token: str = Depends(reusable_oauth2)
 current_user = Depends(get_current_user)
 
 
-def has_permission(*permissions: PermissionNamesBase) -> Callable:
-    # noinspection PyShadowingNames
-    def inner(db: KwikSession = db, user: User = current_user) -> None:
-        r = (
-            db.query(Permission)
-            .join(RolePermission, Role, UserRole)
-            .join(User, User.id == UserRole.user_id)
-            .filter(
-                Permission.name.in_([p.value for p in permissions]),
-                User.id == user.id,
-            )
-            .count()
-        )
-        if r == 0:
-            raise Forbidden().http_exc
+def has_permission(*permissions: PermissionNamesBase) -> Depends:
+    def inner(user: User = current_user) -> None:
+        try:
+            crud.user.has_permissions(user_id=user.id, permissions=permissions)
+        except Forbidden as e:
+            raise e.http_exc
 
     return Depends(inner)
 

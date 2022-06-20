@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 router = AuditorRouter()
 
 
-@router.post("/login/access-token", response_model=schemas.Token)
+@router.post("/access-token", response_model=schemas.Token)
 def login_access_token(db: Session = kwik.db, form_data: OAuth2PasswordRequestForm = Depends()) -> dict:
     """
     OAuth2 compatible token login, get an access token for future requests
@@ -31,7 +31,7 @@ def login_access_token(db: Session = kwik.db, form_data: OAuth2PasswordRequestFo
 
 
 @router.post(
-    "/login/impersonate",
+    "/impersonate",
     response_model=schemas.Token,
     dependencies=[kwik.has_permission(PermissionNames.impersonification)],
 )
@@ -43,20 +43,20 @@ def impersonate(user_id: int, db: Session = kwik.db, current_user: models.User =
     return create_token(user_id=user.id, impersonator_user_id=current_user.id)
 
 
-@router.post("/login/is_impersonating", response_model=bool)
+@router.post("/is_impersonating", response_model=bool)
 def is_impersonating(token: str = Depends(reusable_oauth2)):
     token_data = decode_token(token)
     return token_data.kwik_impersonate != ""
 
 
-@router.post("/login/stop_impersonating", response_model=schemas.Token)
+@router.post("/stop_impersonating", response_model=schemas.Token)
 def stop_impersonating(token: str = Depends(reusable_oauth2)):
     token_data = decode_token(token)
     original_user_id = int(token_data.kwik_impersonate)
     return create_token(user_id=original_user_id)
 
 
-@router.post("/login/test-token", response_model=schemas.User)
+@router.post("/test-token", response_model=schemas.User)
 def test_token(current_user: models.User = kwik.current_user) -> models.User:
     """
     Test access token
@@ -64,7 +64,7 @@ def test_token(current_user: models.User = kwik.current_user) -> models.User:
     return current_user
 
 
-@router.post("/login/password-recovery", response_model=schemas.Msg)
+@router.post("/password-recovery", response_model=schemas.Msg)
 def recover_password(obj_in: RecoverPassword, db: Session = kwik.db) -> dict:
     """
     Password Recovery
@@ -74,15 +74,20 @@ def recover_password(obj_in: RecoverPassword, db: Session = kwik.db) -> dict:
 
     if not user:
         raise HTTPException(
-            status_code=404, detail="The user with this username does not exist in the system.",
+            status_code=404,
+            detail="The user with this username does not exist in the system.",
         )
     password_reset_token = generate_password_reset_token(email=email)
     send_reset_password_email(email_to=user.email, email=email, token=password_reset_token)
     return {"msg": "Password recovery email sent"}
 
 
-@router.post("/login/reset-password", response_model=schemas.Msg)
-def reset_password(token: str = Body(...), password: str = Body(...), db: Session = kwik.db,) -> dict:
+@router.post("/reset-password", response_model=schemas.Msg)
+def reset_password(
+    token: str = Body(...),
+    password: str = Body(...),
+    db: Session = kwik.db,
+) -> dict:
     """
     Reset password
     """
@@ -92,7 +97,8 @@ def reset_password(token: str = Body(...), password: str = Body(...), db: Sessio
     user = crud.user.get_by_email(db=db, email=email)
     if not user:
         raise HTTPException(
-            status_code=404, detail="The user with this username does not exist in the system.",
+            status_code=404,
+            detail="The user with this username does not exist in the system.",
         )
     elif not crud.user.is_active(user):
         raise HTTPException(status_code=400, detail="Inactive user")

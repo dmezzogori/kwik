@@ -42,7 +42,7 @@ class CRUDReadBase(CRUDBase):
         pass
 
     @abc.abstractmethod
-    def get_all(self, *, db: KwikSession | None = None, id: int) -> list[ModelType]:
+    def get_all(self, *, db: KwikSession | None = None) -> list[ModelType]:
         pass
 
     @abc.abstractmethod
