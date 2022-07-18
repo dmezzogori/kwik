@@ -1,9 +1,9 @@
-from kwik import models
+from kwik import models, schemas
 
 from . import auto_crud
 
 
-class AutoCRUDUserRoles(auto_crud.AutoCRUD):
+class AutoCRUDUserRoles(auto_crud.AutoCRUD[models.UserRole, schemas.UserRoleCreate, None]):
     def get_by_user_id_and_role_id(self, *, user_id: int, role_id: int) -> models.UserRole | None:
         return (
             self.db.query(models.UserRole)
@@ -15,4 +15,4 @@ class AutoCRUDUserRoles(auto_crud.AutoCRUD):
         return self.db.query(models.UserRole).filter(models.UserRole.role_id == role_id).all()
 
 
-user_roles = AutoCRUDUserRoles(models.UserRole)
+user_roles = AutoCRUDUserRoles()

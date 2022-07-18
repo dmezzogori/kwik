@@ -18,7 +18,7 @@ UpdateSchemaType = TypeVar("UpdateSchemaType", bound=pydantic.BaseModel)
 
 
 SortingQuery = str
-ParsedSortingQuery = Optional[list[tuple[str, str]]]
+ParsedSortingQuery = list[tuple[str, str]] | None
 FilterQuery = dict[str, Any]
 PaginatedQuery = dict[str, int]
 

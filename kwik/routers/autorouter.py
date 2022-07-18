@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Generic, Type
+from typing import Generic, get_args, NoReturn
 
 import kwik
 import kwik.exceptions
 import kwik.models
 import kwik.schemas
-from fastapi import Depends
+from fastapi.params import Depends
+from kwik.core.enum import PermissionNamesBase
+from kwik.crud import AutoCRUD
 from kwik.typings import ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType
 
 from .auditor import AuditorRouter
@@ -16,26 +18,28 @@ from .auditor import AuditorRouter
 class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType]):
     def __init__(
         self,
-        model: Type[ModelType],
-        schemas,
-        crud,
-        *args,
-        permissions: list[str] | None = None,
-        **kwargs,
+        crud: AutoCRUD[ModelType, CreateSchemaType, UpdateSchemaType] | None = None,
+        model=None,
+        schemas=None,
+        permissions: list[PermissionNamesBase] | None = None,
     ):
+        m, b = get_args(self.__orig_bases__[0])[:2]
+        model = m
+        self.BaseSchemaType: BaseSchemaType = b
 
-        super().__init__(*args, **kwargs)
-        self.model = model
-        self.BaseSchemaType, self.CreateSchemaType, self.UpdateSchemaType = schemas
-        self.crud = crud
-        self.permissions = permissions
-        self.deps: list[Depends] = [kwik.current_user]
+        if crud is None:
+            self.crud: AutoCRUD[ModelType, CreateSchemaType, UpdateSchemaType] = AutoCRUD.get_instance(model)
+        else:
+            self.crud = crud
+
+        _ = self.crud
+
+        self.deps: list[Depends] = []
 
         if permissions is not None:
             self.deps.append(kwik.has_permission(*permissions))
 
         self.router = AuditorRouter()
-
         self.register()
 
     def __init_subclass__(cls):
@@ -86,10 +90,6 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         if getattr(cls, "update") == getattr(base, "update"):
             modify_update_sign()
 
-    @property
-    def name(self) -> str:
-        return self.model.__tablename__
-
     def read_multi(
         self,
         filters: kwik.typings.FilterQuery = kwik.FilterQuery,
@@ -100,47 +100,49 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         Retrieve many {name} items.
         Sorting field:[asc|desc]
         """
-        total, result = self.crud.get_multi(**filters, sort=sorting, **paginated)
+        total, result = self.crud.get_multi(db=None, sort=sorting, **paginated, **filters)
         return kwik.schemas.Paginated[self.BaseSchemaType](total=total, data=result)
 
     # noinspection PyShadowingBuiltins
-    def read(self, id: int) -> ModelType:
+    def read(self, id: int) -> ModelType | NoReturn:
         """
         Retrieve a {name}.
         """
         try:
             db_obj = self.crud.get_if_exist(id=id)
+            return db_obj
         except kwik.exceptions.NotFound as e:
             raise e.http_exc
-        return db_obj
 
-    def create(self, *, obj_in: CreateSchemaType, user: kwik.models.User = kwik.current_user) -> ModelType:
+    def create(self, obj_in: CreateSchemaType, user: kwik.models.User = kwik.current_user) -> ModelType:
         """
         Create a {name}.
         """
         return self.crud.create(obj_in=obj_in, user=user)
 
     # noinspection PyShadowingBuiltins
-    def update(self, *, id: int, obj_in: UpdateSchemaType, user: kwik.models.User = kwik.current_user) -> Any:
+    def update(
+        self, id: int, obj_in: UpdateSchemaType, user: kwik.models.User = kwik.current_user
+    ) -> ModelType | NoReturn:
         """
         Update a {name}.
         """
         try:
             db_obj = self.crud.get_if_exist(id=id)
+            return self.crud.update(db=None, db_obj=db_obj, obj_in=obj_in, user=user)
         except kwik.exceptions.NotFound as e:
             raise e.http_exc
-        return self.crud.update(db_obj=db_obj, obj_in=obj_in, user=user)
 
     # noinspection PyShadowingBuiltins
-    def delete(self, *, id: int, user: kwik.models.User = kwik.current_user) -> Any:
+    def delete(self, *, id: int, user: kwik.models.User = kwik.current_user) -> ModelType | NoReturn:
         """
         Delete a {name}.
         """
         try:
             self.crud.get_if_exist(id=id)
+            return self.crud.delete(id=id, user=user)
         except kwik.exceptions.NotFound as e:
             raise e.http_exc
-        return self.crud.delete(id=id, user=user)
 
     def register(self, *, read_multi=True, read=True, create=True, update=True, delete=True):
         if read_multi:

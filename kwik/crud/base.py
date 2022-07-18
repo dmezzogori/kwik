@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import abc
-from typing import Any, Type, TypeVar, TYPE_CHECKING
+from typing import Any, Type, TYPE_CHECKING, Generic, get_args, TypeVar
 
 from kwik.database import db_context_manager
-from kwik.database.base import Base
 
 if TYPE_CHECKING:
     from kwik.database.session import KwikSession
@@ -12,31 +11,36 @@ if TYPE_CHECKING:
 
 from kwik.models import User
 from kwik.typings import ParsedSortingQuery, PaginatedCRUDResult
-from pydantic import BaseModel
+from kwik.typings import ModelType, CreateSchemaType, UpdateSchemaType
 
-ModelType = TypeVar("ModelType", bound=Base)
-CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
-UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
+T = Generic[ModelType, CreateSchemaType, UpdateSchemaType]
 
 
-class CRUDBase(abc.ABC):
+class CRUDBase(abc.ABC, Generic[ModelType]):
     db: KwikSession = db_context_manager.DBSession()
     user: User | None = db_context_manager.CurrentUser()
     model: Type[ModelType]
 
-    def __init__(self, model: Type[ModelType]):
+    _instances: dict[str, T] = {}
+
+    def __init__(self, model: Type[ModelType] | None = None):
         """
         CRUD object with default methods to Create, Read, Update, Delete (CRUD).
 
         **Parameters**
 
         * `model`: A SQLAlchemy model class
-        * `schema`: A Pydantic model (schema) class
         """
-        self.model = model
+        _model = model if model is not None else get_args(self.__orig_bases__[0])[0]
+        self.model = _model
+        CRUDBase._instances[_model] = self
+
+    @classmethod
+    def get_instance(cls: T, model: Type[ModelType]) -> T:
+        return CRUDBase._instances[model]
 
 
-class CRUDReadBase(CRUDBase):
+class CRUDReadBase(CRUDBase[ModelType]):
     @abc.abstractmethod
     def get(self, *, db: KwikSession | None = None, id: int) -> ModelType | None:
         pass
@@ -54,11 +58,11 @@ class CRUDReadBase(CRUDBase):
         limit: int = 100,
         sort: ParsedSortingQuery | None = None,
         **filters,
-    ) -> PaginatedCRUDResult:
+    ) -> PaginatedCRUDResult[ModelType]:
         pass
 
 
-class CRUDCreateBase(CRUDBase):
+class CRUDCreateBase(CRUDBase, Generic[ModelType, CreateSchemaType]):
     @abc.abstractmethod
     def create(self, *, db: KwikSession | None = None, obj_in: CreateSchemaType, user: User | None = None) -> ModelType:
         pass
@@ -69,14 +73,14 @@ class CRUDCreateBase(CRUDBase):
         *,
         db: KwikSession | None = None,
         obj_in: CreateSchemaType,
+        filters: dict[str, str],
         user: User | None = None,
         raise_on_error: bool = False,
-        **kwargs,
     ) -> ModelType:
         pass
 
 
-class CRUDUpdateBase(CRUDBase):
+class CRUDUpdateBase(CRUDBase, Generic[ModelType, UpdateSchemaType]):
     @abc.abstractmethod
     def update(
         self,
@@ -89,11 +93,7 @@ class CRUDUpdateBase(CRUDBase):
         pass
 
 
-class CRUDDeleteBase(CRUDBase):
+class CRUDDeleteBase(CRUDBase[ModelType]):
     @abc.abstractmethod
     def delete(self, *, db: KwikSession | None = None, id: int, user: User | None = None) -> ModelType:
         pass
-
-
-class AutoCRUDBase(CRUDCreateBase, CRUDReadBase, CRUDUpdateBase, CRUDDeleteBase, abc.ABC):
-    pass

@@ -27,7 +27,7 @@ class KwikRequest(Request):
         return None
 
 
-class AuditorRoute(APIRoute):
+class AuditedRoute(APIRoute):
     def get_route_handler(self) -> Callable:
         original_route_handler = super().get_route_handler()
 
@@ -91,4 +91,4 @@ class AuditorRoute(APIRoute):
 class AuditorRouter(APIRouter):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("dependencies", []).append(current_token)
-        super().__init__(*args, route_class=AuditorRoute, **kwargs)
+        super().__init__(*args, route_class=AuditedRoute, **kwargs)

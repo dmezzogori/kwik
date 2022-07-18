@@ -1,26 +1,21 @@
-from typing import Any, TypeVar
+from typing import Any, NoReturn
 
 from fastapi.encoders import jsonable_encoder
 from kwik import settings
-from kwik.database.base import Base
 from kwik.database.session import KwikSession, _to_be_audited
 from kwik.exceptions import DuplicatedEntity, NotFound
 from kwik.middlewares import get_request_id
 from kwik.models import User
 from kwik.schemas import LogCreateSchema
+from kwik.typings import ModelType, CreateSchemaType, UpdateSchemaType
 from kwik.typings import ParsedSortingQuery, PaginatedCRUDResult
 from kwik.utils import sort_query
-from pydantic import BaseModel
 
 from .base import CRUDCreateBase, CRUDReadBase, CRUDUpdateBase, CRUDDeleteBase
 from .logs import logs
 
-ModelType = TypeVar("ModelType", bound=Base)
-CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
-UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
-
-class AutoCRUDRead(CRUDReadBase):
+class AutoCRUDRead(CRUDReadBase[ModelType]):
     # noinspection PyShadowingBuiltins
     def get(self, *, db: KwikSession | None = None, id: int) -> ModelType | None:
         _db = db if db is not None else self.db
@@ -37,8 +32,8 @@ class AutoCRUDRead(CRUDReadBase):
         skip: int = 0,
         limit: int = 100,
         sort: ParsedSortingQuery | None = None,
-        **filters: dict[str, str],
-    ) -> PaginatedCRUDResult:
+        **filters: Any,
+    ) -> PaginatedCRUDResult[ModelType]:
         _db = db if db is not None else self.db
         q = _db.query(self.model)
         if filters:
@@ -49,10 +44,11 @@ class AutoCRUDRead(CRUDReadBase):
         if sort is not None:
             q = sort_query(model=self.model, query=q, sort=sort)
 
-        return count, q.offset(skip).limit(limit).all()
+        r = q.offset(skip).limit(limit).all()
+        return count, r
 
     # noinspection PyShadowingBuiltins
-    def get_if_exist(self, *, db: KwikSession | None = None, id: int) -> ModelType | None:
+    def get_if_exist(self, *, db: KwikSession | None = None, id: int) -> ModelType | NoReturn:
         _db = db if db is not None else self.db
         r = self.get(db=_db, id=id)
         if r is None:
@@ -60,7 +56,7 @@ class AutoCRUDRead(CRUDReadBase):
         return r
 
 
-class AutoCRUDCreate(CRUDCreateBase):
+class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
     def create(
         self, *, db: KwikSession | None = None, obj_in: CreateSchemaType, user: User | None = None, **kwargs
     ) -> ModelType:
@@ -111,7 +107,7 @@ class AutoCRUDCreate(CRUDCreateBase):
         return obj_db
 
 
-class AutoCRUDUpdate(CRUDUpdateBase):
+class AutoCRUDUpdate(CRUDUpdateBase[ModelType, UpdateSchemaType]):
     def update(
         self,
         *,
@@ -152,7 +148,7 @@ class AutoCRUDUpdate(CRUDUpdateBase):
         return db_obj
 
 
-class AutoCRUDDelete(CRUDDeleteBase):
+class AutoCRUDDelete(CRUDDeleteBase[ModelType]):
     # noinspection PyShadowingBuiltins
     def delete(self, *, db: KwikSession | None = None, id: int, user: User | None = None) -> ModelType:
         _db = db if db is not None else self.db
@@ -172,5 +168,10 @@ class AutoCRUDDelete(CRUDDeleteBase):
         return obj
 
 
-class AutoCRUD(AutoCRUDCreate, AutoCRUDRead, AutoCRUDUpdate, AutoCRUDDelete):
+class AutoCRUD(
+    AutoCRUDCreate[ModelType, CreateSchemaType],
+    AutoCRUDRead[ModelType],
+    AutoCRUDUpdate[ModelType, UpdateSchemaType],
+    AutoCRUDDelete[ModelType],
+):
     pass

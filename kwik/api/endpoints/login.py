@@ -4,30 +4,29 @@ from fastapi.security import OAuth2PasswordRequestForm
 from kwik import crud, models, schemas
 from kwik.api.deps import reusable_oauth2
 from kwik.core.enum import PermissionNames
-from kwik.core.security import get_password_hash, decode_token, create_token
-from kwik.routers import AuditorRouter
+from kwik.core.security import decode_token, create_token
+from kwik.exceptions import IncorrectCredentials, UserInactive, UserNotFound, NotFound
 from kwik.schemas.login import RecoverPassword
 from kwik.utils import (
     generate_password_reset_token,
     send_reset_password_email,
     verify_password_reset_token,
 )
-from sqlalchemy.orm import Session
+
 
 router = APIRouter()
 
 
 @router.post("/access-token", response_model=schemas.Token)
-def login_access_token(db: Session = kwik.db, form_data: OAuth2PasswordRequestForm = Depends()) -> dict:
+def login_access_token(form_data: OAuth2PasswordRequestForm = Depends()) -> dict:
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    user = crud.user.authenticate(db=db, email=form_data.username, password=form_data.password)
-    if not user:
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
-    elif not crud.user.is_active(user):
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return create_token(user_id=user.id)
+    try:
+        user = crud.user.authenticate(email=form_data.username, password=form_data.password)
+        return create_token(user_id=user.id)
+    except (IncorrectCredentials, UserInactive) as e:
+        raise e.http_exc
 
 
 @router.post(
@@ -35,16 +34,16 @@ def login_access_token(db: Session = kwik.db, form_data: OAuth2PasswordRequestFo
     response_model=schemas.Token,
     dependencies=[kwik.has_permission(PermissionNames.impersonification)],
 )
-def impersonate(user_id: int, db: Session = kwik.db, current_user: models.User = kwik.current_user):
-    user = crud.user.get(db=db, id=user_id)
-    if not user:
-        raise HTTPException(status_code=400, detail="User does not exist")
-
-    return create_token(user_id=user.id, impersonator_user_id=current_user.id)
+def impersonate(user_id: int, current_user: models.User = kwik.current_user):
+    try:
+        user = crud.user.get_if_exist(id=user_id)
+        return create_token(user_id=user.id, impersonator_user_id=current_user.id)
+    except NotFound as e:
+        raise e.http_exc
 
 
 @router.post("/is_impersonating", response_model=bool)
-def is_impersonating(token: str = Depends(reusable_oauth2)):
+def is_impersonating(token: str = Depends(reusable_oauth2)) -> bool:
     token_data = decode_token(token)
     return token_data.kwik_impersonate != ""
 
@@ -65,45 +64,31 @@ def test_token(current_user: models.User = kwik.current_user) -> models.User:
 
 
 @router.post("/password-recovery", response_model=schemas.Msg)
-def recover_password(obj_in: RecoverPassword, db: Session = kwik.db) -> dict:
+def recover_password(obj_in: RecoverPassword) -> dict:
     """
     Password Recovery
     """
     email = obj_in.email
-    user = crud.user.get_by_email(db=db, email=email)
+    user = crud.user.get_by_email(email=email)
 
     if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="The user with this username does not exist in the system.",
-        )
+        raise UserNotFound().http_exc
     password_reset_token = generate_password_reset_token(email=email)
     send_reset_password_email(email_to=user.email, email=email, token=password_reset_token)
     return {"msg": "Password recovery email sent"}
 
 
 @router.post("/reset-password", response_model=schemas.Msg)
-def reset_password(
-    token: str = Body(...),
-    password: str = Body(...),
-    db: Session = kwik.db,
-) -> dict:
+def reset_password(token: str = Body(...), password: str = Body(...)) -> dict:
     """
     Reset password
     """
     email = verify_password_reset_token(token)
     if not email:
         raise HTTPException(status_code=400, detail="Invalid token")
-    user = crud.user.get_by_email(db=db, email=email)
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="The user with this username does not exist in the system.",
-        )
-    elif not crud.user.is_active(user):
-        raise HTTPException(status_code=400, detail="Inactive user")
-    hashed_password = get_password_hash(password)
-    user.hashed_password = hashed_password
-    db.add(user)
-    db.flush()
-    return {"msg": "Password updated successfully"}
+
+    try:
+        crud.user.reset_password(email=email, password=password)
+        return {"msg": "Password updated successfully"}
+    except (UserNotFound, UserInactive) as e:
+        raise e.http_exc

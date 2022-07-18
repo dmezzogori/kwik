@@ -4,7 +4,7 @@ from .auto_crud import AutoCRUD
 from .roles_permissions import roles_permissions
 
 
-class CRUDPermission(AutoCRUD):
+class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionCreate, schemas.PermissionUpdate]):
     def get_by_name(self, *, name: str) -> models.Permission | None:
         return self.db.query(models.Permission).filter(models.Permission.name == name).one_or_none()
 
@@ -39,4 +39,4 @@ class CRUDPermission(AutoCRUD):
         return permission_db
 
 
-permission = CRUDPermission(models.Permission)
+permission = CRUDPermission()

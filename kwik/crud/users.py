@@ -1,18 +1,17 @@
-from typing import Any
+from typing import Any, NoReturn
 
 from fastapi import HTTPException
 from kwik import models, schemas
 from kwik.core.enum import PermissionNamesBase
 from kwik.core.security import get_password_hash, verify_password
 from kwik.database.session import KwikSession
-from kwik.exceptions import Forbidden
-from kwik.exceptions import UserInactive
+from kwik.exceptions import Forbidden, UserInactive, IncorrectCredentials, UserNotFound
 from starlette import status
 
 from . import auto_crud
 
 
-class AutoCRUDUser(auto_crud.AutoCRUD):
+class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreate, schemas.UserUpdate]):
     def get_by_email(self, *, db: KwikSession = None, email: str) -> models.User | None:
         return self.db.query(models.User).filter(models.User.email == email).first()
 
@@ -76,16 +75,27 @@ class AutoCRUDUser(auto_crud.AutoCRUD):
             self.db.flush()
             return user_db
 
-    def authenticate(self, *, db: KwikSession = None, email: str, password: str) -> models.User | None:
+    def reset_password(self, *, email: str, password: str) -> models.User | NoReturn:
+        user_db = self.get_by_email(email=email)
+        if user_db is None:
+            raise UserNotFound
+
+        self.is_active(user_db)
+
+        hashed_password = get_password_hash(password)
+        user.hashed_password = hashed_password
+        self.db.add(user)
+        self.db.flush()
+        return user
+
+    def authenticate(self, *, db: KwikSession = None, email: str, password: str) -> models.User | NoReturn:
         user_db = self.get_by_email(db=self.db, email=email)
-        if not user_db:
-            return None
-        if not verify_password(password, user_db.hashed_password):
-            return None
+        if user_db is None or not verify_password(password, user_db.hashed_password):
+            raise IncorrectCredentials
         return user_db
 
     @staticmethod
-    def is_active(user: models.User) -> models.User:
+    def is_active(user: models.User) -> models.User | NoReturn:
         if not user.is_active:
             raise UserInactive
         return user
@@ -110,4 +120,4 @@ class AutoCRUDUser(auto_crud.AutoCRUD):
         return True
 
 
-user = AutoCRUDUser(models.User)
+user = AutoCRUDUser()

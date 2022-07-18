@@ -1,7 +1,7 @@
 from typing import Any
 
 import kwik
-from fastapi import Depends
+from fastapi import Depends, params
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from kwik import crud
@@ -65,7 +65,7 @@ def sorting_query(
         return sort
 
 
-SortingQuery = Depends(sorting_query)
+SortingQuery: ParsedSortingQuery = Depends(sorting_query)
 
 
 # noinspection PyShadowingBuiltins

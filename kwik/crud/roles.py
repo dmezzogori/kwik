@@ -4,7 +4,7 @@ from .auto_crud import AutoCRUD
 from .user_roles import user_roles
 
 
-class AutoCRUDRole(AutoCRUD):
+class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleCreate, schemas.RoleUpdate]):
     def get_by_name(self, *, name: str) -> models.Role | None:
         return self.db.query(models.Role).filter(models.Role.name == name).first()
 
@@ -83,4 +83,4 @@ class AutoCRUDRole(AutoCRUD):
         return role_db
 
 
-role = AutoCRUDRole(models.Role)
+role = AutoCRUDRole()
