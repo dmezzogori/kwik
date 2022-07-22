@@ -1,7 +1,7 @@
 import secrets
-from typing import Any, Optional, Union
+from typing import Any, Union
 
-from pydantic import AnyHttpUrl, BaseSettings, EmailStr, HttpUrl, PostgresDsn, validator
+from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, validator
 
 
 class AlternateDBSettings(BaseSettings):
@@ -9,27 +9,8 @@ class AlternateDBSettings(BaseSettings):
     Alternate DB settings.
     """
 
-    ALTERNATE_DB_SCHEME: str = "postgresql"
-    ALTERNATE_DB_SERVER: str = "db"
-    ALTERNATE_DB_USER: str = "postgres"
-    ALTERNATE_DB_PASSWORD: str = "root"
-    ALTERNATE_DB: str = "alt_db"
-    SQLALCHEMY_DATABASE_URI: PostgresDsn | None = None
-
+    ALTERNATE_SQLALCHEMY_DATABASE_URI: str | None = None
     ENABLE_SOFT_DELETE: bool = False
-
-    @validator("SQLALCHEMY_DATABASE_URI", pre=True)
-    def assemble_db_connection(cls, v: str | None, values: dict[str, Any]) -> Any:
-        if isinstance(v, str):
-            return v
-        ret = PostgresDsn.build(
-            scheme=values.get("ALTERNATE_DB_SCHEME"),
-            user=values.get("ALTERNATE_DB_USER"),
-            password=values.get("ALTERNATE_DB_PASSWORD"),
-            host=values.get("ALTERNATE_DB_SERVER"),
-            path=f"/{values.get('ALTERNATE_DB') or ''}",
-        )
-        return ret
 
 
 class Settings(BaseSettings):

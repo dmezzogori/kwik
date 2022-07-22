@@ -21,7 +21,9 @@ def db_context_switcher():
     from kwik import settings
 
     prev_db_conn_ctx_var = db_conn_ctx_var.get()
-    with DBContextManager(settings=settings.alternate_db) as db:
+    with DBContextManager(
+        db_uri=settings.alternate_db.ALTERNATE_SQLALCHEMY_DATABASE_URI, settings=settings.alternate_db
+    ) as db:
         yield db
 
     db_conn_ctx_var.set(prev_db_conn_ctx_var)
