@@ -5,3 +5,4 @@ from .login import (
     verify_password_reset_token,
 )
 from .query import sort_query
+from . import tests

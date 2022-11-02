@@ -20,3 +20,4 @@ from .websocket.deps import broadcast
 from .applications import Kwik, run, set_running_app, get_running_app
 from .database.session import KwikSession, KwikQuery
 from .exporters.base import KwikExporter
+from . import utils
