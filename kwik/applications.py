@@ -1,15 +1,22 @@
 from __future__ import annotations
 
-from fastapi import FastAPI, APIRouter
+from typing import TYPE_CHECKING
+
+import uvicorn
+from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
+
+import kwik
 from kwik import settings
 from kwik.api.endpoints.docs import get_swagger_ui_html
 from kwik.middlewares import RequestContextMiddleware, DBSessionMiddleware
 from kwik.websocket.deps import broadcast
-from starlette.middleware.cors import CORSMiddleware
-import kwik
+
+if TYPE_CHECKING:
+    from fastapi import APIRouter
 
 
-def set_running_app(app: FastAPI):
+def set_running_app(app: FastAPI) -> None:
     kwik._running_app = app
 
 
@@ -17,13 +24,12 @@ def get_running_app() -> FastAPI | None:
     return kwik._running_app
 
 
-def run(kwik_app: str | Kwik):
-    import uvicorn
-
+def run(kwik_app: str | Kwik) -> None:
     reload = settings.HOTRELOAD
     if isinstance(kwik_app, str):
         kwik_app = f"{kwik_app}._app"
     else:
+        kwik_app = kwik_app._app
         reload = False
 
     uvicorn.run(
@@ -47,7 +53,7 @@ class Kwik:
     It also patches the FastAPI docs endpoint to have collapsable sections in the swagger UI.
     """
 
-    def __init__(self, api_router: APIRouter):
+    def __init__(self, api_router: APIRouter) -> None:
         on_startup = []
         on_shutdown = []
         if settings.WEBSOCKET_ENABLED:
@@ -87,3 +93,5 @@ class Kwik:
         from kwik import logger
 
         logger.info("Kwik App ready")
+        logger.info(f"Kwik App running on http://{settings.HOST}:{settings.PORT}")
+        logger.info(f"Swagger available at http://{settings.HOST}:{settings.PORT}/docs")
