@@ -1,6 +1,7 @@
-import kwik
 from fastapi import Body, Depends, HTTPException, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
+
+import kwik
 from kwik import crud, models, schemas
 from kwik.api.deps import reusable_oauth2
 from kwik.core.enum import PermissionNames
@@ -12,7 +13,6 @@ from kwik.utils import (
     send_reset_password_email,
     verify_password_reset_token,
 )
-
 
 router = APIRouter()
 

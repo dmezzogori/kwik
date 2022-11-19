@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from typing import Any
 
-import kwik
-from fastapi import Depends, params
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt
+
+import kwik
 from kwik import crud
 from kwik.core import security
 from kwik.core.enum import PermissionNamesBase
@@ -12,7 +14,6 @@ from kwik.exceptions import Forbidden
 from kwik.models import User
 from kwik.schemas import TokenPayload
 from kwik.typings import ParsedSortingQuery, SortingQuery
-from pydantic import ValidationError
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{kwik.settings.API_V1_STR}/login/access-token")
 

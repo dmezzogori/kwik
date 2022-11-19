@@ -16,10 +16,14 @@ class AlternateDBSettings(BaseSettings):
 
 
 class Settings(BaseSettings):
+    SERVER_NAME: str = "backend"
+    HOST = "localhost"
+    PORT = 8080
     API_V1_STR: str = "/api/v1"
+
+
     SECRET_KEY: str = secrets.token_urlsafe(32)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 60 minutes * 24 hours * 8 days = 8 days
-    SERVER_NAME: str = "backend"
     SERVER_HOST: AnyHttpUrl = "http://localhost"
     # BACKEND_CORS_ORIGINS is a JSON-formatted list of origins
     # e.g: '["http://localhost", "http://localhost:4200", "http://localhost:3000", \
@@ -29,8 +33,6 @@ class Settings(BaseSettings):
     HOTRELOAD = True
     DEBUG = True
     LOG_LEVEL = "INFO"
-    HOST = "localhost"
-    PORT = 8080
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: Union[str, list[str]]) -> Union[list[str], str]:
@@ -46,6 +48,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "root"
     POSTGRES_DB: str = "db"
+    ENABLE_SOFT_DELETE: bool = False
     SQLALCHEMY_DATABASE_URI: PostgresDsn | None = None
 
     @validator("SQLALCHEMY_DATABASE_URI", pre=True)
@@ -63,11 +66,11 @@ class Settings(BaseSettings):
 
     alternate_db: AlternateDBSettings = AlternateDBSettings()
 
-    SMTP_TLS: bool = True
-    SMTP_PORT: int | None = None
     SMTP_HOST: str | None = None
+    SMTP_PORT: int | None = None
     SMTP_USER: str | None = None
     SMTP_PASSWORD: str | None = None
+    SMTP_TLS: bool = True
     EMAILS_FROM_EMAIL: EmailStr | None = None
     EMAILS_FROM_NAME: str | None = None
 
@@ -91,7 +94,6 @@ class Settings(BaseSettings):
 
     DB_LOGGER: bool = True
 
-    ENABLE_SOFT_DELETE: bool = False
     TEST_ENV: bool = False
 
     class Config:
