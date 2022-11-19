@@ -2,6 +2,7 @@
 title: Kwik
 ---
 
+![Logo](/img/logo.png)
 
 ---
 
@@ -11,15 +12,22 @@ title: Kwik
 
 ---
 
-Kwik is a web framework for building modern, batteries-included, RESTful backends with Python 3.9+.
-  Kwik is based on FastAPI, builds upon it and delivers an opinionated concise API.
+Kwik is a web framework for building modern, batteries-included, RESTful backends with Python 3.10+.
+  Kwik is based on FastAPI, builds upon it and delivers an opinionated concise, business-oriented API.
 
 The key features are:
 
 
 * **Conciseness**: Kwik is quick (pun-intended :smile:)
-* **Battle-tested**: developed internally at Kheperer, we use it everyday to build robust and modern solutions for our customers.
+* **Battle-tested**: developed internally at [Kheperer](https://kheperer.it), we use it every day to build robust and modern solutions for our customers.
 * **Standards-based**
+
+!!! warning
+    While Kwik is in active development, and already used for production, it is still in a pre-release state.
+    
+    The API is subject to change, and the documentation is not complete yet.
+
+
 
 ## Acknowledgments
 
@@ -57,12 +65,12 @@ Uvicorn running on http://localhost:8080 (Press CTRL+C to quit)
 
 </div>
 
-If kwik is started in this way, it automatically create a development server on port `8080`, with hot-reloading enabled
+If kwik is started in this way, it automatically creates a development server on port `8080`, with hot-reloading enabled
 
 
 ### Check it
 
-Open your browser at http://127.0.0.1/docs.
+Open your browser at http://localhost:8080/docs.
 
 You will see the automatic interactive API documentation, showing the built-in endpoints and schemas.
 
