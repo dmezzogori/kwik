@@ -37,7 +37,7 @@ nav:
       - tutorial/database.md
       - tutorial/models.md
       - tutorial/schemas.md
-      - tutorial/crud.md
+      - tutorial/endpoints.md
       - tutorial/permissions.md
       - tutorial/guards.md
       - tutorial/auditing.md
@@ -106,6 +106,7 @@ markdown_extensions:
 
 extra_css:
   - css/termynal.css
+  - css/custom.css
 
 extra_javascript:
   - js/termynal.js
