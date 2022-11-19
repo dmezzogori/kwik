@@ -19,4 +19,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CUSTOM_DOMAIN: kwik.rocks
           CONFIG_FILE: docs/handbook/mkdocs.yml
-          EXTRA_PACKAGES: build-base
+          #EXTRA_PACKAGES: build-base
