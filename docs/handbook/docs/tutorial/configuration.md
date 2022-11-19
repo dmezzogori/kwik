@@ -14,28 +14,28 @@ which is used by Kwik to validate the <a href="https://pydantic-docs.helpmanual.
 
 The following are the main configuration variables available, and corresponding default values:
 
- - General:
+ - **General**:
      - `SERVER_NAME`: `backend` - The name of the server/service on which the application is running (i.e. docker service name).
      - `HOST`: `localhost` - The hostname on which the application is running.
      - `PORT`: `8080` - The port on which the application is running.
      - `API_V1_STR`: `/api/v1` - The base path for the API.
      - `PROJECT_NAME`: `kwik` - The name of the project being developed.
- - Database:
+ - **Database**:
      - `POSTGRES_SERVER`: `db` - The hostname of the database server.
      - `POSTGRES_DB`: `db` - The name of the database.
      - `POSTGRES_USER`: `postgres` - The username to use to connect to the database.
      - `POSTGRES_PASSWORD`: `root` - The password to use to connect to the database.
      - `ENABLE_SOFT_DELETE`: `False` - A flag to enable/disable soft delete.
- - Mailserver:
+ - **Mailserver**:
      - `SMTP_HOST`
      - `SMTP_PORT`
      - `SMTP_USER`
      - `SMTP_PASSWORD`
      - `SMTP_TLS`
- - User management:
+ - **Superuser credentials**:
      - `FIRST_SUPERUSER`: `admin@example.com` - The email address of the admin superuser.
      - `FIRST_SUPERUSER_PASSWORD`: `admin` - The password of the admin superuser.
- - Misc:
+ - **Misc**:
      - `DEBUG`: `True` - A flag to enable/disable debug mode.
      - `HOTRELOAD`: `True` - A flag to enable/disable hot reloading.
      - `WEBSOCKET_ENABLED`: `False` - A flag to enable/disable websocket support.
@@ -44,4 +44,4 @@ The following are the main configuration variables available, and corresponding 
     The default values are used only for development purposes. 
     In production, you should always override them with the appropriate values.
 
-    Moreover, you should be aware that environment variables names are case sensitive.
+    Moreover, you should be aware that *environment variables names* are **case sensitive**.
