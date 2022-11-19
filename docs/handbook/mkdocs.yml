@@ -14,8 +14,8 @@ theme:
     - search.suggest
     - search.highlight
     - content.tabs.link
-#  logo: img/icon-white.svg
-#  favicon: img/favicon.png
+  logo: img/logo.png
+  favicon: img/favicon.ico
   language: en
 repo_name: dmezzogori/kwik
 repo_url: https://github.com/dmezzogori/kwik
