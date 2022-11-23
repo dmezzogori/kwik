@@ -34,8 +34,8 @@ def run(kwik_app: str | Kwik) -> None:
 
     uvicorn.run(
         kwik_app,
-        host=settings.HOST,
-        port=settings.PORT,
+        host=settings.BACKEND_HOST,
+        port=settings.BACKEND_PORT,
         log_level=settings.LOG_LEVEL.lower(),
         reload=reload,
         http="httptools",
@@ -93,5 +93,5 @@ class Kwik:
         from kwik import logger
 
         logger.info("Kwik App ready")
-        logger.info(f"Kwik App running on http://{settings.HOST}:{settings.PORT}")
-        logger.info(f"Swagger available at http://{settings.HOST}:{settings.PORT}/docs")
+        logger.info(f"Kwik App running on http://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}")
+        logger.info(f"Swagger available at http://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}/docs")

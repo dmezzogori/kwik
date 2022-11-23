@@ -17,8 +17,8 @@ class AlternateDBSettings(BaseSettings):
 
 class Settings(BaseSettings):
     SERVER_NAME: str = "backend"
-    HOST = "localhost"
-    PORT = 8080
+    BACKEND_HOST = "localhost"
+    BACKEND_PORT = 8080
     API_V1_STR: str = "/api/v1"
 
 
