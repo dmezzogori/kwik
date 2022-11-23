@@ -1,9 +1,10 @@
 [tool.poetry]
 name = "kwik"
 version = "0.1.0"
-description = ""
+description = "Kwik is a web framework for building modern, batteries-included, RESTful backends with Python 3.10+. Kwik is based on FastAPI, builds upon it and delivers an opinionated concise, business-oriented API."
 authors = ["Davide Mezzogori <dmezzogori@users.noreply.github.com>"]
 readme = "README.md"
+homepage = "https://kwik.rocks"
 
 [tool.poetry.dependencies]
 python = "^3.10"
