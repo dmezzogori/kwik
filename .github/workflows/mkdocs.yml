@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - development
+      - main
 
 jobs:
   build:
@@ -12,8 +12,10 @@ jobs:
     steps:
       - name: Checkout main
         uses: actions/checkout@v2
-      - name: Set up GCC
-        uses: egor-tensin/setup-gcc@v1
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
       - name: Deploy docs
         uses: mhausenblas/mkdocs-deploy-gh-pages@master
         env:
