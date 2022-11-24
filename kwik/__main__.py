@@ -4,7 +4,7 @@ import kwik
 if __name__ == "__main__":
     import sys
 
-    if len(sys.argv) == 0:
+    if len(sys.argv) == 1:
         from kwik.api.api import api_router
 
         k = kwik.Kwik(api_router)
