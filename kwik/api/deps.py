@@ -51,7 +51,7 @@ def has_permission(*permissions: PermissionNamesBase) -> Depends:
 
 
 def sorting_query(
-    sorting: SortingQuery | None = None,
+    sorting: kwik.typings.SortingQuery | None = None,
 ) -> ParsedSortingQuery:
     if sorting is not None:
         sort = []
