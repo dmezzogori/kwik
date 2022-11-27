@@ -61,6 +61,9 @@ extra:
       link: https://linkedin.com/in/davidemezzogori/
     - icon: material/web
       link: https://davide.mezzogori.com
+  analytics:
+    provider: google
+    property: G-RT1L5SXNDC
 
 # Extensions
 markdown_extensions:
