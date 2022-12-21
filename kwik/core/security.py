@@ -22,7 +22,9 @@ def create_access_token(
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=kwik.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.utcnow() + timedelta(
+            minutes=kwik.settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
     to_encode = {"exp": expire, "sub": str(subject), "kwik_impersonate": ""}
     if impersonator_user_id is not None:
         to_encode["kwik_impersonate"] = str(impersonator_user_id)

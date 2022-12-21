@@ -50,7 +50,11 @@ class AuditedRoute(APIRoute):
                 user_ctx_token = current_user_ctx_var.set(user)
                 user_id = user.id
 
-                payload = jwt.decode(request.token, kwik.settings.SECRET_KEY, algorithms=[security.ALGORITHM])
+                payload = jwt.decode(
+                    request.token,
+                    kwik.settings.SECRET_KEY,
+                    algorithms=[security.ALGORITHM],
+                )
                 token_data = schemas.TokenPayload(**payload)
 
                 if token_data.kwik_impersonate != "":

@@ -15,7 +15,9 @@ from kwik.typings import ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
 from .auditor import AuditorRouter
 
 
-class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType]):
+class AutoRouter(
+    Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType]
+):
     def __init__(
         self,
         crud: AutoCRUD[ModelType, CreateSchemaType, UpdateSchemaType] | None = None,
@@ -28,7 +30,9 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         self.BaseSchemaType: BaseSchemaType = b
 
         if crud is None:
-            self.crud: AutoCRUD[ModelType, CreateSchemaType, UpdateSchemaType] = AutoCRUD.get_instance(model)
+            self.crud: AutoCRUD[
+                ModelType, CreateSchemaType, UpdateSchemaType
+            ] = AutoCRUD.get_instance(model)
         else:
             self.crud = crud
 
@@ -59,7 +63,11 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
             params = []
             for param_name, param in base_sign.parameters.items():
                 if param_name == "obj_in":
-                    params.append(inspect.Parameter(param_name, param.kind, annotation=CreateSchema))
+                    params.append(
+                        inspect.Parameter(
+                            param_name, param.kind, annotation=CreateSchema
+                        )
+                    )
                 else:
                     params.append(param)
             new_create.__signature__ = inspect.Signature(params)
@@ -78,7 +86,11 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
             params = []
             for param_name, param in base_sign.parameters.items():
                 if param_name == "obj_in":
-                    params.append(inspect.Parameter(param_name, param.kind, annotation=UpdateSchema))
+                    params.append(
+                        inspect.Parameter(
+                            param_name, param.kind, annotation=UpdateSchema
+                        )
+                    )
                 else:
                     params.append(param)
             new_update.__signature__ = inspect.Signature(params)
@@ -100,7 +112,9 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         Retrieve many {name} items.
         Sorting field:[asc|desc]
         """
-        total, result = self.crud.get_multi(db=None, sort=sorting, **paginated, **filters)
+        total, result = self.crud.get_multi(
+            db=None, sort=sorting, **paginated, **filters
+        )
         return kwik.schemas.Paginated[self.BaseSchemaType](total=total, data=result)
 
     # noinspection PyShadowingBuiltins
@@ -114,7 +128,9 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         except kwik.exceptions.NotFound as e:
             raise e.http_exc
 
-    def create(self, obj_in: CreateSchemaType, user: kwik.models.User = kwik.current_user) -> ModelType:
+    def create(
+        self, obj_in: CreateSchemaType, user: kwik.models.User = kwik.current_user
+    ) -> ModelType:
         """
         Create a {name}.
         """
@@ -122,7 +138,10 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
 
     # noinspection PyShadowingBuiltins
     def update(
-        self, id: int, obj_in: UpdateSchemaType, user: kwik.models.User = kwik.current_user
+        self,
+        id: int,
+        obj_in: UpdateSchemaType,
+        user: kwik.models.User = kwik.current_user,
     ) -> ModelType | NoReturn:
         """
         Update a {name}.
@@ -134,7 +153,9 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
             raise e.http_exc
 
     # noinspection PyShadowingBuiltins
-    def delete(self, *, id: int, user: kwik.models.User = kwik.current_user) -> ModelType | NoReturn:
+    def delete(
+        self, *, id: int, user: kwik.models.User = kwik.current_user
+    ) -> ModelType | NoReturn:
         """
         Delete a {name}.
         """
@@ -144,16 +165,26 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         except kwik.exceptions.NotFound as e:
             raise e.http_exc
 
-    def register(self, *, read_multi=True, read=True, create=True, update=True, delete=True):
+    def register(
+        self, *, read_multi=True, read=True, create=True, update=True, delete=True
+    ):
         if read_multi:
-            self.router.get("/", response_model=kwik.schemas.Paginated[self.BaseSchemaType], dependencies=self.deps)(
-                self.read_multi
-            )
+            self.router.get(
+                "/",
+                response_model=kwik.schemas.Paginated[self.BaseSchemaType],
+                dependencies=self.deps,
+            )(self.read_multi)
         if read:
-            self.router.get("/{id}", response_model=self.BaseSchemaType, dependencies=self.deps)(self.read)
+            self.router.get(
+                "/{id}", response_model=self.BaseSchemaType, dependencies=self.deps
+            )(self.read)
         if create:
-            self.router.post("/", response_model=self.BaseSchemaType, dependencies=self.deps)(self.create)
+            self.router.post(
+                "/", response_model=self.BaseSchemaType, dependencies=self.deps
+            )(self.create)
         if update:
-            self.router.put("/{id}", response_model=self.BaseSchemaType, dependencies=self.deps)(self.update)
+            self.router.put(
+                "/{id}", response_model=self.BaseSchemaType, dependencies=self.deps
+            )(self.update)
         if delete:
             self.router.delete("/{id}", dependencies=self.deps)(self.delete)

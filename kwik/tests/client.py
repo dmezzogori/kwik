@@ -48,18 +48,28 @@ class TestClientBase:
         return self.client.get(self.get_uri, headers=headers)
 
     @assert_status_code_and_return_response
-    def get_single(self, id_: int, headers: dict[str, str], status_code=200) -> Response:
+    def get_single(
+        self, id_: int, headers: dict[str, str], status_code=200
+    ) -> Response:
         return self.client.get(f"{self.get_uri}/{id_}", headers=headers)
 
     @assert_status_code_and_return_response
     def post(self, data: Any, headers: dict[str, str], status_code=200) -> Response:
         json_compatible_data = jsonable_encoder(data)
-        return self.client.post(f"{self.post_uri}/", data=json.dumps(json_compatible_data), headers=headers)
+        return self.client.post(
+            f"{self.post_uri}/", data=json.dumps(json_compatible_data), headers=headers
+        )
 
     @assert_status_code_and_return_response
-    def update(self, id_: int, data: Any, headers: dict[str, str], status_code=200) -> Response:
+    def update(
+        self, id_: int, data: Any, headers: dict[str, str], status_code=200
+    ) -> Response:
         json_compatible_data = jsonable_encoder(data)
-        return self.client.put(f"{self.put_uri}/{id_}", data=json.dumps(json_compatible_data), headers=headers)
+        return self.client.put(
+            f"{self.put_uri}/{id_}",
+            data=json.dumps(json_compatible_data),
+            headers=headers,
+        )
 
     @assert_status_code_and_return_response
     def delete(self, id_: int, headers: dict[str, str], status_code=200) -> Response:

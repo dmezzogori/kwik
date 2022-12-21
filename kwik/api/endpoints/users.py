@@ -40,7 +40,9 @@ def create_user(
         raise DuplicatedEntity().http_exc
     user = crud.user.create(obj_in=user_in)
     if kwik.settings.EMAILS_ENABLED and user_in.email:
-        send_new_account_email(email_to=user_in.email, username=user_in.email, password=user_in.password)
+        send_new_account_email(
+            email_to=user_in.email, username=user_in.email, password=user_in.password
+        )
     return user
 
 
@@ -111,7 +113,9 @@ def read_user_by_id(
     if user_db == user:
         return user_db
     if not crud.user.is_superuser(user_id=user.id):
-        raise HTTPException(status_code=400, detail="The user doesn't have enough privileges")
+        raise HTTPException(
+            status_code=400, detail="The user doesn't have enough privileges"
+        )
     return user_db
 
 

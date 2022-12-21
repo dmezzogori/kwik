@@ -14,9 +14,13 @@ def send_email(*, email_to: str, subject: str = "", body: str = "") -> None:
     try:
         context = ssl.create_default_context()
         email_from = kwik.settings.EMAILS_FROM_EMAIL
-        with smtplib.SMTP_SSL(kwik.settings.SMTP_HOST, kwik.settings.SMTP_PORT, context=context) as server:
+        with smtplib.SMTP_SSL(
+            kwik.settings.SMTP_HOST, kwik.settings.SMTP_PORT, context=context
+        ) as server:
             msg = MIMEMultipart("alternative")
-            msg["From"] = formataddr((str(Header(email_from, "utf-8")), kwik.settings.SMTP_USER))
+            msg["From"] = formataddr(
+                (str(Header(email_from, "utf-8")), kwik.settings.SMTP_USER)
+            )
             msg["To"] = email_to
             msg["Subject"] = subject
             html = body
@@ -35,7 +39,9 @@ def send_reset_password_email(email_to: str, email: str, token: str) -> None:
     subject = f"{project_name} - Password recovery"
     server_host = kwik.settings.SERVER_HOST
     template_file = Path(kwik.settings.EMAIL_TEMPLATES_DIR) / "reset_password.html"
-    template_str = "Use the following link to reset your password <a href='{{link}}'>{{link}}</a>"
+    template_str = (
+        "Use the following link to reset your password <a href='{{link}}'>{{link}}</a>"
+    )
     if Path(template_file).is_file():
         with open(template_file) as f:
             template_str = f.read()

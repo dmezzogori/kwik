@@ -9,7 +9,12 @@ class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleCreate, schemas.RoleUpdate]
         return self.db.query(models.Role).filter(models.Role.name == name).first()
 
     def get_multi_by_user_id(self, *, user_id: int) -> list[models.Role]:
-        return self.db.query(models.Role).join(models.UserRole).filter(models.UserRole.user_id == user_id).all()
+        return (
+            self.db.query(models.Role)
+            .join(models.UserRole)
+            .filter(models.UserRole.user_id == user_id)
+            .all()
+        )
 
     def get_users_by_name(self, *, name: str) -> list[models.User]:
         # TODO: va sostituita con un metodo sul crud degli utenti
@@ -60,7 +65,9 @@ class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleCreate, schemas.RoleUpdate]
 
     @staticmethod
     def associate_user(*, role_db: models.Role, user_db: models.User) -> models.Role:
-        user_role_db = user_roles.get_by_user_id_and_role_id(user_id=user_db.id, role_id=role_db.id)
+        user_role_db = user_roles.get_by_user_id_and_role_id(
+            user_id=user_db.id, role_id=role_db.id
+        )
         if user_role_db is None:
             user_role_in = schemas.UserRoleCreate(
                 user_id=user_db.id,
@@ -71,7 +78,9 @@ class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleCreate, schemas.RoleUpdate]
 
     @staticmethod
     def purge_user(*, role_db: models.Role, user_db: models.User) -> models.Role:
-        user_role_db = user_roles.get_by_user_id_and_role_id(user_id=user_db.id, role_id=role_db.id)
+        user_role_db = user_roles.get_by_user_id_and_role_id(
+            user_id=user_db.id, role_id=role_db.id
+        )
         user_roles.delete(id=user_role_db.id)
         return role_db
 

@@ -8,7 +8,13 @@ from ..database.session import KwikSession
 
 
 class CRUDLogs(CRUDCreateBase):
-    def create(self, *, db: KwikSession | None = None, obj_in: LogCreateSchema, user: User | None = None) -> models.Log:
+    def create(
+        self,
+        *,
+        db: KwikSession | None = None,
+        obj_in: LogCreateSchema,
+        user: User | None = None
+    ) -> models.Log:
         _db = db if db is not None else self.db
 
         obj_in_data = jsonable_encoder(obj_in)

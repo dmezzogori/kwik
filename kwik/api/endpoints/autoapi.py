@@ -7,7 +7,10 @@ from app import crud, schemas
 
 
 def NotFound(id):
-    return HTTPException(status_code=404, detail="The item with id={id} does not exist in the system".format(id=id))
+    return HTTPException(
+        status_code=404,
+        detail="The item with id={id} does not exist in the system".format(id=id),
+    )
 
 
 class AutoAPI:
@@ -66,14 +69,17 @@ class AutoAPI:
             entity = self.crud.get(db, name=obj_in.name)
             if entity:
                 raise HTTPException(
-                    status_code=400, detail=f"The {self.name} with this name already exists in the system.",
+                    status_code=400,
+                    detail=f"The {self.name} with this name already exists in the system.",
                 )
             obj_db = self.crud.create(db, obj_in=obj_in)
             return obj_db
 
         create.__doc__ = create.__doc__.format(name=self.name)
 
-        def update(*, db: kwik.KwikSession = kwik.db, id: int, obj_in: UpdateSchema) -> Any:
+        def update(
+            *, db: kwik.KwikSession = kwik.db, id: int, obj_in: UpdateSchema
+        ) -> Any:
             """
             Update a {name}.
             """
@@ -101,17 +107,27 @@ class AutoAPI:
         if permissions is not None:
             deps.append(kwik.has_permission(*permissions))
 
-        self.router.get("/", response_model=list[BaseSchema], dependencies=deps)(read_multi)
+        self.router.get("/", response_model=list[BaseSchema], dependencies=deps)(
+            read_multi
+        )
         self.router.get("/{id}", response_model=BaseSchema, dependencies=deps)(read)
         self.router.post("/", response_model=BaseSchema, dependencies=deps)(create)
         self.router.put("/{id}", response_model=BaseSchema, dependencies=deps)(update)
         self.router.delete("/{id}", dependencies=deps)(delete)
 
-        api_router.include_router(self.router, prefix=f"/{self.name.replace('_', '/')}", tags=[f"{self.name}"])
+        api_router.include_router(
+            self.router, prefix=f"/{self.name.replace('_', '/')}", tags=[f"{self.name}"]
+        )
         return self
 
     def add_endpoint(
-        self, *, method: str, path: str, endpoint: Callable, response_model=None, permissions=None,
+        self,
+        *,
+        method: str,
+        path: str,
+        endpoint: Callable,
+        response_model=None,
+        permissions=None,
     ):
         register = {
             "get": self.router.get,
@@ -124,4 +140,6 @@ class AutoAPI:
         deps = [kwik.current_user]
         if permissions is not None:
             deps.append(kwik.has_permission(*permissions))
-        register[method](path, response_model=response_model, dependencies=deps)(endpoint)
+        register[method](path, response_model=response_model, dependencies=deps)(
+            endpoint
+        )

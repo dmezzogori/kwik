@@ -1,5 +1,11 @@
 from .audits import audit
-from .auto_crud import AutoCRUD, AutoCRUDCreate, AutoCRUDDelete, AutoCRUDUpdate, AutoCRUDRead
+from .auto_crud import (
+    AutoCRUD,
+    AutoCRUDCreate,
+    AutoCRUDDelete,
+    AutoCRUDUpdate,
+    AutoCRUDRead,
+)
 from .logs import logs
 from .permissions import permission
 from .roles import role

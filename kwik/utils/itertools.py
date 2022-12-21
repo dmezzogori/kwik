@@ -20,7 +20,9 @@ def yield_limited(*, item: Any, count: int, limit: int) -> Iterable[Any]:
     return count
 
 
-def iter_unique(generator: Generator[T, None, None], *, attr: str | Callable) -> Iterable[T]:
+def iter_unique(
+    generator: Generator[T, None, None], *, attr: str | Callable
+) -> Iterable[T]:
     """restiuisce elementi unici dal generatore, in funzione del valore dell'attributo indicato"""
     seen = set()
     for t in generator:

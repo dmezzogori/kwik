@@ -25,7 +25,9 @@ class KwikSession(Session):
     def query(self, *entities, **kwargs) -> KwikQuery:
         return super().query(*entities, **kwargs)
 
-    def delete(self, instances: kwik.typings.ModelType | Sequence[kwik.typings.ModelType]) -> None:
+    def delete(
+        self, instances: kwik.typings.ModelType | Sequence[kwik.typings.ModelType]
+    ) -> None:
         if not isinstance(instances, Iterable):
             instances = (instances,)
         for instance in instances:
@@ -53,7 +55,9 @@ class KwikQuery(Query):
     It is automatically registered by the Kwik DBContextManager.
     """
 
-    def __init__(self, entities: tuple[kwik.typings.ModelType, ...], session: Session = None) -> None:
+    def __init__(
+        self, entities: tuple[kwik.typings.ModelType, ...], session: Session = None
+    ) -> None:
         """
         Ovverides the superclass init to inject automatically soft delete
         filters, for any entity which requires that.
@@ -98,7 +102,9 @@ class KwikQuery(Query):
         i.e. database.query(some_model_with_soft_delete).ignore_soft_delete().all()
         return all records, ignoring soft delete flags.
         """
-        self._where_criteria = [c for c in self._where_criteria if c not in self._soft_delete_criteria]
+        self._where_criteria = [
+            c for c in self._where_criteria if c not in self._soft_delete_criteria
+        ]
         return self
 
     def get(self, ident: int):

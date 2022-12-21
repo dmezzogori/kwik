@@ -16,7 +16,9 @@ def read_roles(paginated=kwik.PaginatedQuery) -> dict:
 
 
 @router.get("/me", response_model=list[schemas.Role])
-def read_role_of_logged_user(current_user: models.User = kwik.current_user) -> list[models.Role]:
+def read_role_of_logged_user(
+    current_user: models.User = kwik.current_user,
+) -> list[models.Role]:
     """
     Get roles of logged in user.
     """
@@ -32,7 +34,9 @@ def read_users_by_role(role_id: int) -> dict:
     return {"data": users, "total": len(users)}
 
 
-@router.get("/{role_id}/assignable-users", response_model=schemas.Paginated[schemas.User])
+@router.get(
+    "/{role_id}/assignable-users", response_model=schemas.Paginated[schemas.User]
+)
 def read_users_not_in_role(role_id: int) -> dict:
     """
     Get all users not involved in the given role
@@ -41,7 +45,10 @@ def read_users_not_in_role(role_id: int) -> dict:
     return {"data": users, "total": len(users)}
 
 
-@router.get("/{role_id}/permissions", response_model=schemas.Paginated[schemas.PermissionORMSchema])
+@router.get(
+    "/{role_id}/permissions",
+    response_model=schemas.Paginated[schemas.PermissionORMSchema],
+)
 def read_users_by_role(role_id: int) -> dict:
     """
     Get permissions by role
@@ -50,7 +57,10 @@ def read_users_by_role(role_id: int) -> dict:
     return {"data": permissions, "total": len(permissions)}
 
 
-@router.get("/{role_id}/assignable-permissions", response_model=schemas.Paginated[schemas.PermissionORMSchema])
+@router.get(
+    "/{role_id}/assignable-permissions",
+    response_model=schemas.Paginated[schemas.PermissionORMSchema],
+)
 def read_users_not_in_role(role_id: int) -> dict:
     """
     Get all permissions not involved in the given role
@@ -80,11 +90,15 @@ def update_role(role_id: int, role_in: schemas.RoleUpdate) -> models.Role:
 
 
 @router.post("/associate", response_model=schemas.Role)
-def associate_user_to_role(user_role_in: schemas.UserRoleCreate, current_user=kwik.current_user) -> models.Role:
+def associate_user_to_role(
+    user_role_in: schemas.UserRoleCreate, current_user=kwik.current_user
+) -> models.Role:
     try:
         user = crud.user.get_if_exist(id=user_role_in.user_id)
         role = crud.role.get_if_exist(id=user_role_in.role_id)
-        role = crud.role.associate_user(user_db=user, role_db=role, creator_user=current_user)
+        role = crud.role.associate_user(
+            user_db=user, role_db=role, creator_user=current_user
+        )
         return role
     except NotFound as e:
         raise e.http_exc

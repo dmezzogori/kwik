@@ -64,7 +64,13 @@ class CRUDReadBase(CRUDBase[ModelType]):
 
 class CRUDCreateBase(CRUDBase, Generic[ModelType, CreateSchemaType]):
     @abc.abstractmethod
-    def create(self, *, db: KwikSession | None = None, obj_in: CreateSchemaType, user: User | None = None) -> ModelType:
+    def create(
+        self,
+        *,
+        db: KwikSession | None = None,
+        obj_in: CreateSchemaType,
+        user: User | None = None,
+    ) -> ModelType:
         pass
 
     @abc.abstractmethod
@@ -95,5 +101,7 @@ class CRUDUpdateBase(CRUDBase, Generic[ModelType, UpdateSchemaType]):
 
 class CRUDDeleteBase(CRUDBase[ModelType]):
     @abc.abstractmethod
-    def delete(self, *, db: KwikSession | None = None, id: int, user: User | None = None) -> ModelType:
+    def delete(
+        self, *, db: KwikSession | None = None, id: int, user: User | None = None
+    ) -> ModelType:
         pass

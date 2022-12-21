@@ -6,7 +6,9 @@ import aiofiles
 from fastapi import UploadFile
 
 
-async def store_file(*, in_file: UploadFile, path: str | None = None) -> Tuple[str, int]:
+async def store_file(
+    *, in_file: UploadFile, path: str | None = None
+) -> Tuple[str, int]:
     root_upload_directory = "/uploads"
 
     if path is not None and len(path) > 1:

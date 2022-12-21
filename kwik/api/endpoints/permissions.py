@@ -30,7 +30,9 @@ def create_permission(permission_in: schemas.PermissionCreate) -> models.Permiss
 
 
 @router.post("/associate", response_model=schemas.PermissionORMSchema)
-def associate_permission_to_role(permission_role_in: schemas.PermissionRoleCreate) -> models.Permission:
+def associate_permission_to_role(
+    permission_role_in: schemas.PermissionRoleCreate,
+) -> models.Permission:
     try:
         permission = crud.permission.get_if_exist(id=permission_role_in.permission_id)
         role = crud.role.get_if_exist(id=permission_role_in.role_id)
@@ -89,7 +91,9 @@ def delete_permission(
 
 
 @router.delete("/", response_model=schemas.PermissionORMSchema)
-def purge_role_from_permission(permission_role_in: schemas.PermissionRoleRemove) -> models.Permission:
+def purge_role_from_permission(
+    permission_role_in: schemas.PermissionRoleRemove,
+) -> models.Permission:
     """
     Remove permission from role
     """

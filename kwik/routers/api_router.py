@@ -13,7 +13,9 @@ class APIRouter(_APIRouter):
             if module_name == "tests" and not kwik.settings.TEST_ENV:
                 continue
 
-            router = getmembers(module, lambda x: isinstance(x, (_APIRouter, AuditorRouter, AutoRouter)))[0][1]
+            router = getmembers(
+                module, lambda x: isinstance(x, (_APIRouter, AuditorRouter, AutoRouter))
+            )[0][1]
 
             if isinstance(router, AutoRouter):
                 router = router.router

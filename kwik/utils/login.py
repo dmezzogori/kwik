@@ -9,13 +9,19 @@ def generate_password_reset_token(email: str) -> str:
     now = datetime.utcnow()
     expires = now + delta
     exp = expires.timestamp()
-    encoded_jwt = jwt.encode({"exp": exp, "nbf": now, "sub": email}, kwik.settings.SECRET_KEY, algorithm="HS256",)
+    encoded_jwt = jwt.encode(
+        {"exp": exp, "nbf": now, "sub": email},
+        kwik.settings.SECRET_KEY,
+        algorithm="HS256",
+    )
     return encoded_jwt
 
 
 def verify_password_reset_token(token: str) -> str | None:
     try:
-        decoded_token = jwt.decode(token, kwik.settings.SECRET_KEY, algorithms=["HS256"])
+        decoded_token = jwt.decode(
+            token, kwik.settings.SECRET_KEY, algorithms=["HS256"]
+        )
         return decoded_token["sub"]
     except jwt.JWTError:
         return None

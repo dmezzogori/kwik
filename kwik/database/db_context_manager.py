@@ -22,7 +22,8 @@ def db_context_switcher():
 
     prev_db_conn_ctx_var = db_conn_ctx_var.get()
     with DBContextManager(
-        db_uri=settings.alternate_db.ALTERNATE_SQLALCHEMY_DATABASE_URI, settings=settings.alternate_db
+        db_uri=settings.alternate_db.ALTERNATE_SQLALCHEMY_DATABASE_URI,
+        settings=settings.alternate_db,
     ) as db:
         yield db
 
@@ -52,7 +53,11 @@ class DBContextManager:
     """
 
     def __init__(
-        self, *, settings: Settings | None = None, db_uri: str | None = None, connect_args: dict | None = None
+        self,
+        *,
+        settings: Settings | None = None,
+        db_uri: str | None = None,
+        connect_args: dict | None = None,
     ) -> None:
         self.engine = create_engine(
             url=db_uri or settings.SQLALCHEMY_DATABASE_URI,

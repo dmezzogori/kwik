@@ -15,5 +15,12 @@ from .permission import (
 )
 from .role import Role, RoleCreate, RoleInDB, RoleUpdate, UserRoleCreate, UserRoleRemove
 from .token import Token, TokenPayload
-from .user import User, UserCreate, UserInDB, UserUpdate, UserWithPermissionsAndRoles, UserChangePassword
+from .user import (
+    User,
+    UserCreate,
+    UserInDB,
+    UserUpdate,
+    UserWithPermissionsAndRoles,
+    UserChangePassword,
+)
 from . import role_permissions

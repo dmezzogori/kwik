@@ -23,7 +23,9 @@ def login_access_token(form_data: OAuth2PasswordRequestForm = Depends()) -> dict
     OAuth2 compatible token login, get an access token for future requests
     """
     try:
-        user = crud.user.authenticate(email=form_data.username, password=form_data.password)
+        user = crud.user.authenticate(
+            email=form_data.username, password=form_data.password
+        )
         return create_token(user_id=user.id)
     except (IncorrectCredentials, UserInactive) as e:
         raise e.http_exc
@@ -74,7 +76,9 @@ def recover_password(obj_in: RecoverPassword) -> dict:
     if not user:
         raise UserNotFound().http_exc
     password_reset_token = generate_password_reset_token(email=email)
-    send_reset_password_email(email_to=user.email, email=email, token=password_reset_token)
+    send_reset_password_email(
+        email_to=user.email, email=email, token=password_reset_token
+    )
     return {"msg": "Password recovery email sent"}
 
 

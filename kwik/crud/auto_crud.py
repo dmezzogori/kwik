@@ -48,17 +48,26 @@ class AutoCRUDRead(CRUDReadBase[ModelType]):
         return count, r
 
     # noinspection PyShadowingBuiltins
-    def get_if_exist(self, *, db: KwikSession | None = None, id: int) -> ModelType | NoReturn:
+    def get_if_exist(
+        self, *, db: KwikSession | None = None, id: int
+    ) -> ModelType | NoReturn:
         _db = db if db is not None else self.db
         r = self.get(db=_db, id=id)
         if r is None:
-            raise NotFound(detail=f"Entity [{self.model.__tablename__}] with id={id} does not exist")
+            raise NotFound(
+                detail=f"Entity [{self.model.__tablename__}] with id={id} does not exist"
+            )
         return r
 
 
 class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
     def create(
-        self, *, db: KwikSession | None = None, obj_in: CreateSchemaType, user: User | None = None, **kwargs
+        self,
+        *,
+        db: KwikSession | None = None,
+        obj_in: CreateSchemaType,
+        user: User | None = None,
+        **kwargs,
     ) -> ModelType:
         obj_in_data = dict(obj_in)
 
@@ -99,7 +108,9 @@ class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
         _db = db if db is not None else self.db
         _user = user if user is not None else self.user
 
-        obj_db: ModelType | None = _db.query(self.model).filter_by(**filters).one_or_none()
+        obj_db: ModelType | None = (
+            _db.query(self.model).filter_by(**filters).one_or_none()
+        )
         if obj_db is None:
             obj_db: ModelType = self.create(db=_db, obj_in=obj_in, user=_user, **kwargs)
         elif raise_on_error:
@@ -150,7 +161,9 @@ class AutoCRUDUpdate(CRUDUpdateBase[ModelType, UpdateSchemaType]):
 
 class AutoCRUDDelete(CRUDDeleteBase[ModelType]):
     # noinspection PyShadowingBuiltins
-    def delete(self, *, db: KwikSession | None = None, id: int, user: User | None = None) -> ModelType:
+    def delete(
+        self, *, db: KwikSession | None = None, id: int, user: User | None = None
+    ) -> ModelType:
         _db = db if db is not None else self.db
         obj: ModelType = _db.query(self.model).get(id)
 

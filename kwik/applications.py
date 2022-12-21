@@ -86,12 +86,19 @@ class Kwik:
 
         @self._app.get("/docs", include_in_schema=False)
         async def custom_swagger_ui_html():
-            return get_swagger_ui_html(openapi_url=self._app.openapi_url, title=self._app.title + " - Swagger UI")
+            return get_swagger_ui_html(
+                openapi_url=self._app.openapi_url,
+                title=self._app.title + " - Swagger UI",
+            )
 
         set_running_app(self._app)
 
         from kwik import logger
 
         logger.info("Kwik App ready")
-        logger.info(f"Kwik App running on http://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}")
-        logger.info(f"Swagger available at http://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}/docs")
+        logger.info(
+            f"Kwik App running on http://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}"
+        )
+        logger.info(
+            f"Swagger available at http://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}/docs"
+        )

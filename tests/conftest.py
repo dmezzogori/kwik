@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 @pytest.fixture(scope="session")
 def app():
     import os
+
     os.environ["TEST_ENV"] = "True"
 
     import kwik

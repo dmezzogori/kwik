@@ -4,13 +4,22 @@ from .auto_crud import AutoCRUD
 from .roles_permissions import roles_permissions
 
 
-class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionCreate, schemas.PermissionUpdate]):
+class CRUDPermission(
+    AutoCRUD[models.Permission, schemas.PermissionCreate, schemas.PermissionUpdate]
+):
     def get_by_name(self, *, name: str) -> models.Permission | None:
-        return self.db.query(models.Permission).filter(models.Permission.name == name).one_or_none()
+        return (
+            self.db.query(models.Permission)
+            .filter(models.Permission.name == name)
+            .one_or_none()
+        )
 
     @staticmethod
     def associate_role(
-        *, role_db: models.Role, permission_db: models.Permission, creator_user: models.User
+        *,
+        role_db: models.Role,
+        permission_db: models.Permission,
+        creator_user: models.User
     ) -> models.Permission:
         role_permission_db = roles_permissions.get_by_permission_id_and_role_id(
             role_id=role_db.id, permission_id=permission_db.id
@@ -24,7 +33,9 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionCreate, schem
         return permission_db
 
     @staticmethod
-    def purge_role(*, role_db: models.Role, permission_db: models.Permission) -> models.Permission:
+    def purge_role(
+        *, role_db: models.Role, permission_db: models.Permission
+    ) -> models.Permission:
         role_permission_db = roles_permissions.get_by_permission_id_and_role_id(
             role_id=role_db.id, permission_id=permission_db.id
         )
