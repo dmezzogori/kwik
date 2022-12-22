@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from typing import Any, Type, TYPE_CHECKING, Generic, get_args, TypeVar
+from typing import Any, Type, TYPE_CHECKING, Generic, get_args, TypeVar, NoReturn
 
 from kwik.database import db_context_manager
 
@@ -42,23 +42,26 @@ class CRUDBase(abc.ABC, Generic[ModelType]):
 
 class CRUDReadBase(CRUDBase[ModelType]):
     @abc.abstractmethod
-    def get(self, *, db: KwikSession | None = None, id: int) -> ModelType | None:
+    def get(self, *, id: int) -> ModelType | None:
         pass
 
     @abc.abstractmethod
-    def get_all(self, *, db: KwikSession | None = None) -> list[ModelType]:
+    def get_all(self) -> list[ModelType]:
         pass
 
     @abc.abstractmethod
     def get_multi(
         self,
         *,
-        db: KwikSession | None = None,
         skip: int = 0,
         limit: int = 100,
         sort: ParsedSortingQuery | None = None,
         **filters,
     ) -> PaginatedCRUDResult[ModelType]:
+        pass
+
+    @abc.abstractmethod
+    def get_if_exist(self, *, id: int) -> ModelType | NoReturn:
         pass
 
 
@@ -67,9 +70,7 @@ class CRUDCreateBase(CRUDBase, Generic[ModelType, CreateSchemaType]):
     def create(
         self,
         *,
-        db: KwikSession | None = None,
         obj_in: CreateSchemaType,
-        user: User | None = None,
     ) -> ModelType:
         pass
 
@@ -77,10 +78,8 @@ class CRUDCreateBase(CRUDBase, Generic[ModelType, CreateSchemaType]):
     def create_if_not_exist(
         self,
         *,
-        db: KwikSession | None = None,
         obj_in: CreateSchemaType,
         filters: dict[str, str],
-        user: User | None = None,
         raise_on_error: bool = False,
     ) -> ModelType:
         pass
@@ -91,17 +90,13 @@ class CRUDUpdateBase(CRUDBase, Generic[ModelType, UpdateSchemaType]):
     def update(
         self,
         *,
-        db: KwikSession | None = None,
         db_obj: ModelType,
         obj_in: UpdateSchemaType | dict[str, Any],
-        user: User | None = None,
     ) -> ModelType:
         pass
 
 
 class CRUDDeleteBase(CRUDBase[ModelType]):
     @abc.abstractmethod
-    def delete(
-        self, *, db: KwikSession | None = None, id: int, user: User | None = None
-    ) -> ModelType:
+    def delete(self, *, id: int) -> ModelType:
         pass
