@@ -40,9 +40,7 @@ def create_user(
         raise DuplicatedEntity().http_exc
     user = crud.user.create(obj_in=user_in)
     if kwik.settings.EMAILS_ENABLED and user_in.email:
-        send_new_account_email(
-            email_to=user_in.email, username=user_in.email, password=user_in.password
-        )
+        send_new_account_email(email_to=user_in.email, username=user_in.email, password=user_in.password)
     return user
 
 
@@ -113,9 +111,7 @@ def read_user_by_id(
     if user_db == user:
         return user_db
     if not crud.user.is_superuser(user_id=user.id):
-        raise HTTPException(
-            status_code=400, detail="The user doesn't have enough privileges"
-        )
+        raise HTTPException(status_code=400, detail="The user doesn't have enough privileges")
     return user_db
 
 
@@ -146,6 +142,6 @@ def update_password(
     At the moment, it doesn't check that the current user is the one changing its own password because in the future
     a user's password could be forced by an user with adequate permissions.
     The old password is however required at the moment.
-    The user still needs to be authenticated to change an user's password
+    The user still needs to be authenticated to change a user's password
     """
     return crud.user.change_password(user_id=user_id, obj_in=obj_in)

@@ -52,7 +52,7 @@ class AutoCRUDRead(CRUDReadBase[ModelType]):
 
 
 class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
-    def create(self, *, obj_in: CreateSchemaType) -> ModelType:
+    def create(self, *, obj_in: CreateSchemaType, **kwargs: Any) -> ModelType:
         obj_in_data = dict(obj_in)
 
         if self.user is not None and _to_be_audited(self.model):
@@ -81,11 +81,12 @@ class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
         obj_in: CreateSchemaType,
         filters: dict[str, str],
         raise_on_error: bool = False,
+        **kwargs: Any,
     ) -> ModelType:
 
         obj_db: ModelType | None = self.db.query(self.model).filter_by(**filters).one_or_none()
         if obj_db is None:
-            obj_db: ModelType = self.create(obj_in=obj_in)
+            obj_db: ModelType = self.create(obj_in=obj_in, **kwargs)
         elif raise_on_error:
             raise DuplicatedEntity
         return obj_db

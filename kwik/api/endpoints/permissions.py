@@ -6,10 +6,7 @@ router = AuditorRouter()
 
 
 @router.get("/", response_model=list[schemas.PermissionORMSchema])
-def read_permissions(
-    skip: int = 0,
-    limit: int = 100,
-) -> list[models.Permission]:
+def read_permissions(skip: int = 0, limit: int = 100) -> list[models.Permission]:
     """
     Retrieve permissions.
     """
@@ -30,9 +27,7 @@ def create_permission(permission_in: schemas.PermissionCreate) -> models.Permiss
 
 
 @router.post("/associate", response_model=schemas.PermissionORMSchema)
-def associate_permission_to_role(
-    permission_role_in: schemas.PermissionRoleCreate,
-) -> models.Permission:
+def associate_permission_to_role(permission_role_in: schemas.PermissionRoleCreate) -> models.Permission:
     try:
         permission = crud.permission.get_if_exist(id=permission_role_in.permission_id)
         role = crud.role.get_if_exist(id=permission_role_in.role_id)
@@ -42,9 +37,7 @@ def associate_permission_to_role(
 
 
 @router.get("/{permission_id}", response_model=schemas.PermissionORMSchema)
-def read_permission_by_id(
-    permission_id: int,
-) -> models.Permission:
+def read_permission_by_id(permission_id: int) -> models.Permission:
     """
     Get a specific permission by id.
     """
@@ -52,10 +45,7 @@ def read_permission_by_id(
 
 
 @router.put("/{permission_id}", response_model=schemas.PermissionORMSchema)
-def update_permission(
-    permission_id: int,
-    permission_in: schemas.PermissionUpdate,
-) -> models.Permission:
+def update_permission(permission_id: int, permission_in: schemas.PermissionUpdate) -> models.Permission:
     """
     Update a permission.
     """
@@ -67,9 +57,7 @@ def update_permission(
 
 
 @router.delete("/{name}/deprecate", response_model=schemas.PermissionORMSchema)
-def deprecate_permission_by_name(
-    name: str,
-) -> models.Permission:
+def deprecate_permission_by_name(name: str) -> models.Permission:
     """
     Deprecate permission. Remove all associated roles
     """
@@ -77,9 +65,7 @@ def deprecate_permission_by_name(
 
 
 @router.delete("/{permission_id}", response_model=schemas.PermissionORMSchema)
-def delete_permission(
-    permission_id: int,
-) -> models.Permission:
+def delete_permission(permission_id: int) -> models.Permission:
     """
     Delete a role.
     """
@@ -91,9 +77,7 @@ def delete_permission(
 
 
 @router.delete("/", response_model=schemas.PermissionORMSchema)
-def purge_role_from_permission(
-    permission_role_in: schemas.PermissionRoleRemove,
-) -> models.Permission:
+def purge_role_from_permission(permission_role_in: schemas.PermissionRoleRemove) -> models.Permission:
     """
     Remove permission from role
     """

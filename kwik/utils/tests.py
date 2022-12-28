@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from typing import Generator
 
-import kwik
+import kwik.crud
 from kwik.database.db_context_manager import DBContextManager
 from kwik.database.db_context_var import db_conn_ctx_var
 

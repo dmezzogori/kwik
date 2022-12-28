@@ -69,6 +69,12 @@ class DBContextManager:
         self.token: Token | None = None
 
     def __enter__(self) -> KwikSession | Session:
+        token = db_conn_ctx_var.get()
+        if token is not None:
+            self.db = token
+            self.token = token
+            return self.db
+
         class_ = Session
         query_cls = Query
         if self.settings.ENABLE_SOFT_DELETE:
@@ -95,4 +101,4 @@ class DBContextManager:
             self.db.commit()
 
         self.db.close()
-        db_conn_ctx_var.reset(self.token)
+        # db_conn_ctx_var.reset(self.token)
