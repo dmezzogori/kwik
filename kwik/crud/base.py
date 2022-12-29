@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 import abc
-from typing import Any, Type, TYPE_CHECKING, Generic, get_args, TypeVar, NoReturn
+from typing import Any, Type, TYPE_CHECKING, Generic, get_args, NoReturn
 
 from kwik.database import db_context_manager
+from kwik.models import User
+from kwik.typings import ModelType, CreateSchemaType, UpdateSchemaType
+from kwik.typings import ParsedSortingQuery, PaginatedCRUDResult
 
 if TYPE_CHECKING:
     from kwik.database.session import KwikSession
-
-
-from kwik.models import User
-from kwik.typings import ParsedSortingQuery, PaginatedCRUDResult
-from kwik.typings import ModelType, CreateSchemaType, UpdateSchemaType
 
 T = Generic[ModelType, CreateSchemaType, UpdateSchemaType]
 

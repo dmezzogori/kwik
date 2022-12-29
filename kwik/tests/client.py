@@ -1,40 +1,38 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Mapping, TypeVar, Generic, get_args
 
-import json
-from functools import wraps
-
-from fastapi.encoders import jsonable_encoder
 from fastapi.testclient import TestClient
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from requests import Response
+    from httpx import Response
 
 
-def assert_status_code_and_return_response(status_code: int):
-    def wrapper(func: Callable[..., Response]) -> Callable:
-        @wraps(func)
-        def inner(*args, **kwargs) -> Any:
-            response = func(*args, **kwargs)
-            assert response.status_code == status_code
-            return response.json()
-
-        return inner
-
-    return wrapper
+GetSchema = TypeVar("GetSchema", bound=BaseModel)
+PostSchema = TypeVar("PostSchema", bound=BaseModel)
+UpdateSchema = TypeVar("UpdateSchema", bound=BaseModel)
+DeleteSchema = TypeVar("DeleteSchema", bound=BaseModel)
 
 
-class TestClientBase:
+def assert_status_code_and_return_response(
+    response: Response, status_code: int = 200
+) -> Mapping[str, Any] | list[Mapping[str, Any]]:
+    assert response.status_code == status_code
+    return response.json()
+
+
+class TestClientBase(Generic[GetSchema, PostSchema, UpdateSchema, DeleteSchema]):
     """
     Base class for all test clients.
     """
 
     BASE_URI: str
 
-    def __init__(self, client: TestClient, headers: dict[str, str]):
+    def __init__(self, client: TestClient, headers: dict[str, str]) -> None:
         self.client = client
         self.headers = headers
+        self.get_schema, self.post_schema, self.update_schema, self.delete_schema = get_args(self.__orig_bases__[0])
 
     @property
     def get_uri(self) -> str:
@@ -56,34 +54,46 @@ class TestClientBase:
     def delete_uri(self) -> str:
         return self.BASE_URI
 
-    def make_post_data(self, **kwargs) -> Any:
+    def make_post_data(self, **kwargs):
         raise NotImplementedError
 
-    def make_put_data(self, **kwargs) -> Any:
+    def make_put_data(self, **kwargs):
         raise NotImplementedError
 
-    @assert_status_code_and_return_response(status_code=200)
-    def get(self, id_: int) -> Response:
-        return self.client.get(f"{self.get_uri}/{id_}", headers=self.headers)
-
-    @assert_status_code_and_return_response(status_code=200)
-    def get_multi(self) -> Response:
-        return self.client.get(self.get_multi_uri, headers=self.headers)
-
-    @assert_status_code_and_return_response(status_code=200)
-    def post(self, data: Any) -> Response:
-        json_compatible_data = jsonable_encoder(data)
-        return self.client.post(f"{self.post_uri}/", data=json.dumps(json_compatible_data), headers=self.headers)
-
-    @assert_status_code_and_return_response(status_code=200)
-    def update(self, id_: int, data: Any) -> Response:
-        json_compatible_data = jsonable_encoder(data)
-        return self.client.put(
-            f"{self.put_uri}/{id_}",
-            data=json.dumps(json_compatible_data),
-            headers=self.headers,
+    def get(self, id_: int) -> GetSchema:
+        return self.get_schema(
+            **assert_status_code_and_return_response(self.client.get(f"{self.get_uri}/{id_}", headers=self.headers))
         )
 
-    @assert_status_code_and_return_response(status_code=200)
-    def delete(self, id_: int) -> Response:
-        return self.client.delete(f"{self.delete_uri}/{id_}", headers=self.headers)
+    def get_multi(self) -> list[GetSchema]:
+        return [
+            self.get_schema(**item)
+            for item in assert_status_code_and_return_response(
+                self.client.get(self.get_multi_uri, headers=self.headers)
+            )["data"]
+        ]
+
+    def post(self, data: BaseModel) -> PostSchema:
+        return self.post_schema(
+            **assert_status_code_and_return_response(
+                self.client.post(f"{self.post_uri}/", json=data.dict(), headers=self.headers)
+            )
+        )
+
+    def update(self, id_: int, data: BaseModel) -> UpdateSchema:
+        return self.update_schema(
+            **assert_status_code_and_return_response(
+                self.client.put(
+                    f"{self.put_uri}/{id_}",
+                    json=data.dict(),
+                    headers=self.headers,
+                )
+            )
+        )
+
+    def delete(self, id_: int) -> DeleteSchema:
+        return self.delete_schema(
+            **assert_status_code_and_return_response(
+                self.client.delete(f"{self.delete_uri}/{id_}", headers=self.headers)
+            )
+        )
