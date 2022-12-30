@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 Token = Dict[str, str]
 
 
-def get_token_headers(username: str, password: str, client: TestClient) -> Token:
+def _get_token_headers(client: TestClient, username: str, password: str) -> Token:
     login_data = {
         "username": username,
         "password": password,
@@ -16,3 +16,23 @@ def get_token_headers(username: str, password: str, client: TestClient) -> Token
     access_token = tokens["access_token"]
     headers = {"Authorization": f"Bearer {access_token}"}
     return headers
+
+
+class TokensManager:
+    def __init__(self, client: TestClient):
+        self.client = client
+        self._tokens: Dict[str, Token] = {}
+
+    def _get_token_headers(self, username: str, password: str) -> Token:
+        login_data = {
+            "username": username,
+            "password": password,
+        }
+        r = self.client.post(f"{kwik.settings.API_V1_STR}/login/access-token", data=login_data)
+        tokens = r.json()
+        access_token = tokens["access_token"]
+        headers = {"Authorization": f"Bearer {access_token}"}
+        return headers
+
+    def _set_token_headers(self, *, token_name: str, username: str, password: str) -> Token:
+        return self._tokens.setdefault(token_name, self._get_token_headers(username, password))
