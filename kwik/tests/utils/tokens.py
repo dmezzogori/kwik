@@ -1,27 +1,13 @@
-from typing import Dict
-
 import kwik
 from fastapi.testclient import TestClient
 
-Token = Dict[str, str]
-
-
-def _get_token_headers(client: TestClient, username: str, password: str) -> Token:
-    login_data = {
-        "username": username,
-        "password": password,
-    }
-    r = client.post(f"{kwik.settings.API_V1_STR}/login/access-token", data=login_data)
-    tokens = r.json()
-    access_token = tokens["access_token"]
-    headers = {"Authorization": f"Bearer {access_token}"}
-    return headers
+Token = dict[str, str]
 
 
 class TokensManager:
     def __init__(self, client: TestClient):
         self.client = client
-        self._tokens: Dict[str, Token] = {}
+        self._tokens: dict[str, Token] = {}
 
     def _get_token_headers(self, username: str, password: str) -> Token:
         login_data = {
