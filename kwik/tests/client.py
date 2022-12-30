@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import urllib.parse
-from typing import TYPE_CHECKING, Any, Mapping, TypeVar, Generic, get_args
+from typing import TYPE_CHECKING, Any, Mapping, TypeVar, Generic, get_args, Literal
 
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
@@ -10,10 +10,7 @@ if TYPE_CHECKING:
     from httpx import Response
 
 
-GetSchema = TypeVar("GetSchema", bound=BaseModel)
-PostSchema = TypeVar("PostSchema", bound=BaseModel)
-UpdateSchema = TypeVar("UpdateSchema", bound=BaseModel)
-DeleteSchema = TypeVar("DeleteSchema", bound=BaseModel)
+ResponseSchema = TypeVar("ResponseSchema", bound=BaseModel)
 
 
 def assert_status_code_and_return_response(
@@ -23,7 +20,7 @@ def assert_status_code_and_return_response(
     return response.json()
 
 
-class TestClientBase(Generic[GetSchema, PostSchema, UpdateSchema, DeleteSchema]):
+class TestClientBase(Generic[ResponseSchema]):
     """
     Base class for all test clients.
     """
@@ -33,7 +30,7 @@ class TestClientBase(Generic[GetSchema, PostSchema, UpdateSchema, DeleteSchema])
     def __init__(self, client: TestClient, headers: dict[str, str]) -> None:
         self.client = client
         self.headers = headers
-        self.get_schema, self.post_schema, self.update_schema, self.delete_schema = get_args(self.__orig_bases__[0])
+        self.response_schema = get_args(self.__orig_bases__[0])[0]
 
     @property
     def get_uri(self) -> str:
@@ -61,16 +58,20 @@ class TestClientBase(Generic[GetSchema, PostSchema, UpdateSchema, DeleteSchema])
     def make_put_data(self, **kwargs):
         raise NotImplementedError
 
-    def get(self, id_: int, status_code: int = 200) -> GetSchema | None:
+    def get(self, id_: int, status_code: int = 200) -> ResponseSchema | None:
         response = assert_status_code_and_return_response(
             self.client.get(f"{self.get_uri}/{id_}", headers=self.headers), status_code=status_code
         )
         if status_code == 200:
-            return self.get_schema(**response)
+            return self.response_schema(**response)
 
     def get_multi(
-        self, filters: dict[str, str] | None = None, skip: int | None = None, limit: int | None = None
-    ) -> list[GetSchema]:
+        self,
+        filters: dict[str, str] | None = None,
+        sorting: tuple[str, Literal["asc", "desc"]] | None = None,
+        skip: int | None = None,
+        limit: int | None = None,
+    ) -> list[ResponseSchema]:
 
         exclude_keys = {
             "creation_time",
@@ -79,26 +80,33 @@ class TestClientBase(Generic[GetSchema, PostSchema, UpdateSchema, DeleteSchema])
             "last_modifier_user_id",
         }
 
-        query = {**filters, **{"skip": skip, "limit": limit}}
-        query = {k: v for k, v in query.items() if v is not None and k not in exclude_keys}
-        query_string = urllib.parse.urlencode(query)
+        query = {"skip": skip, "limit": limit}
+        if filters is not None:
+            query.update(filters)
+        if sorting is not None:
+            query["sorting"] = f"{sorting[0]}:{sorting[1]}"
+        query_string = urllib.parse.urlencode(
+            query={k: v for k, v in query.items() if v is not None and k not in exclude_keys}
+        )
+        if query_string:
+            uri = f"{self.get_multi_uri}/?{query_string}"
+        else:
+            uri = self.get_multi_uri
 
         return [
-            self.get_schema(**item)
-            for item in assert_status_code_and_return_response(
-                self.client.get(f"{self.get_multi_uri}?{query_string}", headers=self.headers)
-            )["data"]
+            self.response_schema(**item)
+            for item in assert_status_code_and_return_response(self.client.get(uri, headers=self.headers))["data"]
         ]
 
-    def post(self, data: BaseModel) -> PostSchema:
-        return self.post_schema(
-            **assert_status_code_and_return_response(
-                self.client.post(f"{self.post_uri}/", json=data.dict(), headers=self.headers)
-            )
+    def post(self, data: BaseModel, status_code: int = 200) -> ResponseSchema | None:
+        response = assert_status_code_and_return_response(
+            self.client.post(f"{self.post_uri}/", json=data.dict(), headers=self.headers), status_code=status_code
         )
+        if status_code == 200:
+            return self.response_schema(**response)
 
-    def update(self, id_: int, data: BaseModel) -> UpdateSchema:
-        return self.update_schema(
+    def update(self, id_: int, data: BaseModel) -> ResponseSchema:
+        return self.response_schema(
             **assert_status_code_and_return_response(
                 self.client.put(
                     f"{self.put_uri}/{id_}",
@@ -108,8 +116,8 @@ class TestClientBase(Generic[GetSchema, PostSchema, UpdateSchema, DeleteSchema])
             )
         )
 
-    def delete(self, id_: int) -> DeleteSchema:
-        return self.delete_schema(
+    def delete(self, id_: int) -> ResponseSchema:
+        return self.response_schema(
             **assert_status_code_and_return_response(
                 self.client.delete(f"{self.delete_uri}/{id_}", headers=self.headers)
             )
