@@ -96,9 +96,5 @@ class Kwik:
         from kwik import logger
 
         logger.info("Kwik App ready")
-        logger.info(
-            f"Kwik App running on http://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}"
-        )
-        logger.info(
-            f"Swagger available at http://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}/docs"
-        )
+        logger.info(f"Kwik App running on http://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}")
+        logger.info(f"Swagger available at http://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}/docs")

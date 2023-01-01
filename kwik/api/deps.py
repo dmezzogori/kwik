@@ -15,9 +15,7 @@ from kwik.models import User
 from kwik.schemas import TokenPayload
 from kwik.typings import ParsedSortingQuery, SortingQuery
 
-reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl=f"{kwik.settings.API_V1_STR}/login/access-token"
-)
+reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{kwik.settings.API_V1_STR}/login/access-token")
 
 db = Depends(get_db_from_request)
 
