@@ -1,6 +1,6 @@
 import kwik
 from kwik import crud, models, schemas
-from kwik.exceptions import NotFound, DuplicatedEntity
+from kwik.exceptions import DuplicatedEntity, NotFound
 from kwik.routers import AuditorRouter
 
 router = AuditorRouter()
@@ -80,11 +80,11 @@ def update_role(role_id: int, role_in: schemas.RoleUpdate) -> models.Role:
 
 
 @router.post("/associate", response_model=schemas.Role)
-def associate_user_to_role(user_role_in: schemas.UserRoleCreate, current_user=kwik.current_user) -> models.Role:
+def associate_user_to_role(user_role_in: schemas.UserRoleCreate) -> models.Role:
     try:
         user = crud.user.get_if_exist(id=user_role_in.user_id)
         role = crud.role.get_if_exist(id=user_role_in.role_id)
-        role = crud.role.associate_user(user_db=user, role_db=role, creator_user=current_user)
+        role = crud.role.associate_user(user_db=user, role_db=role)
         return role
     except NotFound as e:
         raise e.http_exc
