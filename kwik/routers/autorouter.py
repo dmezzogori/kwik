@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import Generic, get_args, NoReturn
+from typing import Generic, NoReturn, get_args
 
 import kwik
 import kwik.exceptions
@@ -10,7 +10,7 @@ import kwik.schemas
 from fastapi.params import Depends
 from kwik.core.enum import PermissionNamesBase
 from kwik.crud import AutoCRUD
-from kwik.typings import ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType
+from kwik.typings import BaseSchemaType, CreateSchemaType, ModelType, UpdateSchemaType
 
 from .auditor import AuditorRouter
 
@@ -152,7 +152,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         if read:
             self.router.get("/{id}", response_model=self.BaseSchemaType, dependencies=self.deps)(self.read)
         if create:
-            self.router.post("/", response_model=self.BaseSchemaType, dependencies=self.deps)(self.create)
+            self.router.post("", response_model=self.BaseSchemaType, dependencies=self.deps)(self.create)
         if update:
             self.router.put("/{id}", response_model=self.BaseSchemaType, dependencies=self.deps)(self.update)
         if delete:
