@@ -1,7 +1,7 @@
 import kwik
 from fastapi import Body, HTTPException
 from fastapi.encoders import jsonable_encoder
-from kwik import crud, models, schemas, PaginatedQuery, has_permission
+from kwik import PaginatedQuery, crud, has_permission, models, schemas
 from kwik.core.enum import PermissionNames
 from kwik.exceptions import DuplicatedEntity, NotFound
 from kwik.routers import AuditorRouter
@@ -25,13 +25,11 @@ def read_users(paginated=PaginatedQuery):
 
 
 @router.post(
-    "/",
+    "",
     response_model=schemas.User,
     dependencies=[kwik.has_permission(PermissionNames.user_management)],
 )
-def create_user(
-    user_in: schemas.UserCreate,
-) -> models.User:
+def create_user(user_in: schemas.UserCreate) -> models.User:
     """
     Create new user.
     """

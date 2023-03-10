@@ -104,7 +104,7 @@ def purge_role_from_user(user_role_in: schemas.UserRoleRemove) -> models.Role:
         raise e.http_exc
 
 
-@router.post("/", response_model=schemas.Role)
+@router.post("", response_model=schemas.Role)
 def create_role(role_in: schemas.RoleCreate) -> models.Role:
     """
     Create new role.

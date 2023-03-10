@@ -1,5 +1,5 @@
 from kwik import crud, models, schemas
-from kwik.exceptions import NotFound, DuplicatedEntity
+from kwik.exceptions import DuplicatedEntity, NotFound
 from kwik.routers import AuditorRouter
 
 router = AuditorRouter()
@@ -14,7 +14,7 @@ def read_permissions(skip: int = 0, limit: int = 100) -> list[models.Permission]
     return permissions
 
 
-@router.post("/", response_model=schemas.PermissionORMSchema)
+@router.post("", response_model=schemas.PermissionORMSchema)
 def create_permission(permission_in: schemas.PermissionCreate) -> models.Permission:
     """
     Create new permission.
@@ -76,7 +76,7 @@ def delete_permission(permission_id: int) -> models.Permission:
         raise e.http_exc
 
 
-@router.delete("/", response_model=schemas.PermissionORMSchema)
+@router.delete("", response_model=schemas.PermissionORMSchema)
 def purge_role_from_permission(permission_role_in: schemas.PermissionRoleRemove) -> models.Permission:
     """
     Remove permission from role

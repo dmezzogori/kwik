@@ -1,16 +1,15 @@
 from typing import Any
 
-from fastapi import APIRouter
-from pydantic.networks import EmailStr
-
 import kwik.crud
+from fastapi import APIRouter
 from kwik import models, schemas
 from kwik.utils import send_test_email
+from pydantic.networks import EmailStr
 
 router = APIRouter()
 
 
-@router.post("/test-email/", response_model=schemas.Msg, status_code=201)
+@router.post("/test-email", response_model=schemas.Msg, status_code=201)
 def test_email(email_to: EmailStr, current_user: models.User = kwik.current_user) -> Any:
     """
     Test emails.
@@ -19,7 +18,7 @@ def test_email(email_to: EmailStr, current_user: models.User = kwik.current_user
     return {"msg": "Test email sent"}
 
 
-@router.post("/test-ws/")
+@router.post("/test-ws")
 async def test_ws(message: str, project_id: int) -> Any:
     """
     Test WS.
@@ -30,7 +29,7 @@ async def test_ws(message: str, project_id: int) -> Any:
     return {"message": f"{message}"}
 
 
-@router.post("/test-db-switcher/")
+@router.post("/test-db-switcher")
 def test_db_switcher() -> Any:
     """
     Test DB Switcher.
