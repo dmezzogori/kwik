@@ -152,7 +152,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         if read:
             self.router.get("/{id}", response_model=self.BaseSchemaType, dependencies=self.deps)(self.read)
         if create:
-            self.router.post("", response_model=self.BaseSchemaType, dependencies=self.deps)(self.create)
+            self.router.post("/", response_model=self.BaseSchemaType, dependencies=self.deps)(self.create)
         if update:
             self.router.put("/{id}", response_model=self.BaseSchemaType, dependencies=self.deps)(self.update)
         if delete:
