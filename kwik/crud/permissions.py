@@ -26,7 +26,7 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionCreate, schem
         role_permission_db = roles_permissions.get_by_permission_id_and_role_id(
             role_id=role_db.id, permission_id=permission_db.id
         )
-        roles_permissions.delete(obj_id=role_permission_db.id)
+        roles_permissions.delete(id=role_permission_db.id)
         return permission_db
 
     def deprecate(self, *, name: str) -> models.Permission:
