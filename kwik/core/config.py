@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import secrets
+from multiprocessing import cpu_count
 from typing import Any, Union
 
 from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, validator
@@ -33,6 +34,7 @@ class Settings(BaseSettings):
     HOTRELOAD = True
     DEBUG = True
     LOG_LEVEL = "INFO"
+    BACKEND_WORKERS: int = cpu_count()
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: Union[str, list[str]]) -> Union[list[str], str]:

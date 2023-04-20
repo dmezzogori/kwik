@@ -2,15 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import kwik
 import uvicorn
 from fastapi import FastAPI
-from starlette.middleware.cors import CORSMiddleware
-
-import kwik
 from kwik import settings
 from kwik.api.endpoints.docs import get_swagger_ui_html
-from kwik.middlewares import RequestContextMiddleware, DBSessionMiddleware
+from kwik.middlewares import DBSessionMiddleware, RequestContextMiddleware
 from kwik.websocket.deps import broadcast
+from starlette.middleware.cors import CORSMiddleware
 
 if TYPE_CHECKING:
     from fastapi import APIRouter
@@ -32,6 +31,11 @@ def run(kwik_app: str | Kwik) -> None:
         kwik_app = kwik_app._app
         reload = False
 
+    workers = 1
+    if settings.APP_ENV == "production":
+        reload = False
+        workers = settings.BACKEND_WORKERS
+
     uvicorn.run(
         kwik_app,
         host=settings.BACKEND_HOST,
@@ -41,6 +45,7 @@ def run(kwik_app: str | Kwik) -> None:
         http="httptools",
         ws="websockets",
         proxy_headers=True,
+        workers=workers,
     )
 
 
