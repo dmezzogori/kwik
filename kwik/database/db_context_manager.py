@@ -3,12 +3,12 @@ from __future__ import annotations
 from contextvars import Token
 from typing import TYPE_CHECKING
 
-from kwik.core.config import Settings
 from kwik import models
+from kwik.core.config import Settings
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker, Query
+from sqlalchemy.orm import Query, Session, sessionmaker
 
-from .db_context_var import db_conn_ctx_var, current_user_ctx_var
+from .db_context_var import current_user_ctx_var, db_conn_ctx_var
 
 if TYPE_CHECKING:
     from .session import KwikSession, KwikQuery
@@ -62,6 +62,8 @@ class DBContextManager:
         self.engine = create_engine(
             url=db_uri or settings.SQLALCHEMY_DATABASE_URI,
             pool_pre_ping=True,
+            pool_recycle=60,
+            max_overflow=0,
             connect_args=connect_args if connect_args else {},
         )
         self.db: KwikSession | Session | None = None
@@ -78,7 +80,7 @@ class DBContextManager:
         class_ = Session
         query_cls = Query
         if self.settings.ENABLE_SOFT_DELETE:
-            from .session import KwikSession, KwikQuery
+            from .session import KwikQuery, KwikSession
 
             class_ = KwikSession
             query_cls = KwikQuery
