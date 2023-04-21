@@ -31,10 +31,46 @@ class Settings(BaseSettings):
     # "http://localhost:8080", "http://local.dockertoolbox.tiangolo.com"]'
     BACKEND_CORS_ORIGINS: list[AnyHttpUrl] = []
     WEBSOCKET_ENABLED = False
-    HOTRELOAD = True
-    DEBUG = True
+    BACKEND_WORKERS: int
+    HOTRELOAD: bool
+    DEBUG: bool
     LOG_LEVEL = "INFO"
-    BACKEND_WORKERS: int = cpu_count()
+
+    @validator("BACKEND_WORKERS", pre=True)
+    def get_number_of_workers(cls, v: int, values: dict[str, Any]) -> int:
+        """
+        Returns the number of workers to use in Uvicorn.
+        If the BACKEND_WORKERS environment variable is set, it will return that number.
+        If the APP_ENV is set to development, it will default to 1.
+        Otherwise, it will return half the number of CPU cores.
+        """
+        if v:
+            return v
+        if values.get("APP_ENV") == "development":
+            return 1
+        return cpu_count() // 2
+
+    @validator("HOTRELOAD", pre=True)
+    def get_hotreload(cls, v: bool | None, values: dict[str, Any]) -> bool:
+        """
+        Returns the hotreload flag.
+        If the APP_ENV is set to something else than development, it will return False, ignoring the value of HOTRELOAD.
+        """
+        if values.get("BACKEND_WORKERS") > 1:
+            return False
+        if values.get("APP_ENV") != "development":
+            return False
+        return v if v is not None else True
+
+    @validator("DEBUG", pre=True)
+    def get_debug(cls, v: bool | None, values: dict[str, Any]) -> bool:
+        """
+        Returns the debug flag.
+        If the APP_ENV is set to something else than development, it will return False, ignoring the value of DEBUG.
+        """
+        if values.get("APP_ENV") != "development":
+            return False
+        return v if v is not None else True
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: Union[str, list[str]]) -> Union[list[str], str]:
@@ -50,6 +86,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "root"
     POSTGRES_DB: str = "db"
+    POSTGRES_MAX_CONNECTIONS: int
     ENABLE_SOFT_DELETE: bool = False
     SQLALCHEMY_DATABASE_URI: PostgresDsn | None = None
 

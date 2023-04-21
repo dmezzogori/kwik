@@ -1,8 +1,7 @@
+import kwik.crud.base
+from kwik.database.db_context_manager import DBContextManager
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
-
-from kwik.database.db_context_manager import DBContextManager
-import kwik.crud.base
 
 
 class DBSessionMiddleware(BaseHTTPMiddleware):

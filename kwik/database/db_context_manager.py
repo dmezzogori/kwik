@@ -1,19 +1,19 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from contextvars import Token
 from typing import TYPE_CHECKING
 
+import kwik
 from kwik import models
 from kwik.core.config import Settings
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Query, Session, sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from .db_context_var import current_user_ctx_var, db_conn_ctx_var
 
 if TYPE_CHECKING:
-    from .session import KwikSession, KwikQuery
-
-from contextlib import contextmanager
+    from .session import KwikSession
 
 
 @contextmanager
@@ -44,6 +44,20 @@ class CurrentUser:
         return user
 
 
+engine = create_engine(
+    url=kwik.settings.SQLALCHEMY_DATABASE_URI,
+    pool_pre_ping=True,
+    pool_size=kwik.settings.POSTGRES_MAX_CONNECTIONS // kwik.settings.BACKEND_WORKERS,
+    max_overflow=0,
+)
+
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+)
+
+
 class DBContextManager:
     """
     DB Session Context Manager.
@@ -52,20 +66,7 @@ class DBContextManager:
     if any exception is raised by the application.
     """
 
-    def __init__(
-        self,
-        *,
-        settings: Settings | None = None,
-        db_uri: str | None = None,
-        connect_args: dict | None = None,
-    ) -> None:
-        self.engine = create_engine(
-            url=db_uri or settings.SQLALCHEMY_DATABASE_URI,
-            pool_pre_ping=True,
-            pool_recycle=60,
-            max_overflow=0,
-            connect_args=connect_args if connect_args else {},
-        )
+    def __init__(self, *, settings: Settings | None = None) -> None:
         self.db: KwikSession | Session | None = None
         self.settings: Settings = settings
         self.token: Token | None = None
@@ -77,21 +78,7 @@ class DBContextManager:
             self.token = token
             return self.db
 
-        class_ = Session
-        query_cls = Query
-        if self.settings.ENABLE_SOFT_DELETE:
-            from .session import KwikQuery, KwikSession
-
-            class_ = KwikSession
-            query_cls = KwikQuery
-
-        self.db = sessionmaker(
-            class_=class_,
-            query_cls=query_cls,
-            autocommit=False,
-            autoflush=False,
-            bind=self.engine,
-        )()
+        self.db = SessionLocal()
 
         self.token = db_conn_ctx_var.set(self.db)
         return self.db
@@ -103,4 +90,4 @@ class DBContextManager:
             self.db.commit()
 
         self.db.close()
-        # db_conn_ctx_var.reset(self.token)
+        db_conn_ctx_var.reset(self.token)

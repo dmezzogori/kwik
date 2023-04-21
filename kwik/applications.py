@@ -25,16 +25,12 @@ def get_running_app() -> FastAPI | None:
 
 def run(kwik_app: str | Kwik) -> None:
     reload = settings.HOTRELOAD
+    workers = settings.BACKEND_WORKERS
     if isinstance(kwik_app, str):
         kwik_app = f"{kwik_app}._app"
     else:
         kwik_app = kwik_app._app
         reload = False
-
-    workers = 1
-    if settings.APP_ENV == "production":
-        reload = False
-        workers = settings.BACKEND_WORKERS
 
     uvicorn.run(
         kwik_app,
