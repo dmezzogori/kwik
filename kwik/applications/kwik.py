@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import kwik
-import uvicorn
 from fastapi import FastAPI
 from kwik import settings
 from kwik.api.endpoints.docs import get_swagger_ui_html
@@ -21,28 +20,6 @@ def set_running_app(app: FastAPI) -> None:
 
 def get_running_app() -> FastAPI | None:
     return kwik._running_app
-
-
-def run(kwik_app: str | Kwik) -> None:
-    reload = settings.HOTRELOAD
-    workers = settings.BACKEND_WORKERS
-    if isinstance(kwik_app, str):
-        kwik_app = f"{kwik_app}._app"
-    else:
-        kwik_app = kwik_app._app
-        reload = False
-
-    uvicorn.run(
-        kwik_app,
-        host=settings.BACKEND_HOST,
-        port=settings.BACKEND_PORT,
-        log_level=settings.LOG_LEVEL.lower(),
-        reload=reload,
-        http="httptools",
-        ws="websockets",
-        proxy_headers=True,
-        workers=workers,
-    )
 
 
 class Kwik:
