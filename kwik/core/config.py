@@ -31,9 +31,9 @@ class Settings(BaseSettings):
     # "http://localhost:8080", "http://local.dockertoolbox.tiangolo.com"]'
     BACKEND_CORS_ORIGINS: list[AnyHttpUrl] = []
     WEBSOCKET_ENABLED = False
-    BACKEND_WORKERS: int
-    HOTRELOAD: bool
-    DEBUG: bool
+    BACKEND_WORKERS: int = 1
+    HOTRELOAD: bool = False
+    DEBUG: bool = False
     LOG_LEVEL = "INFO"
 
     @validator("BACKEND_WORKERS", pre=True)
