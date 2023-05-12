@@ -1,9 +1,4 @@
-import json
-
 from fastapi import WebSocket
-
-import kwik
-from .deps import broadcast
 
 
 async def send(
@@ -11,7 +6,12 @@ async def send(
     data: dict | None = None,
     message: str | None = None,
 ):
-    d = {"data": data or {}, "message": message or ""}
-    t = json.dumps(d)
-    kwik.logger.error(f"Sending: {t}")
-    await websocket.send_text(t)
+    if data is not None and message is not None:
+        raise ValueError("Only one of data or message should be provided")
+
+    if message is not None:
+        await websocket.send_text(message)
+    elif data is not None:
+        await websocket.send_json(data)
+    else:
+        raise ValueError("Either data or message should be provided")
