@@ -3,7 +3,6 @@ from __future__ import annotations
 import inspect
 from typing import Generic, NoReturn, get_args
 
-import kwik
 import kwik.exceptions
 import kwik.models
 import kwik.schemas
@@ -12,6 +11,7 @@ from kwik.core.enum import PermissionNamesBase
 from kwik.crud import AutoCRUD
 from kwik.typings import BaseSchemaType, CreateSchemaType, ModelType, UpdateSchemaType
 
+import kwik
 from .auditor import AuditorRouter
 
 
