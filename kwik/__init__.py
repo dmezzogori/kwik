@@ -1,4 +1,6 @@
-# ATTENZIONE ALL'ORDINE DI IMPORT
+"""
+   isort:skip_file
+"""
 
 from .core.config import Settings
 
