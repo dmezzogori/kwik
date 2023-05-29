@@ -1,3 +1,6 @@
-from .base import KwikException, DuplicatedEntity, Forbidden, NotFound
+from __future__ import annotations
+
+from .base import DuplicatedEntity, Forbidden, KwikException, NotFound
 from .exporters import ExporterLimitExceeded
-from .users import UserInactive, IncorrectCredentials, UserNotFound
+from .handler import kwik_exception_handler
+from .users import IncorrectCredentials, UserInactive, UserNotFound

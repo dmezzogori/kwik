@@ -6,6 +6,7 @@ import kwik
 from fastapi import FastAPI
 from kwik import settings
 from kwik.api.endpoints.docs import get_swagger_ui_html
+from kwik.exceptions import KwikException
 from kwik.middlewares import DBSessionMiddleware, RequestContextMiddleware
 from kwik.websocket.deps import broadcast
 from starlette.middleware.cors import CORSMiddleware
@@ -61,6 +62,8 @@ class Kwik:
             )
 
         self._app.include_router(api_router, prefix=settings.API_V1_STR)
+
+        self._app.exception_handler(KwikException)(kwik.exceptions.handler.kwik_exception_handler)
 
         @self._app.get("/docs", include_in_schema=False)
         async def custom_swagger_ui_html():
