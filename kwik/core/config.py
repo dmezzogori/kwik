@@ -88,7 +88,7 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "db"
     POSTGRES_MAX_CONNECTIONS: int
     ENABLE_SOFT_DELETE: bool = False
-    SQLALCHEMY_DATABASE_URI: PostgresDsn | None = None
+    SQLALCHEMY_DATABASE_URI: PostgresDsn | str | None = None
 
     @validator("SQLALCHEMY_DATABASE_URI", pre=True)
     def assemble_db_connection(cls, v: str | None, values: dict[str, Any]) -> Any:

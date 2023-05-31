@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 
 import kwik.crud
@@ -36,7 +38,7 @@ def test_db_switcher() -> Any:
     """
 
     user_db = kwik.crud.user.get(id=1)
-    with kwik.database.db_context_switcher() as db:
+    with kwik.database.DBContextSwitcher() as db:
         db = db
     kwik.logger.error(kwik.crud.user.db.get_bind())
     kwik.logger.error(db.get_bind())

@@ -1,60 +1,15 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
-from contextvars import Token
+from types import TracebackType
 from typing import TYPE_CHECKING
 
-import kwik
-from kwik import models
-from kwik.core.config import Settings
-from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from kwik.database.context_vars import db_conn_ctx_var
+from kwik.database.session_local import SessionLocal
 
 if TYPE_CHECKING:
-    from .session import KwikSession
+    from contextvars import Token
 
-
-@contextmanager
-def db_context_switcher():
-    from kwik import settings
-
-    prev_db_conn_ctx_var = db_conn_ctx_var.get()
-    with DBContextManager(
-        db_uri=settings.alternate_db.ALTERNATE_SQLALCHEMY_DATABASE_URI,
-        settings=settings.alternate_db,
-    ) as db:
-        yield db
-
-    db_conn_ctx_var.set(prev_db_conn_ctx_var)
-
-
-class DBSession:
-    def __get__(self, obj, objtype=None) -> KwikSession:
-        db = db_conn_ctx_var.get()
-        if db is not None:
-            return db
-        raise Exception("No database connection available")
-
-
-class CurrentUser:
-    def __get__(self, obj, objtype=None) -> models.User | None:
-        user = current_user_ctx_var.get()
-        return user
-
-
-engine = create_engine(
-    url=kwik.settings.SQLALCHEMY_DATABASE_URI,
-    pool_pre_ping=True,
-    pool_size=kwik.settings.POSTGRES_MAX_CONNECTIONS // kwik.settings.BACKEND_WORKERS,
-    max_overflow=0,
-)
-
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine,
-)
+    from sqlalchemy.orm import Session
 
 
 class DBContextManager:
@@ -65,39 +20,67 @@ class DBContextManager:
     automatically rollback a transaction if any exception is raised by the application.
     """
 
-    def __init__(self, *, settings: Settings) -> None:
+    def __init__(self) -> None:
         """
         Initialize the DBContextManager.
 
-        Requires a Settings object instance to be passed in.
         """
-        self.settings: Settings = settings
-        self.db: KwikSession | Session | None = None
-        self.token: Token | None = None
+        self.db: Session | None = None
+        self.token: Token[Session | None] | None = None
 
-    def __enter__(self) -> KwikSession | Session:
+    def __enter__(self) -> Session:
         """
-        Enter the context manager.
+        Enter the context manager, which returns a database session.
+
+        Retrieves a database session from the context variable.
+        If no session is found, a new session is created and stored in the context variable.
 
         Returns a database session.
         """
 
         token = db_conn_ctx_var.get()
-        if token is not None:
+        if token is None:
+            # No session found in the context variable.
+
+            # Create a new session.
+            self.db = SessionLocal()
+            # Store the session in the context variable.
+            self.token = db_conn_ctx_var.set(self.db)
+        else:
+            # Session found in the context variable.
             self.db = token
             self.token = token
-            return self.db
 
-        self.db = SessionLocal()
-
-        self.token = db_conn_ctx_var.set(self.db)
         return self.db
 
-    def __exit__(self, exception_type, exception_value, exception_traceback) -> None:
+    def __exit__(
+        self,
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        exception_traceback: TracebackType | None,
+    ) -> None:
+        """
+        Exit the context manager, handling any exceptions raised by the application.
+
+        If an exception is raised by the application, rollback the transaction.
+        Otherwise, commit the transaction.
+
+        Then, closes the database session and reset the context variable to its previous value.
+        """
+
         if exception_type is not None:
+            # An exception was raised by the application.
+
+            # Rollback the transaction.
             self.db.rollback()
         else:
+            # No exception was raised by the application.
+
+            # Commit the transaction.
             self.db.commit()
 
+        # Close the database session.
         self.db.close()
+
+        # Reset the context variable to its previous value.
         db_conn_ctx_var.reset(self.token)

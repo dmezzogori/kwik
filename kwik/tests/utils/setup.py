@@ -1,17 +1,19 @@
-import os
+from __future__ import annotations
+
 from typing import Callable
 
-import kwik
+from kwik.database import DBContextManager
 from kwik.database.base import Base
 
 
-def init_test_db(db_path: str, init_db: Callable, *args, **kwargs) -> None:
-    # Create a temporary database
-    if os.path.exists(db_path):
-        os.remove(db_path)
-    os.mknod(db_path)
-
+def init_test_db(init_db: Callable, *args, **kwargs) -> None:
     # Initialize the database
-    with kwik.utils.tests.test_db(db_path=db_path, setup=False) as db:
+    with DBContextManager() as db:
         Base.metadata.create_all(bind=db.get_bind())
         init_db(*args, **kwargs)
+
+
+def drop_test_db() -> None:
+    # Drop the database
+    with DBContextManager() as db:
+        Base.metadata.drop_all(bind=db.get_bind())
