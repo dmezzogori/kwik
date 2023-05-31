@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 from typing import Callable
 
@@ -6,7 +8,7 @@ from fastapi import APIRouter, Request, Response
 from fastapi.routing import APIRoute
 from jose import jwt
 from kwik import crud, schemas
-from kwik.api.deps import get_current_user, current_token, get_token
+from kwik.api.deps import current_token, get_current_user, get_token
 from kwik.core import security
 from kwik.middlewares import get_request_id
 
@@ -32,7 +34,7 @@ class AuditedRoute(APIRoute):
         original_route_handler = super().get_route_handler()
 
         async def custom_route_handler(request: Request) -> Response:
-            from kwik.database.db_context_var import current_user_ctx_var
+            from kwik.database.context_vars import current_user_ctx_var
 
             # start the timer
             start = time.time()

@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from contextlib import contextmanager
 from typing import Generator
 
 import kwik.crud
+from kwik.database.context_vars.db_conn import db_conn_ctx_var
 from kwik.database.db_context_manager import DBContextManager
-from kwik.database.db_context_var import db_conn_ctx_var
 
 
 @contextmanager
@@ -17,7 +19,7 @@ def test_db(*, db_path: str, setup=True) -> Generator:
     ) as db_cxt:
         if setup:
             superuser = kwik.crud.user.get_by_email(email=kwik.settings.FIRST_SUPERUSER)
-            from kwik.database.db_context_var import current_user_ctx_var
+            from kwik.database.context_vars import current_user_ctx_var
 
             current_user_ctx_var.set(superuser)
 

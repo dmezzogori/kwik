@@ -7,10 +7,9 @@ from typing import TYPE_CHECKING
 import kwik
 from kwik import models
 from kwik.core.config import Settings
+from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
-
-from .db_context_var import current_user_ctx_var, db_conn_ctx_var
 
 if TYPE_CHECKING:
     from .session import KwikSession
@@ -61,17 +60,28 @@ SessionLocal = sessionmaker(
 class DBContextManager:
     """
     DB Session Context Manager.
-    Correctly initialize the session by overriding the Session and Query class.
-    Implemented as a python context manager, automatically rollback a transaction
-    if any exception is raised by the application.
+
+    Implemented as a context manager,
+    automatically rollback a transaction if any exception is raised by the application.
     """
 
-    def __init__(self, *, settings: Settings | None = None) -> None:
-        self.db: KwikSession | Session | None = None
+    def __init__(self, *, settings: Settings) -> None:
+        """
+        Initialize the DBContextManager.
+
+        Requires a Settings object instance to be passed in.
+        """
         self.settings: Settings = settings
+        self.db: KwikSession | Session | None = None
         self.token: Token | None = None
 
     def __enter__(self) -> KwikSession | Session:
+        """
+        Enter the context manager.
+
+        Returns a database session.
+        """
+
         token = db_conn_ctx_var.get()
         if token is not None:
             self.db = token
