@@ -23,8 +23,8 @@ class DBContextManager:
     def __init__(self) -> None:
         """
         Initialize the DBContextManager.
-
         """
+
         self.db: Session | None = None
         self.token: Token[Session | None] | None = None
 
