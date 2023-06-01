@@ -38,8 +38,8 @@ class DBContextManager:
         Returns a database session.
         """
 
-        token = db_conn_ctx_var.get()
-        if token is None:
+        db = db_conn_ctx_var.get()
+        if db is None:
             # No session found in the context variable.
 
             # Create a new session.
@@ -48,8 +48,7 @@ class DBContextManager:
             self.token = db_conn_ctx_var.set(self.db)
         else:
             # Session found in the context variable.
-            self.db = token
-            self.token = token
+            self.db = db
 
         return self.db
 
@@ -83,4 +82,4 @@ class DBContextManager:
         self.db.close()
 
         # Reset the context variable to its previous value.
-        db_conn_ctx_var.reset(self.token)
+        db_conn_ctx_var.set(None)

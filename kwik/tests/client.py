@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import urllib.parse
-from typing import TYPE_CHECKING, Any, Mapping, TypeVar, Generic, get_args, Literal
+from typing import TYPE_CHECKING, Any, Generic, Literal, Mapping, TypeVar, get_args
 
+from fastapi.encoders import jsonable_encoder
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
@@ -16,6 +17,7 @@ ResponseSchema = TypeVar("ResponseSchema", bound=BaseModel)
 def assert_status_code_and_return_response(
     response: Response, status_code: int = 200
 ) -> Mapping[str, Any] | list[Mapping[str, Any]]:
+    print(response.json())
     assert response.status_code == status_code
     return response.json()
 
@@ -72,7 +74,6 @@ class TestClientBase(Generic[ResponseSchema]):
         skip: int | None = None,
         limit: int | None = None,
     ) -> list[ResponseSchema]:
-
         exclude_keys = {
             "creation_time",
             "last_modification_time",
@@ -98,9 +99,10 @@ class TestClientBase(Generic[ResponseSchema]):
             for item in assert_status_code_and_return_response(self.client.get(uri, headers=self.headers))["data"]
         ]
 
-    def post(self, data: BaseModel, status_code: int = 200) -> ResponseSchema | None:
+    def post(self, data: BaseModel, status_code: int = 200, post_uri: str | None = None) -> ResponseSchema | None:
         response = assert_status_code_and_return_response(
-            self.client.post(f"{self.post_uri}/", json=data.dict(), headers=self.headers), status_code=status_code
+            self.client.post(f"{post_uri or self.post_uri}", json=jsonable_encoder(data), headers=self.headers),
+            status_code=status_code,
         )
         if status_code == 200:
             return self.response_schema(**response)
