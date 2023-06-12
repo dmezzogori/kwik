@@ -4,11 +4,12 @@ import time
 from typing import Callable
 
 import kwik
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.routing import APIRoute
 from jose import jwt
 from kwik import crud, schemas
-from kwik.api.deps import current_token, get_current_user, get_token
+from kwik.api.deps.token import get_token
+from kwik.api.deps.users import get_current_user
 from kwik.core import security
 from kwik.middlewares import get_request_id
 
@@ -96,5 +97,5 @@ class AuditedRoute(APIRoute):
 
 class AuditorRouter(APIRouter):
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("dependencies", []).append(current_token)
+        kwargs.setdefault("dependencies", []).append(Depends(get_token))
         super().__init__(*args, route_class=AuditedRoute, **kwargs)

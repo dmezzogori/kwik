@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from kwik.schemas.mixins.orm import ORMMixin
 from pydantic import BaseModel
 
@@ -15,13 +17,4 @@ class PermissionCreate(_BaseSchema):
 
 
 class PermissionUpdate(_BaseSchema):
-    pass
-
-
-class PermissionRoleCreate(BaseModel):
-    permission_id: int
-    role_id: int
-
-
-class PermissionRoleRemove(PermissionRoleCreate):
     pass

@@ -1,98 +1,100 @@
-from fastapi import Body, Depends, HTTPException, APIRouter
-from fastapi.security import OAuth2PasswordRequestForm
+from __future__ import annotations
 
-import kwik
-from kwik import crud, models, schemas
-from kwik.api.deps import reusable_oauth2
-from kwik.core.enum import PermissionNames
-from kwik.core.security import decode_token, create_token
-from kwik.exceptions import IncorrectCredentials, UserInactive, UserNotFound, NotFound
-from kwik.schemas.login import RecoverPassword
-from kwik.utils import (
-    generate_password_reset_token,
-    send_reset_password_email,
-    verify_password_reset_token,
-)
+import kwik.api.deps
+import kwik.core.enum
+import kwik.core.security
+import kwik.crud
+import kwik.models
+import kwik.schemas
+import kwik.typings
+import kwik.utils
+from fastapi import APIRouter, Body, Depends
+from fastapi.security import OAuth2PasswordRequestForm
+from kwik.exceptions.base import InvalidToken
 
 router = APIRouter()
 
 
-@router.post("/access-token", response_model=schemas.Token)
-def login_access_token(form_data: OAuth2PasswordRequestForm = Depends()) -> dict:
+@router.post("/access-token", response_model=kwik.typings.Token)
+def login_access_token(form_data: OAuth2PasswordRequestForm = Depends()) -> kwik.typings.Token:
     """
     OAuth2 compatible token login, get an access token for future requests
+
+    Raises:
+        IncorrectCredentials: If the provided credentials are incorrect
     """
-    try:
-        user = crud.user.authenticate(
-            email=form_data.username, password=form_data.password
-        )
-        return create_token(user_id=user.id)
-    except (IncorrectCredentials, UserInactive) as e:
-        raise e.http_exc
+
+    user = kwik.crud.user.authenticate(email=form_data.username, password=form_data.password)
+    return kwik.core.security.create_token(user_id=user.id)
+
+
+@router.post("/test-token", response_model=kwik.schemas.UserORMSchema)
+def test_token(current_user: kwik.api.deps.current_user) -> kwik.models.User:
+    """
+    Test access token
+    """
+
+    return current_user
 
 
 @router.post(
     "/impersonate",
-    response_model=schemas.Token,
-    dependencies=[kwik.has_permission(PermissionNames.impersonification)],
+    response_model=kwik.typings.Token,
+    dependencies=(kwik.api.deps.has_permission(kwik.core.enum.Permissions.impersonification),),
 )
-def impersonate(user_id: int, current_user: models.User = kwik.current_user):
-    try:
-        user = crud.user.get_if_exist(id=user_id)
-        return create_token(user_id=user.id, impersonator_user_id=current_user.id)
-    except NotFound as e:
-        raise e.http_exc
+def impersonate(user_id: int, current_user: kwik.api.deps.current_user):
+    """
+    Impersonate a user.
+
+    Permissions:
+        * `impersonification`
+
+    Raises:
+        NotFound: If the provided user does not exist
+    """
+
+    # Retrieve the user to impersonate
+    user = kwik.crud.user.get_if_exist(id=user_id)
+
+    return kwik.core.security.create_token(user_id=user.id, impersonator_user_id=current_user.id)
 
 
 @router.post("/is_impersonating", response_model=bool)
-def is_impersonating(token: str = Depends(reusable_oauth2)) -> bool:
-    token_data = decode_token(token)
+def is_impersonating(token: str = Depends(kwik.api.deps.token.reusable_oauth2)) -> bool:
+    """
+    Check if the current token is impersonating another user
+
+    Raises:
+        InvalidToken: If the token is invalid
+    """
+
+    token_data = kwik.core.security.decode_token(token)
     return token_data.kwik_impersonate != ""
 
 
-@router.post("/stop_impersonating", response_model=schemas.Token)
-def stop_impersonating(token: str = Depends(reusable_oauth2)):
-    token_data = decode_token(token)
+@router.post("/stop_impersonating", response_model=kwik.typings.Token)
+def stop_impersonating(token: str = Depends(kwik.api.deps.token.reusable_oauth2)):
+    """
+    Stop impersonating and return the original token
+
+    Raises:
+        InvalidToken: If the token is invalid
+    """
+
+    token_data = kwik.core.security.decode_token(token)
     original_user_id = int(token_data.kwik_impersonate)
-    return create_token(user_id=original_user_id)
+    return kwik.core.security.create_token(user_id=original_user_id)
 
 
-@router.post("/test-token", response_model=schemas.User)
-def test_token(current_user: models.User = kwik.current_user) -> models.User:
-    """
-    Test access token
-    """
-    return current_user
-
-
-@router.post("/password-recovery", response_model=schemas.Msg)
-def recover_password(obj_in: RecoverPassword) -> dict:
-    """
-    Password Recovery
-    """
-    email = obj_in.email
-    user = crud.user.get_by_email(email=email)
-
-    if not user:
-        raise UserNotFound().http_exc
-    password_reset_token = generate_password_reset_token(email=email)
-    send_reset_password_email(
-        email_to=user.email, email=email, token=password_reset_token
-    )
-    return {"msg": "Password recovery email sent"}
-
-
-@router.post("/reset-password", response_model=schemas.Msg)
+@router.post("/reset-password", response_model=kwik.schemas.Msg)
 def reset_password(token: str = Body(...), password: str = Body(...)) -> dict:
     """
     Reset password
     """
-    email = verify_password_reset_token(token)
-    if not email:
-        raise HTTPException(status_code=400, detail="Invalid token")
 
-    try:
-        crud.user.reset_password(email=email, password=password)
-        return {"msg": "Password updated successfully"}
-    except (UserNotFound, UserInactive) as e:
-        raise e.http_exc
+    email = kwik.utils.verify_password_reset_token(token)
+    if not email:
+        raise InvalidToken
+
+    kwik.crud.user.reset_password(email=email, password=password)
+    return {"msg": "Password updated successfully"}

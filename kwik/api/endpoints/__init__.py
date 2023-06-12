@@ -1,6 +1,3 @@
-from . import login
-from . import permissions
-from . import roles
-from . import users
-from . import utils
-from . import tests
+from __future__ import annotations
+
+from . import login, permissions, roles, users

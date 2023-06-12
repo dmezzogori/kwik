@@ -1,2 +1,4 @@
-from .kwik import Kwik, get_running_app, set_running_app
+from __future__ import annotations
+
+from .kwik import Kwik
 from .run import run

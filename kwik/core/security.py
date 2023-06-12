@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 from datetime import datetime, timedelta
 from typing import Any
 
 import kwik
+import kwik.typings
 from jose import jwt
 from kwik import schemas
-from kwik.exceptions import Forbidden
+from kwik.exceptions.base import InvalidToken
 from passlib.context import CryptContext
 from pydantic import ValidationError
 
@@ -22,9 +25,7 @@ def create_access_token(
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
-            minutes=kwik.settings.ACCESS_TOKEN_EXPIRE_MINUTES
-        )
+        expire = datetime.utcnow() + timedelta(minutes=kwik.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode = {"exp": expire, "sub": str(subject), "kwik_impersonate": ""}
     if impersonator_user_id is not None:
         to_encode["kwik_impersonate"] = str(impersonator_user_id)
@@ -33,10 +34,7 @@ def create_access_token(
     return encoded_jwt
 
 
-def create_token(
-    user_id: int,
-    impersonator_user_id: int | None = None,
-) -> dict:
+def create_token(user_id: int, impersonator_user_id: int | None = None) -> kwik.typings.Token:
     access_token_expires = timedelta(minutes=kwik.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return {
         "access_token": create_access_token(
@@ -54,7 +52,7 @@ def decode_token(token: str) -> schemas.TokenPayload:
         token_data = schemas.TokenPayload(**payload)
         return token_data
     except (jwt.JWTError, ValidationError):
-        raise Forbidden()
+        raise InvalidToken
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

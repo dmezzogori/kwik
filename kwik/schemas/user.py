@@ -1,49 +1,40 @@
+from __future__ import annotations
+
 from pydantic import BaseModel, EmailStr
 
+from .mixins import ORMMixin
 from .permission import PermissionORMSchema
 from .role import Role
 
 
-class UserBase(BaseModel):
-    email: EmailStr | None = None
+class _BaseSchema(BaseModel):
     is_active: bool | None = True
     is_superuser: bool | None = True
 
 
-class UserCreate(UserBase):
+class UserCreateSchema(_BaseSchema):
     name: str
     surname: str
     email: EmailStr
     password: str
 
 
-class UserUpdate(UserBase):
+class UserUpdateSchema(BaseModel):
     name: str | None = None
     surname: str | None = None
     email: EmailStr | None = None
 
 
-class UserChangePassword(BaseModel):
+class UserChangePasswordSchema(BaseModel):
     old_password: str
     new_password: str
 
 
-class UserInDBBase(UserBase):
-    id: int | None = None
-
-    class Config:
-        orm_mode = True
-
-
-class User(UserInDBBase):
+class UserORMSchema(ORMMixin):
     name: str | None = None
     surname: str | None = None
 
 
-class UserInDB(UserInDBBase):
-    hashed_password: str
-
-
-class UserWithPermissionsAndRoles(User):
+class UserORMExtendedSchema(UserORMSchema):
     roles: list[Role]
     permissions: list[PermissionORMSchema]

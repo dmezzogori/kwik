@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 from typing import Generic, NoReturn, get_args
 
+import kwik
 import kwik.exceptions
 import kwik.models
 import kwik.schemas
@@ -11,7 +12,6 @@ from kwik.core.enum import PermissionNamesBase
 from kwik.crud import AutoCRUD
 from kwik.typings import BaseSchemaType, CreateSchemaType, ModelType, UpdateSchemaType
 
-import kwik
 from .auditor import AuditorRouter
 
 
@@ -92,9 +92,9 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
 
     def read_multi(
         self,
-        filters: kwik.typings.FilterQuery = kwik.FilterQuery,
-        sorting: kwik.typings.ParsedSortingQuery = kwik.SortingQuery,
-        paginated: kwik.typings.PaginatedQuery = kwik.PaginatedQuery,
+        sorting: kwik.SortingQuery,
+        paginated: kwik.PaginatedQuery,
+        filters: kwik.FilterQuery,
     ) -> kwik.schemas.Paginated[BaseSchemaType]:
         """
         Retrieve many {name} items.
@@ -156,4 +156,4 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         if update:
             self.router.put("/{id}", response_model=self.BaseSchemaType, dependencies=self.deps)(self.update)
         if delete:
-            self.router.delete("/{id}", dependencies=self.deps)(self.delete)
+            self.router.delete("/{id}", response_model=None, dependencies=self.deps)(self.delete)

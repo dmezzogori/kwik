@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from fastapi import HTTPException, status
 
 
@@ -27,3 +29,8 @@ class Forbidden(KwikException):
 class NotFound(KwikException):
     def __init__(self, detail="Entity not found"):
         super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
+
+
+class InvalidToken(KwikException):
+    def __init__(self, detail="Invalid token"):
+        super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)

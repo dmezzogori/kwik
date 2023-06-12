@@ -1,16 +1,17 @@
+from __future__ import annotations
+
 from typing import Any, NoReturn
 
 from fastapi import HTTPException
+from kwik import models, schemas
+from kwik.core.security import get_password_hash, verify_password
+from kwik.exceptions import Forbidden, IncorrectCredentials, UserInactive, UserNotFound
 from starlette import status
 
-from kwik import models, schemas
-from kwik.core.enum import PermissionNamesBase
-from kwik.core.security import get_password_hash, verify_password
-from kwik.exceptions import Forbidden, UserInactive, IncorrectCredentials, UserNotFound
 from . import auto_crud
 
 
-class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreate, schemas.UserUpdate]):
+class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, schemas.UserUpdateSchema]):
     def get_by_email(self, *, email: str) -> models.User | None:
         return self.db.query(models.User).filter(models.User.email == email).first()
 
@@ -18,7 +19,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreate, schemas.U
         return self.db.query(models.User).filter(models.User.name == name).first()
 
     # noinspection PyMethodOverriding
-    def create(self, *, obj_in: schemas.UserCreate) -> models.User:
+    def create(self, *, obj_in: schemas.UserCreateSchema) -> models.User:
         db_obj = models.User(
             name=obj_in.name,
             surname=obj_in.surname,
@@ -32,14 +33,14 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreate, schemas.U
         self.db.refresh(db_obj)
         return db_obj
 
-    def create_if_not_exist(self, *, filters: dict, obj_in: schemas.UserCreate, **kwargs) -> models.User:
+    def create_if_not_exist(self, *, filters: dict, obj_in: schemas.UserCreateSchema, **kwargs) -> models.User:
         obj_db = self.db.query(models.User).filter_by(**filters).one_or_none()
         if obj_db is None:
             obj_db = self.create(obj_in=obj_in)
         return obj_db
 
     # noinspection PyMethodOverriding
-    def update(self, *, db_obj: models.User, obj_in: schemas.UserUpdate | dict[str, Any]) -> models.User:
+    def update(self, *, db_obj: models.User, obj_in: schemas.UserUpdateSchema | dict[str, Any]) -> models.User:
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
@@ -50,7 +51,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreate, schemas.U
             update_data["hashed_password"] = hashed_password
         return super().update(db_obj=db_obj, obj_in=update_data)
 
-    def change_password(self, *, user_id: int, obj_in: schemas.UserChangePassword) -> models.User:
+    def change_password(self, *, user_id: int, obj_in: schemas.UserChangePasswordSchema) -> models.User:
         user_db = self.get(id=user_id)
         if not user_db:
             raise HTTPException(
@@ -62,11 +63,10 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreate, schemas.U
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="The provided password is wrong",
             )
-        else:
-            hashed_password = get_password_hash(obj_in.new_password)
-            user_db.hashed_password = hashed_password
-            self.db.flush()
-            return user_db
+
+        hashed_password = get_password_hash(obj_in.new_password)
+        user_db.hashed_password = hashed_password
+        return user_db
 
     def reset_password(self, *, email: str, password: str) -> models.User | NoReturn:
         user_db = self.get_by_email(email=email)
@@ -81,10 +81,21 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreate, schemas.U
         self.db.flush()
         return user
 
-    def authenticate(self, *, email: str, password: str) -> models.User | NoReturn:
+    def authenticate(self, *, email: str, password: str) -> models.User:
+        """
+        Authenticate a user with email and password
+
+        Raises:
+            IncorrectCredentials: If the user does not exist or the password is wrong
+        """
+
+        # Retrieve the user from the database
         user_db = self.get_by_email(email=email)
+
+        # Check if the user exists and the password is correct
         if user_db is None or not verify_password(password, user_db.hashed_password):
             raise IncorrectCredentials
+
         return user_db
 
     @staticmethod
@@ -97,19 +108,26 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreate, schemas.U
         user_db = self.get_if_exist(id=user_id)
         return user_db.is_superuser
 
-    def has_permissions(self, *, user_id: int, permissions: PermissionNamesBase) -> bool:
+    def has_permissions(self, *, permissions: list[str]) -> bool:
+        """
+        Check if the user has the required permissions
+
+        Raises:
+            Forbidden: If the user does not have the required permissions
+        """
         r = (
             self.db.query(models.Permission)
             .join(models.RolePermission, models.Role, models.UserRole)
             .join(models.User, models.User.id == models.UserRole.user_id)
             .filter(
-                models.Permission.name.in_([p.value for p in permissions]),
-                models.User.id == user_id,
+                models.Permission.name.in_(permissions),
+                models.User.id == self.user.id,
             )
             .count()
         )
         if r == 0:
-            raise Forbidden()
+            raise Forbidden
+
         return True
 
 

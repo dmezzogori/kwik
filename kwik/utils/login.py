@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime, timedelta
 
 import kwik
@@ -18,10 +20,5 @@ def generate_password_reset_token(email: str) -> str:
 
 
 def verify_password_reset_token(token: str) -> str | None:
-    try:
-        decoded_token = jwt.decode(
-            token, kwik.settings.SECRET_KEY, algorithms=["HS256"]
-        )
-        return decoded_token["sub"]
-    except jwt.JWTError:
-        return None
+    decoded_token = jwt.decode(token, kwik.settings.SECRET_KEY, algorithms=["HS256"])
+    return decoded_token.get("sub", None)
