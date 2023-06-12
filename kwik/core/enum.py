@@ -10,10 +10,10 @@ class PermissionNamesBase(StrEnum):
 class Permissions(StrEnum):
     impersonification = "impersonification"
 
-    user_management_create = "user_management_create"
-    user_management_read = "user_management_read"
-    user_management_update = "user_management_update"
-    user_management_delete = "user_management_delete"
+    users_management_create = "users_management_create"
+    users_management_read = "users_management_read"
+    users_management_update = "users_management_update"
+    users_management_delete = "users_management_delete"
 
     permissions_management_create = "permissions_management_create"
     permissions_management_read = "permissions_management_read"

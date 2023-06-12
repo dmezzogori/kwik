@@ -16,7 +16,7 @@ router = AuditorRouter()
 @router.get(
     "/",
     response_model=kwik.schemas.Paginated[kwik.schemas.UserORMSchema],
-    dependencies=[kwik.api.deps.has_permission(Permissions.user_management_read)],
+    dependencies=[kwik.api.deps.has_permission(Permissions.users_management_read)],
 )
 def read_users(paginated: kwik.api.deps.PaginatedQuery) -> kwik.typings.PaginatedResponse[kwik.models.User]:
     """
@@ -25,6 +25,15 @@ def read_users(paginated: kwik.api.deps.PaginatedQuery) -> kwik.typings.Paginate
 
     total, data = kwik.crud.user.get_multi(**paginated)
     return kwik.typings.PaginatedResponse(data=data, total=total)
+
+
+@router.get("/me", response_model=kwik.schemas.UserORMExtendedSchema)
+def read_user_me(user: kwik.api.deps.current_user) -> kwik.models.User:
+    """
+    Get current user.
+    """
+
+    return user
 
 
 @router.get(
@@ -41,16 +50,7 @@ def read_user_by_id(
     """
 
     if user_id != user.id:
-        kwik.crud.user.has_permissions(permissions=Permissions.user_management_read)
-
-    return user
-
-
-@router.get("/me", response_model=kwik.schemas.UserORMExtendedSchema)
-def read_user_me(user: kwik.api.deps.current_user) -> kwik.models.User:
-    """
-    Get current user.
-    """
+        kwik.crud.user.has_permissions(permissions=Permissions.users_management_read)
 
     return user
 
@@ -58,7 +58,7 @@ def read_user_me(user: kwik.api.deps.current_user) -> kwik.models.User:
 @router.post(
     "",
     response_model=kwik.schemas.UserORMSchema,
-    dependencies=[kwik.api.deps.has_permission(Permissions.user_management_create)],
+    dependencies=[kwik.api.deps.has_permission(Permissions.users_management_create)],
 )
 def create_user(user_in: kwik.schemas.UserCreateSchema) -> kwik.models.User:
     """
@@ -92,7 +92,7 @@ def update_myself(
 @router.put(
     "/{user_id}",
     response_model=kwik.schemas.UserORMSchema,
-    dependencies=[kwik.api.deps.has_permission(Permissions.user_management_update)],
+    dependencies=[kwik.api.deps.has_permission(Permissions.users_management_update)],
 )
 def update_user(
     user_id: int,
@@ -109,7 +109,7 @@ def update_user(
 @router.put(
     "/{user_id}/update_password",
     response_model=kwik.schemas.UserORMSchema,
-    dependencies=[kwik.api.deps.has_permission(Permissions.user_management_update)],
+    dependencies=[kwik.api.deps.has_permission(Permissions.users_management_update)],
 )
 def update_password(
     user_id: int,
@@ -122,6 +122,6 @@ def update_password(
     """
 
     if user_id != user.id:
-        kwik.crud.user.has_permissions(permissions=Permissions.user_management_update)
+        kwik.crud.user.has_permissions(permissions=Permissions.users_management_update)
 
     return kwik.crud.user.change_password(user_id=user_id, obj_in=obj_in)

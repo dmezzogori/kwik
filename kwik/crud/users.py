@@ -108,7 +108,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         user_db = self.get_if_exist(id=user_id)
         return user_db.is_superuser
 
-    def has_permissions(self, *, permissions: list[str]) -> bool:
+    def has_permissions(self, *, user_id: int, permissions: list[str]) -> bool:
         """
         Check if the user has the required permissions
 
@@ -121,7 +121,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
             .join(models.User, models.User.id == models.UserRole.user_id)
             .filter(
                 models.Permission.name.in_(permissions),
-                models.User.id == self.user.id,
+                models.User.id == user_id,
             )
             .count()
         )

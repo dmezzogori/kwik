@@ -31,8 +31,9 @@ class UserChangePasswordSchema(BaseModel):
 
 
 class UserORMSchema(ORMMixin):
-    name: str | None = None
-    surname: str | None = None
+    name: str
+    surname: str
+    email: EmailStr
 
 
 class UserORMExtendedSchema(UserORMSchema):
