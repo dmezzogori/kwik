@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import kwik.crud
 from fastapi import Depends
+from kwik.exceptions import Forbidden
 
 
 def has_permission(*permissions: str) -> Depends:
@@ -14,6 +15,7 @@ def has_permission(*permissions: str) -> Depends:
     """
 
     def check_permissions(current_user: kwik.api.deps.current_user) -> None:
-        kwik.crud.user.has_permissions(user_id=current_user.id, permissions=permissions)
+        if not kwik.crud.user.has_permissions(user_id=current_user.id, permissions=permissions):
+            raise Forbidden
 
     return Depends(check_permissions)

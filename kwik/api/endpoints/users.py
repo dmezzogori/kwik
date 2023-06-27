@@ -6,7 +6,7 @@ import kwik.models
 import kwik.schemas
 import kwik.typings
 from kwik.core.enum import Permissions
-from kwik.exceptions import DuplicatedEntity
+from kwik.exceptions import DuplicatedEntity, Forbidden
 from kwik.routers import AuditorRouter
 from kwik.utils import send_new_account_email
 
@@ -50,7 +50,8 @@ def read_user_by_id(
     """
 
     if user_id != user.id:
-        kwik.crud.user.has_permissions(permissions=Permissions.users_management_read)
+        if not kwik.crud.user.has_permissions(user_id=user.id, permissions=(Permissions.users_management_read,)):
+            raise Forbidden
 
     return user
 
@@ -122,6 +123,7 @@ def update_password(
     """
 
     if user_id != user.id:
-        kwik.crud.user.has_permissions(permissions=Permissions.users_management_update)
+        if not kwik.crud.user.has_permissions(user_id=user.id, permissions=(Permissions.users_management_update,)):
+            raise Forbidden
 
     return kwik.crud.user.change_password(user_id=user_id, obj_in=obj_in)

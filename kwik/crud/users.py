@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, NoReturn
+from typing import Any, NoReturn, Sequence
 
 from fastapi import HTTPException
 from kwik import models, schemas
 from kwik.core.security import get_password_hash, verify_password
-from kwik.exceptions import Forbidden, IncorrectCredentials, UserInactive, UserNotFound
+from kwik.exceptions import IncorrectCredentials, UserInactive, UserNotFound
 from starlette import status
 
 from . import auto_crud
@@ -108,13 +108,11 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         user_db = self.get_if_exist(id=user_id)
         return user_db.is_superuser
 
-    def has_permissions(self, *, user_id: int, permissions: list[str]) -> bool:
+    def has_permissions(self, *, user_id: int, permissions: Sequence[str]) -> bool:
         """
-        Check if the user has the required permissions
+        Check if the user has all the permissions provided.
+        """
 
-        Raises:
-            Forbidden: If the user does not have the required permissions
-        """
         r = (
             self.db.query(models.Permission)
             .join(models.RolePermission, models.Role, models.UserRole)
@@ -123,12 +121,27 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
                 models.Permission.name.in_(permissions),
                 models.User.id == user_id,
             )
-            .count()
+            .distinct()
         )
-        if r == 0:
-            raise Forbidden
+        return r.count() == len(permissions)
 
-        return True
+    def has_roles(self, *, user_id: int, roles: Sequence[str]) -> bool:
+        """
+        Check if the user has all the roles provided.
+        """
+
+        r = (
+            self.db.query(models.Role)
+            .join(models.UserRole, models.Role.id == models.UserRole.role_id)
+            .join(models.User, models.User.id == models.UserRole.user_id)
+            .filter(
+                models.Role.name.in_(roles),
+                models.User.id == user_id,
+            )
+            .distinct()
+        )
+
+        return r.count() == len(roles)
 
 
 user = AutoCRUDUser()
