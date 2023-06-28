@@ -1,17 +1,23 @@
+from __future__ import annotations
+
 from typing import Any, NoReturn
 
 from fastapi.encoders import jsonable_encoder
 from kwik import settings
-from kwik.database.session import KwikSession, _to_be_audited
+from kwik.database.session import _to_be_audited
 from kwik.exceptions import DuplicatedEntity, NotFound
 from kwik.middlewares import get_request_id
-from kwik.models import User
 from kwik.schemas import LogCreateSchema
-from kwik.typings import ModelType, CreateSchemaType, UpdateSchemaType
-from kwik.typings import ParsedSortingQuery, PaginatedCRUDResult
+from kwik.typings import (
+    CreateSchemaType,
+    ModelType,
+    PaginatedCRUDResult,
+    ParsedSortingQuery,
+    UpdateSchemaType,
+)
 from kwik.utils import sort_query
 
-from .base import CRUDCreateBase, CRUDReadBase, CRUDUpdateBase, CRUDDeleteBase
+from .base import CRUDCreateBase, CRUDDeleteBase, CRUDReadBase, CRUDUpdateBase
 from .logs import logs
 
 
@@ -83,7 +89,6 @@ class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
         raise_on_error: bool = False,
         **kwargs: Any,
     ) -> ModelType:
-
         obj_db: ModelType | None = self.db.query(self.model).filter_by(**filters).one_or_none()
         if obj_db is None:
             obj_db: ModelType = self.create(obj_in=obj_in, **kwargs)
@@ -94,7 +99,6 @@ class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
 
 class AutoCRUDUpdate(CRUDUpdateBase[ModelType, UpdateSchemaType]):
     def update(self, *, db_obj: ModelType, obj_in: UpdateSchemaType | dict[str, Any]) -> ModelType:
-
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
