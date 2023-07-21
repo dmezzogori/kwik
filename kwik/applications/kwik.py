@@ -50,7 +50,8 @@ class Kwik:
             debug=settings.DEBUG,
             on_startup=[broadcast.connect] if settings.WEBSOCKET_ENABLED else None,
             on_shutdown=[broadcast.disconnect] if settings.WEBSOCKET_ENABLED else None,
-            docs_url=None,  # disable default docs
+            docs_url=None,  # disable default docs,
+            redirect_slashes=False,
         )
 
         app = self.set_middlewares(app=app)
