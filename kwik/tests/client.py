@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import urllib.parse
-from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 from fastapi.encoders import jsonable_encoder
 from fastapi.testclient import TestClient
@@ -42,7 +43,7 @@ class TestClientBase:
 
     @property
     def post_uri(self) -> str:
-        return self.BASE_URI
+        return f"{self.BASE_URI}/"
 
     @property
     def put_uri(self) -> str:
@@ -93,6 +94,9 @@ class TestClientBase:
         return assert_status_code_and_return_response(self.client.get(uri, headers=self.headers))
 
     def post(self, data: BaseModel, status_code: int = 200, post_uri: str | None = None) -> EndpointReturn:
+        if post_uri is None:
+            post_uri = self.post_uri
+
         return assert_status_code_and_return_response(
             self.client.post(f"{post_uri or self.post_uri}", json=jsonable_encoder(data), headers=self.headers),
             status_code=status_code,
