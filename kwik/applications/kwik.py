@@ -50,7 +50,6 @@ class Kwik:
             debug=settings.DEBUG,
             on_startup=[broadcast.connect] if settings.WEBSOCKET_ENABLED else None,
             on_shutdown=[broadcast.disconnect] if settings.WEBSOCKET_ENABLED else None,
-            docs_url=None,  # disable default docs,
             redirect_slashes=False,
         )
 
@@ -59,8 +58,6 @@ class Kwik:
         app.include_router(api_router, prefix=settings.API_V1_STR)
 
         app.exception_handler(KwikException)(kwik.exceptions.handler.kwik_exception_handler)
-
-        app = self.customize_swagger_ui(app=app)
 
         return app
 
