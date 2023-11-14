@@ -23,6 +23,7 @@ class UserUpdateSchema(BaseModel):
     name: str | None = None
     surname: str | None = None
     email: EmailStr | None = None
+    is_active: bool | None = None
 
 
 class UserChangePasswordSchema(BaseModel):
