@@ -84,12 +84,12 @@ def read_users_by_role(role_id: int) -> kwik.typings.PaginatedResponse[models.Pe
     response_model=schemas.Paginated[schemas.PermissionORMSchema],
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
 )
-def read_users_not_in_role(role_id: int) -> kwik.typings.PaginatedResponse[models.Permission]:
+def read_permissions_not_assigned_to_role(role_id: int) -> kwik.typings.PaginatedResponse[models.Permission]:
     """
-    Get all permissions not involved in the given role
+    Get all permissions not assigned to the given role
     """
 
-    permissions = crud.role.get_permissions_not_in_role(role_id=role_id)
+    permissions = crud.role.get_permissions_not_assigned_to_role(role_id=role_id)
     return kwik.typings.PaginatedResponse(data=permissions, total=len(permissions))
 
 

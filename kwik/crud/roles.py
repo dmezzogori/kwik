@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from kwik import models, schemas
 from sqlalchemy import or_
 
@@ -43,8 +45,7 @@ class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleCreate, schemas.RoleUpdate]
             .all()
         )
 
-    def get_permissions_not_in_role(self, *, role_id: int) -> list[models.Permission]:
-        # TODO: va sostituita con un metodo sul crud dei permessi
+    def get_permissions_not_assigned_to_role(self, *, role_id: int) -> list[models.Permission]:
         return (
             self.db.query(models.Permission)
             .join(models.RolePermission)
