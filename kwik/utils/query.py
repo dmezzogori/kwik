@@ -10,7 +10,6 @@ from kwik import logger
 from kwik.typings import ModelType, ParsedSortingQuery
 
 
-@contextlib.contextmanager
 def sort_query(*, model: Type[ModelType], query: Query, sort: ParsedSortingQuery) -> Query:
     order_by = []
     for attr, order in sort:
@@ -22,6 +21,7 @@ def sort_query(*, model: Type[ModelType], query: Query, sort: ParsedSortingQuery
     return query.order_by(*order_by)
 
 
+@contextlib.contextmanager
 def count_queries(conn):
     queries = []
     def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
