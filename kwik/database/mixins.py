@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, func
 from sqlalchemy.ext.declarative import declared_attr
 
