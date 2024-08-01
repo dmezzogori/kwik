@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 import kwik.exceptions.handler
 import kwik.logger
@@ -71,6 +72,7 @@ class Kwik:
         If CORS is enabled, add the CORSMiddleware.
         """
 
+        app.add_middleware(ProxyHeadersMiddleware)
         app.add_middleware(GZipMiddleware)
         app.add_middleware(RequestContextMiddleware)
         app.add_middleware(DBSessionMiddleware)
