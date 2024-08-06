@@ -136,5 +136,8 @@ class Settings(BaseSettings):
 
     TEST_ENV: bool = False
 
+    SENTRY_INTEGRATION_ENABLED: bool = False
+    SENTRY_DSN: str = ''
+
     class Config:
         case_sensitive = True
