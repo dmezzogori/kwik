@@ -1,38 +1,38 @@
-[tool.poetry]
+[project]
 name = "kwik"
 version = "0.1.0"
 description = "Kwik is a web framework for building modern, batteries-included, RESTful backends with Python 3.10+. Kwik is based on FastAPI, builds upon it and delivers an opinionated concise, business-oriented API."
-authors = ["Davide Mezzogori <dmezzogori@users.noreply.github.com>"]
 readme = "README.md"
-homepage = "https://kwik.rocks"
+requires-python = ">=3.11, <3.12"
+dependencies = [
+    "aiofiles ==23.1.0",
+    "alembic ==1.8.1",
+    "asyncpg ==0.27.0",
+    "bcrypt ==4.0.1",
+    "broadcaster ==0.2.0",
+    "fastapi ==0.100.0",
+    "gunicorn ==20.1.0",
+    "httptools ==0.5.0",
+    "httpx ==0.24.1",
+    "passlib ==1.7.4",
+    "psycopg2-binary ==2.9.5",
+    "pydantic[email] ==1.10.2",
+    "python-jose ==3.3.0",
+    "python-multipart ==0.0.6",
+    "requests ==2.28.1",
+    "sqlalchemy ==1.4.48",
+    "uvicorn ==0.22.0",
+    "websockets ==11.0.3"
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-aiofiles = "^23.1.0"
-alembic = "^1.8.1"
-asyncpg = "^0.27.0"
-bcrypt = "^4.0.1"
-broadcaster = "^0.2.0"
-fastapi = "^0.100.0"
-gunicorn = "^20.1.0"
-httptools = "^0.5.0"
-httpx = "^0.24.1"
-passlib = "^1.7.4"
-psycopg2-binary = "^2.9.5"
-pydantic = {extras = ["email"], version = "^1.10.2"}
-python-jose = "^3.3.0"
-python-multipart = "^0.0.6"
-requests = "^2.28.1"
-sqlalchemy = "^1.4.48"
-uvicorn = "^0.22.0"
-websockets = "^11.0.3"
-
-[tool.poetry.group.dev.dependencies]
-coverage-badge = "^1.1.0"
-pytest = "^7.2.0"
-pytest-cov = "^4.0.0"
-ruff = "^0.3.4"
+[tool.uv]
+dev-dependencies = [
+    "coverage-badge ==1.1.0",
+    "pytest ==7.2.0",
+    "pytest-cov ==4.0.0",
+    "ruff ==0.3.4"
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
