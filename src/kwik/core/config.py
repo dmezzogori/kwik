@@ -87,7 +87,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "root"
     POSTGRES_DB: str = "db"
-    POSTGRES_MAX_CONNECTIONS: int
+    POSTGRES_MAX_CONNECTIONS: int = 100
     ENABLE_SOFT_DELETE: bool = False
     SQLALCHEMY_DATABASE_URI: PostgresDsn | str | None = None
 
