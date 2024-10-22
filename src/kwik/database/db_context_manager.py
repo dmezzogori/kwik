@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from kwik.database.context_vars import db_conn_ctx_var
 from kwik.database.session_local import SessionLocal
 
+
 if TYPE_CHECKING:
     from contextvars import Token
 
