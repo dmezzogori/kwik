@@ -137,7 +137,12 @@ class Settings(BaseSettings):
     TEST_ENV: bool = False
 
     SENTRY_INTEGRATION_ENABLED: bool = False
-    SENTRY_DSN: str = ''
+    SENTRY_DSN: str = ""
+
+    WEBSERVICE_ENABLED: bool = False
+    WEBSERVICE_URL: AnyHttpUrl | str = ""
+    WEBSERVICE_USER: str | None = None
+    WEBSERVICE_PASSWORD: str | None = None
 
     class Config:
         case_sensitive = True
