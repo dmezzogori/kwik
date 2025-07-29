@@ -1,5 +1,6 @@
-from kwik.database.base import Base
 from sqlalchemy import Column, Float, Integer, String
+
+from kwik.database.base import Base
 
 
 class Audit(Base):

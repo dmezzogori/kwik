@@ -2,8 +2,9 @@ import enum
 import os
 from _csv import writer
 
-from kwik.database.base import Base
 from starlette.responses import StreamingResponse
+
+from kwik.database.base import Base
 
 from .base import KwikExporter
 
@@ -39,10 +40,9 @@ class KwikCSVExporter(KwikExporter):
                 for sub_key in self.partial_substitutions.keys():
                     if sub_key in new_key:
                         new_key = new_key.replace(
-                            sub_key, self.partial_substitutions[sub_key]
+                            sub_key, self.partial_substitutions[sub_key],
                         )
-                else:
-                    headers.append(new_key.replace("_", " ").capitalize())
+                headers.append(new_key.replace("_", " ").capitalize())
         writer_obj.writerow(headers)
 
     def load(self, *, data: list[Base]) -> None:
@@ -60,15 +60,15 @@ class KwikCSVExporter(KwikExporter):
                                 if self._item_to_write(item, field):
                                     items_to_write.append(
                                         item.__getattribute__(field).strftime(
-                                            "%Y-%m-%d"
-                                        )
+                                            "%Y-%m-%d",
+                                        ),
                                     )
                                 else:
                                     items_to_write.append("")
                             case CellFormats.INT:
                                 if self._item_to_write(item, field):
                                     items_to_write.append(
-                                        int(item.__getattribute__(field))
+                                        int(item.__getattribute__(field)),
                                     )
                                 else:
                                     items_to_write.append("")
@@ -81,7 +81,7 @@ class KwikCSVExporter(KwikExporter):
 
     def streaming_response(self) -> StreamingResponse:
         response = StreamingResponse(
-            open(self.filename, mode="rb"), media_type="text/csv"
+            open(self.filename, mode="rb"), media_type="text/csv",
         )
         response.headers[
             "Content-Disposition"

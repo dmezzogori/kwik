@@ -2,20 +2,21 @@ from __future__ import annotations
 
 from typing import Annotated
 
+from fastapi import Depends
+
 import kwik.crud
 import kwik.exceptions
 import kwik.models
-from fastapi import Depends
 
 from .token import current_token
 
 
 def get_current_user(token: current_token) -> kwik.models.User:
-    """
-    Returns the user associated with the token
+    """Returns the user associated with the token.
 
     Raises:
         Forbidden: if the user is not found
+
     """
     user = kwik.crud.user.get(id=token.sub)
     if user is None:

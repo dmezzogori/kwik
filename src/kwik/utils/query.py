@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import contextlib
-from typing import Type
 
 from sqlalchemy import event
 from sqlalchemy.orm import Query
@@ -10,7 +9,7 @@ from kwik import logger
 from kwik.typings import ModelType, ParsedSortingQuery
 
 
-def sort_query(*, model: Type[ModelType], query: Query, sort: ParsedSortingQuery) -> Query:
+def sort_query(*, model: type[ModelType], query: Query, sort: ParsedSortingQuery) -> Query:
     order_by = []
     for attr, order in sort:
         model_attr = getattr(model, attr)

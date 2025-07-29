@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from kwik.database.db_context_manager import DBContextManager
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
+
+from kwik.database.db_context_manager import DBContextManager
 
 
 class DBSessionMiddleware(BaseHTTPMiddleware):

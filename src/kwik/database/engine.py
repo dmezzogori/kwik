@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import kwik
 from sqlalchemy import create_engine
+
+import kwik
 
 engine = create_engine(
     url=kwik.settings.SQLALCHEMY_DATABASE_URI,

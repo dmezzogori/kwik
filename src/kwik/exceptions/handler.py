@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from fastapi import Request
-from kwik.exceptions import KwikException
 from starlette.responses import JSONResponse
+
+from kwik.exceptions import KwikException
 
 
 async def kwik_exception_handler(request: Request, exc: KwikException):

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from kwik.database.engine import engine, alternate_engine
 from sqlalchemy.orm import sessionmaker
+
+from kwik.database.engine import alternate_engine, engine
 
 SessionLocal = sessionmaker(
     autocommit=False,

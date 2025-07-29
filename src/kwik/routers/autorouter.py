@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import inspect
-from typing import Generic, NoReturn, get_args
+from typing import Generic, get_args
+
+from fastapi.params import Depends
 
 import kwik
 import kwik.exceptions
 import kwik.models
 import kwik.schemas
-from fastapi.params import Depends
 from kwik.core.enum import PermissionNamesBase
 from kwik.crud import AutoCRUD
 from kwik.typings import BaseSchemaType, CreateSchemaType, ModelType, UpdateSchemaType
@@ -84,10 +85,10 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
             new_update.__signature__ = inspect.Signature(params)
             cls.update = new_update
 
-        if getattr(cls, "create") == getattr(base, "create"):
+        if cls.create == base.create:
             modify_create_signature()
 
-        if getattr(cls, "update") == getattr(base, "update"):
+        if cls.update == base.update:
             modify_update_sign()
 
     def read_multi(
@@ -96,18 +97,15 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         paginated: kwik.PaginatedQuery,
         filters: kwik.FilterQuery,
     ) -> kwik.schemas.Paginated[BaseSchemaType]:
-        """
-        Retrieve many {name} items.
-        Sorting field:[asc|desc]
+        """Retrieve many {name} items.
+        Sorting field:[asc|desc].
         """
         total, result = self.crud.get_multi(sort=sorting, **paginated, **filters)
         return kwik.schemas.Paginated[self.BaseSchemaType](total=total, data=result)
 
     # noinspection PyShadowingBuiltins
-    def read(self, id: int) -> ModelType | NoReturn:
-        """
-        Retrieve a {name}.
-        """
+    def read(self, id: int) -> ModelType:
+        """Retrieve a {name}."""
         try:
             db_obj = self.crud.get_if_exist(id=id)
             return db_obj
@@ -115,16 +113,12 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
             raise e.http_exc
 
     def create(self, obj_in: CreateSchemaType) -> ModelType:
-        """
-        Create a {name}.
-        """
+        """Create a {name}."""
         return self.crud.create(obj_in=obj_in)
 
     # noinspection PyShadowingBuiltins
-    def update(self, id: int, obj_in: UpdateSchemaType) -> ModelType | NoReturn:
-        """
-        Update a {name}.
-        """
+    def update(self, id: int, obj_in: UpdateSchemaType) -> ModelType:
+        """Update a {name}."""
         try:
             db_obj = self.crud.get_if_exist(id=id)
             return self.crud.update(db_obj=db_obj, obj_in=obj_in)
@@ -132,10 +126,8 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
             raise e.http_exc
 
     # noinspection PyShadowingBuiltins
-    def delete(self, *, id: int) -> ModelType | NoReturn:
-        """
-        Delete a {name}.
-        """
+    def delete(self, *, id: int) -> ModelType:
+        """Delete a {name}."""
         try:
             self.crud.get_if_exist(id=id)
             return self.crud.delete(id=id)

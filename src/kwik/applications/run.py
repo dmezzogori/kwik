@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uvicorn
+
 from kwik import settings
 from kwik.applications.gunicorn import KwikGunicornApplication
 

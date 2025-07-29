@@ -3,6 +3,7 @@ from inspect import getmembers, ismodule
 from fastapi import APIRouter as _APIRouter
 
 import kwik
+
 from .auditor import AuditorRouter
 from .autorouter import AutoRouter
 
@@ -14,7 +15,7 @@ class APIRouter(_APIRouter):
                 continue
 
             router = getmembers(
-                module, lambda x: isinstance(x, (_APIRouter, AuditorRouter, AutoRouter))
+                module, lambda x: isinstance(x, (_APIRouter, AuditorRouter, AutoRouter)),
             )[0][1]
 
             if isinstance(router, AutoRouter):

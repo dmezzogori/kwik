@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Tuple
 from uuid import uuid1
 
 import aiofiles
@@ -7,8 +6,8 @@ from fastapi import UploadFile
 
 
 async def store_file(
-    *, in_file: UploadFile, path: str | None = None
-) -> Tuple[str, int]:
+    *, in_file: UploadFile, path: str | None = None,
+) -> tuple[str, int]:
     root_upload_directory = "/uploads"
 
     if path is not None and len(path) > 1:

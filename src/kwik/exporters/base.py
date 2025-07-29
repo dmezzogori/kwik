@@ -1,5 +1,6 @@
-from kwik.database.base import Base
 from starlette.responses import StreamingResponse
+
+from kwik.database.base import Base
 
 from .exporter_fields import ExporterFields
 

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import time
-from typing import Callable
+from collections.abc import Callable
 
-import kwik
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.routing import APIRoute
 from jose import jwt
+
+import kwik
 from kwik import crud, schemas
 from kwik.api.deps.token import get_token
 from kwik.api.deps.users import get_current_user

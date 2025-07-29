@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, Any, Generic, NoReturn, Type, get_args
+from typing import TYPE_CHECKING, Any, Generic, get_args
 
 import kwik
 from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
@@ -15,8 +15,9 @@ from kwik.typings import (
 )
 
 if TYPE_CHECKING:
-    from kwik.database.session import KwikSession
     from sqlalchemy.orm import Session
+
+    from kwik.database.session import KwikSession
 
 T = Generic[ModelType, CreateSchemaType, UpdateSchemaType]
 
@@ -37,13 +38,12 @@ class CurrentUser:
 class CRUDBase(abc.ABC, Generic[ModelType]):
     db: KwikSession = DBSession()
     user: User | None = CurrentUser()
-    model: Type[ModelType]
+    model: type[ModelType]
 
     _instances: dict[str, T] = {}
 
-    def __init__(self, model: Type[ModelType] | None = None):
-        """
-        CRUD object with default methods to Create, Read, Update, Delete (CRUD).
+    def __init__(self, model: type[ModelType] | None = None):
+        """CRUD object with default methods to Create, Read, Update, Delete (CRUD).
 
         **Parameters**
 
@@ -54,7 +54,7 @@ class CRUDBase(abc.ABC, Generic[ModelType]):
         CRUDBase._instances[_model] = self
 
     @classmethod
-    def get_instance(cls: T, model: Type[ModelType]) -> T:
+    def get_instance(cls: T, model: type[ModelType]) -> T:
         return CRUDBase._instances[model]
 
 
@@ -79,7 +79,7 @@ class CRUDReadBase(CRUDBase[ModelType]):
         pass
 
     @abc.abstractmethod
-    def get_if_exist(self, *, id: int) -> ModelType | NoReturn:
+    def get_if_exist(self, *, id: int) -> ModelType:
         pass
 
 

@@ -16,14 +16,12 @@ router = AuditorRouter()
     dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_read),),
 )
 def get_many_permissions(paginated: kwik.api.deps.PaginatedQuery) -> kwik.typings.PaginatedResponse[models.Permission]:
-    """
-    Returns all permissions, paginated.
+    """Returns all permissions, paginated.
 
     Permissions required:
 
      -  `permissions_management_read`
     """
-
     total, permissions = crud.permission.get_multi(**paginated)
     return kwik.typings.PaginatedResponse(total=total, data=permissions)
 
@@ -34,16 +32,15 @@ def get_many_permissions(paginated: kwik.api.deps.PaginatedQuery) -> kwik.typing
     dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_read),),
 )
 def get_single_permission(permission_id: int) -> models.Permission:
-    """
-    Returns a single permission by id.
+    """Returns a single permission by id.
 
     Permissions required:
         * `permissions_management_read`
 
     Raises:
         NotFound: If the provided permission does not exist
-    """
 
+    """
     return crud.permission.get_if_exist(id=permission_id)
 
 
@@ -53,16 +50,15 @@ def get_single_permission(permission_id: int) -> models.Permission:
     dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_create),),
 )
 def create_permission(permission_in: schemas.PermissionCreate) -> models.Permission:
-    """
-    Create new permission.
+    """Create new permission.
 
     Raises:
         DuplicatedEntity: If the provided permission name already exists
 
     Permissions required:
         * `permissions_management_create`
-    """
 
+    """
     permission = crud.permission.get_by_name(name=permission_in.name)
     if permission is not None:
         raise DuplicatedEntity
@@ -76,16 +72,15 @@ def create_permission(permission_in: schemas.PermissionCreate) -> models.Permiss
     dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_update),),
 )
 def associate_permission_to_role(permission_id: int, role_id: int) -> models.Permission:
-    """
-    Associate a permission to a role.
+    """Associate a permission to a role.
 
     Raises:
         NotFound: If the provided permission or role does not exist
 
     Permissions required:
         * `permissions_management_update`
-    """
 
+    """
     return crud.permission.associate_role(permission_id=permission_id, role_id=role_id)
 
 
@@ -95,16 +90,15 @@ def associate_permission_to_role(permission_id: int, role_id: int) -> models.Per
     dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_update),),
 )
 def update_permission(permission_id: int, permission_in: schemas.PermissionUpdate) -> models.Permission:
-    """
-    Update a permission.
+    """Update a permission.
 
     Raises:
         NotFound: If the provided permission does not exist
 
     Permissions required:
         * `permissions_management_update`
-    """
 
+    """
     permission = crud.permission.get_if_exist(id=permission_id)
     return crud.permission.update(db_obj=permission, obj_in=permission_in)
 
@@ -115,8 +109,7 @@ def update_permission(permission_id: int, permission_in: schemas.PermissionUpdat
     dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_delete),),
 )
 def purge_all_roles(permission_id: int) -> models.Permission:
-    """
-    Remove all existing associations of a permission to any role.
+    """Remove all existing associations of a permission to any role.
     Does not delete the permission itself.
 
     Raises:
@@ -124,8 +117,8 @@ def purge_all_roles(permission_id: int) -> models.Permission:
 
     Permissions required:
         * `permissions_management_delete`
-    """
 
+    """
     return crud.permission.purge_all_roles(permission_id=permission_id)
 
 
@@ -135,8 +128,7 @@ def purge_all_roles(permission_id: int) -> models.Permission:
     dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_delete),),
 )
 def purge_role_from_permission(permission_id: int, role_id: int) -> models.Permission:
-    """
-    Remove permission from role
+    """Remove permission from role.
 
     Raises:
         NotFound: If the provided permission or role does not exist
@@ -145,7 +137,6 @@ def purge_role_from_permission(permission_id: int, role_id: int) -> models.Permi
         * `permissions_management_delete`
 
     """
-
     return crud.permission.purge_role(permission_id=permission_id, role_id=role_id)
 
 
@@ -155,14 +146,13 @@ def purge_role_from_permission(permission_id: int, role_id: int) -> models.Permi
     dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_delete),),
 )
 def delete_permission(permission_id: int) -> models.Permission:
-    """
-    Delete a permission and remove all existing associations of it to any role.
+    """Delete a permission and remove all existing associations of it to any role.
 
     Raises:
         NotFound: If the provided permission does not exist
 
     Permissions required:
         * `permissions_management_delete`
-    """
 
+    """
     return crud.permission.delete(id=permission_id)

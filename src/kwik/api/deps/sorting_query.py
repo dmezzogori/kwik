@@ -3,13 +3,13 @@ from __future__ import annotations
 import re
 from typing import Annotated
 
-import kwik.typings
 from fastapi import Depends
+
+import kwik.typings
 
 
 def parse_sorting_query(sorting: str | None = None) -> kwik.typings.ParsedSortingQuery:
-    """
-    Sorting query parameter parser, to be used as endpoint dependency
+    """Sorting query parameter parser, to be used as endpoint dependency
     The sorting parameter is a comma-separated list of fields to sort by.
     Each field can be postfixed with a colon and a direction ("asc" or "desc").
     If no direction is specified, "asc" is assumed.
@@ -17,8 +17,8 @@ def parse_sorting_query(sorting: str | None = None) -> kwik.typings.ParsedSortin
     Example:
     >>> tuple(parse_sorting_query("id:desc,created_at"))
     (("id", "desc"), ("created_at", "asc"))
-    """
 
+    """
     if sorting is not None:
         sort = []
         pattern = r"(\w+)(?::(asc|desc))?"

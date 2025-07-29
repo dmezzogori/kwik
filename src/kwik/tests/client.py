@@ -18,14 +18,12 @@ EndpointReturn = Mapping[str, Any] | list[Mapping[str, Any]]
 
 
 def assert_status_code_and_return_response(response: Response, status_code: int = 200) -> EndpointReturn:
-    assert response.status_code == status_code, response.text
+    assert response.status_code == status_code, response.text  # noqa: S101
     return response.json()
 
 
 class TestClientBase:
-    """
-    Base class for all test clients.
-    """
+    """Base class for all test clients."""
 
     BASE_URI: str
 
@@ -61,7 +59,7 @@ class TestClientBase:
 
     def get(self, id_: int, status_code: int = 200) -> EndpointReturn | None:
         return assert_status_code_and_return_response(
-            self.client.get(f"{self.get_uri}/{id_}", headers=self.headers), status_code=status_code
+            self.client.get(f"{self.get_uri}/{id_}", headers=self.headers), status_code=status_code,
         )
 
     def get_multi(
@@ -84,7 +82,7 @@ class TestClientBase:
         if sorting is not None:
             query["sorting"] = f"{sorting[0]}:{sorting[1]}"
         query_string = urllib.parse.urlencode(
-            query={k: v for k, v in query.items() if v is not None and k not in exclude_keys}
+            query={k: v for k, v in query.items() if v is not None and k not in exclude_keys},
         )
         if query_string:
             uri = f"{self.get_multi_uri}/?{query_string}"
@@ -109,10 +107,10 @@ class TestClientBase:
                 put_uri,
                 json=jsonable_encoder(data),
                 headers=self.headers,
-            )
+            ),
         )
 
     def delete(self, id_: int) -> EndpointReturn:
         return assert_status_code_and_return_response(
-            self.client.delete(f"{self.delete_uri}/{id_}", headers=self.headers)
+            self.client.delete(f"{self.delete_uri}/{id_}", headers=self.headers),
         )

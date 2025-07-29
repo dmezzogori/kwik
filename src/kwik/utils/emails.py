@@ -6,8 +6,9 @@ from email.mime.text import MIMEText
 from email.utils import formataddr
 from pathlib import Path
 
-import kwik
 from jinja2 import Template
+
+import kwik
 
 
 def send_email(*, email_to: str, subject: str = "", body: str = "") -> None:
@@ -15,11 +16,11 @@ def send_email(*, email_to: str, subject: str = "", body: str = "") -> None:
         context = ssl.create_default_context()
         email_from = kwik.settings.EMAILS_FROM_EMAIL
         with smtplib.SMTP_SSL(
-            kwik.settings.SMTP_HOST, kwik.settings.SMTP_PORT, context=context
+            kwik.settings.SMTP_HOST, kwik.settings.SMTP_PORT, context=context,
         ) as server:
             msg = MIMEMultipart("alternative")
             msg["From"] = formataddr(
-                (str(Header(email_from, "utf-8")), kwik.settings.SMTP_USER)
+                (str(Header(email_from, "utf-8")), kwik.settings.SMTP_USER),
             )
             msg["To"] = email_to
             msg["Subject"] = subject
@@ -55,7 +56,7 @@ def send_reset_password_email(email_to: str, email: str, token: str) -> None:
             "email": email_to,
             "valid_hours": kwik.settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS,
             "link": link,
-        }
+        },
     )
     send_email(email_to=email_to, subject=subject, body=body)
 
@@ -77,7 +78,7 @@ def send_new_account_email(email_to: str, username: str, password: str) -> None:
             "password": password,
             "email": email_to,
             "link": link,
-        }
+        },
     )
     send_email(email_to=email_to, subject=subject, body=body)
 

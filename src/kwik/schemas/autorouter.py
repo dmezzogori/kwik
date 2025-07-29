@@ -1,9 +1,13 @@
-from typing import Generic
+from __future__ import annotations
 
-from kwik.typings import BaseSchemaType
+from typing import Any, TypeVar, Generic
+
 from pydantic.generics import GenericModel
 
+# Use TypeVar to avoid circular import
+T = TypeVar('T')
 
-class Paginated(GenericModel, Generic[BaseSchemaType]):
+
+class Paginated(GenericModel, Generic[T]):
     total: int
-    data: list[BaseSchemaType]
+    data: list[T]

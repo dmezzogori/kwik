@@ -1,9 +1,9 @@
 from fastapi.encoders import jsonable_encoder
 
-from .base import CRUDCreateBase
 from .. import models
 from ..models import User
 from ..schemas import LogCreateSchema
+from .base import CRUDCreateBase
 
 
 class CRUDLogs(CRUDCreateBase):
@@ -19,7 +19,7 @@ class CRUDLogs(CRUDCreateBase):
         return db_obj
 
     def create_if_not_exist(self, *args, **kwargs):
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 logs = CRUDLogs(models.Log)

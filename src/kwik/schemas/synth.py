@@ -4,14 +4,15 @@ from datetime import datetime
 from pydantic import BaseModel, create_model
 from sqlalchemy import inspect as ins
 from sqlalchemy.sql.sqltypes import (
+    JSON,
     BigInteger,
+    Boolean,
     DateTime,
     Float,
     Integer,
-    JSON,
     String,
-    Boolean,
 )
+
 from kwik import typings
 
 TYPE_MAPPINGS = {
@@ -20,7 +21,7 @@ TYPE_MAPPINGS = {
     String: str,
     DateTime: datetime,
     Float: float,
-    JSON: typing.Dict,
+    JSON: dict,
     Boolean: bool,
 }
 
@@ -49,12 +50,12 @@ def synth_schemas(cls):
 
     bkw = dict(kw)
     BaseSchema: BaseModel = create_model(
-        f"{cls.__name__}Base", __base__=typings.BaseModel, **bkw
+        f"{cls.__name__}Base", __base__=typings.BaseModel, **bkw,
     )
     CreateModel: BaseModel = create_model(
-        f"{cls.__name__}Create", **{k: v for k, v in kw.items() if k != "id"}
+        f"{cls.__name__}Create", **{k: v for k, v in kw.items() if k != "id"},
     )
     UpdateModel: BaseModel = create_model(
-        f"{cls.__name__}Update", **{k: v for k, v in kw.items() if k != "id"}
+        f"{cls.__name__}Update", **{k: v for k, v in kw.items() if k != "id"},
     )
     return BaseSchema, CreateModel, UpdateModel

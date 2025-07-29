@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-import kwik
 from jose import jwt
+
+import kwik
 
 
 def generate_password_reset_token(email: str) -> str:

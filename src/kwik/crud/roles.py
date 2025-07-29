@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from kwik import models, schemas
 from sqlalchemy import or_
+
+from kwik import models, schemas
 
 from .auto_crud import AutoCRUD
 from .user_roles import user_roles
@@ -35,9 +36,7 @@ class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleCreate, schemas.RoleUpdate]
         )
 
     def get_users_not_in_role(self, *, role_id: int) -> list[models.User]:
-        """
-        Get all users not involved in the given role, including users with no role.
-        """
+        """Get all users not involved in the given role, including users with no role."""
         return (
             self.db.query(models.User)
             .outerjoin(models.UserRole, models.User.id == models.UserRole.user_id)

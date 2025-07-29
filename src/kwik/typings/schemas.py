@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TypeVar
 
 import pydantic
+
 from kwik.database.base import Base
 
 

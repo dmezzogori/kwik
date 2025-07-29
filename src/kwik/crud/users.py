@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, NoReturn, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from fastapi import HTTPException
+from starlette import status
+
 from kwik import models, schemas
 from kwik.core.security import get_password_hash, verify_password
 from kwik.exceptions import IncorrectCredentials, UserInactive, UserNotFound
-from starlette import status
 
 from . import auto_crud
 
@@ -68,7 +70,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         user_db.hashed_password = hashed_password
         return user_db
 
-    def reset_password(self, *, email: str, password: str) -> models.User | NoReturn:
+    def reset_password(self, *, email: str, password: str) -> models.User:
         user_db = self.get_by_email(email=email)
         if user_db is None:
             raise UserNotFound
@@ -82,13 +84,12 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         return user
 
     def authenticate(self, *, email: str, password: str) -> models.User:
-        """
-        Authenticate a user with email and password
+        """Authenticate a user with email and password.
 
         Raises:
             IncorrectCredentials: If the user does not exist or the password is wrong
-        """
 
+        """
         # Retrieve the user from the database
         user_db = self.get_by_email(email=email)
 
@@ -99,7 +100,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         return user_db
 
     @staticmethod
-    def is_active(user: models.User) -> models.User | NoReturn:
+    def is_active(user: models.User) -> models.User:
         if not user.is_active:
             raise UserInactive
         return user
@@ -109,10 +110,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         return user_db.is_superuser
 
     def has_permissions(self, *, user_id: int, permissions: Sequence[str]) -> bool:
-        """
-        Check if the user has all the permissions provided.
-        """
-
+        """Check if the user has all the permissions provided."""
         r = (
             self.db.query(models.Permission)
             .join(models.RolePermission, models.Role, models.UserRole)
@@ -126,10 +124,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         return r.count() == len(permissions)
 
     def has_roles(self, *, user_id: int, roles: Sequence[str]) -> bool:
-        """
-        Check if the user has all the roles provided.
-        """
-
+        """Check if the user has all the roles provided."""
         r = (
             self.db.query(models.Role)
             .join(models.UserRole, models.Role.id == models.UserRole.role_id)

@@ -1,7 +1,8 @@
-from kwik.database.base import Base
-from kwik.database.mixins import RecordInfoMixin, SoftDeleteMixin
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
+
+from kwik.database.base import Base
+from kwik.database.mixins import RecordInfoMixin, SoftDeleteMixin
 
 
 class User(Base):
@@ -37,7 +38,7 @@ class Role(Base, SoftDeleteMixin):
     is_locked = Column(Boolean(), default=False, nullable=False)
 
     permissions = relationship(
-        "Permission", secondary="roles_permissions", viewonly=True
+        "Permission", secondary="roles_permissions", viewonly=True,
     )
 
 

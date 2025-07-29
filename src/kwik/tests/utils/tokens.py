@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import kwik
 from fastapi.testclient import TestClient
+
+import kwik
 
 Token = dict[str, str]
 

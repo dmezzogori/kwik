@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from kwik.database.context_vars import db_conn_ctx_var
 from kwik.database.session_local import SessionLocal
 
-
 if TYPE_CHECKING:
     from contextvars import Token
 
@@ -14,31 +13,25 @@ if TYPE_CHECKING:
 
 
 class DBContextManager:
-    """
-    DB Session Context Manager.
+    """DB Session Context Manager.
 
     Implemented as a context manager,
     automatically rollback a transaction if any exception is raised by the application.
     """
 
     def __init__(self) -> None:
-        """
-        Initialize the DBContextManager.
-        """
-
+        """Initialize the DBContextManager."""
         self.db: Session | None = None
         self.token: Token[Session | None] | None = None
 
     def __enter__(self) -> Session:
-        """
-        Enter the context manager, which returns a database session.
+        """Enter the context manager, which returns a database session.
 
         Retrieves a database session from the context variable.
         If no session is found, a new session is created and stored in the context variable.
 
         Returns a database session.
         """
-
         db = db_conn_ctx_var.get()
         if db is None:
             # No session found in the context variable.
@@ -59,15 +52,13 @@ class DBContextManager:
         exception_value: BaseException | None,
         exception_traceback: TracebackType | None,
     ) -> None:
-        """
-        Exit the context manager, handling any exceptions raised by the application.
+        """Exit the context manager, handling any exceptions raised by the application.
 
         If an exception is raised by the application, rollback the transaction.
         Otherwise, commit the transaction.
 
         Then, closes the database session and reset the context variable to its previous value.
         """
-
         if exception_type is not None:
             # An exception was raised by the application.
 

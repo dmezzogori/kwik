@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, NoReturn
+from typing import Any
 
 from fastapi.encoders import jsonable_encoder
+
 from kwik import settings
-from kwik.database.session import _to_be_audited
 from kwik.exceptions import DuplicatedEntity, NotFound
 from kwik.middlewares import get_request_id
 from kwik.schemas import LogCreateSchema
@@ -50,7 +50,7 @@ class AutoCRUDRead(CRUDReadBase[ModelType]):
         return count, r
 
     # noinspection PyShadowingBuiltins
-    def get_if_exist(self, *, id: int) -> ModelType | NoReturn:
+    def get_if_exist(self, *, id: int) -> ModelType:
         r = self.get(id=id)
         if r is None:
             raise NotFound(detail=f"Entity [{self.model.__tablename__}] with id={id} does not exist")
@@ -61,6 +61,8 @@ class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
     def create(self, *, obj_in: CreateSchemaType, **kwargs: Any) -> ModelType:
         obj_in_data = dict(obj_in)
 
+        # Import here to avoid circular import
+        from kwik.database.session import _to_be_audited
         if self.user is not None and _to_be_audited(self.model):
             obj_in_data["creator_user_id"] = self.user.id
 
@@ -104,6 +106,8 @@ class AutoCRUDUpdate(CRUDUpdateBase[ModelType, UpdateSchemaType]):
         else:
             update_data = obj_in.dict(exclude_unset=True)
 
+        # Import here to avoid circular import
+        from kwik.database.session import _to_be_audited
         if self.user is not None and _to_be_audited(self.model):
             update_data["last_modifier_user_id"] = self.user.id
 

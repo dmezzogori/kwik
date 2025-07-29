@@ -19,20 +19,14 @@ router = AuditorRouter()
     dependencies=[kwik.api.deps.has_permission(Permissions.users_management_read)],
 )
 def read_users(paginated: kwik.api.deps.PaginatedQuery) -> kwik.typings.PaginatedResponse[kwik.models.User]:
-    """
-    Retrieve users.
-    """
-
+    """Retrieve users."""
     total, data = kwik.crud.user.get_multi(**paginated)
     return kwik.typings.PaginatedResponse(data=data, total=total)
 
 
 @router.get("/me", response_model=kwik.schemas.UserORMExtendedSchema)
 def read_user_me(user: kwik.api.deps.current_user) -> kwik.models.User:
-    """
-    Get current user.
-    """
-
+    """Get current user."""
     return user
 
 
@@ -44,11 +38,9 @@ def read_user_by_id(
     user_id: int,
     user: kwik.api.deps.current_user,
 ) -> kwik.models.User:
-    """
-    Get a specific user by id.
+    """Get a specific user by id.
     If the user requested is not the same as the logged-in user, the user must have the user_management_read permission.
     """
-
     if user_id != user.id:
         if not kwik.crud.user.has_permissions(user_id=user.id, permissions=(Permissions.users_management_read,)):
             raise Forbidden
@@ -62,10 +54,7 @@ def read_user_by_id(
     dependencies=[kwik.api.deps.has_permission(Permissions.users_management_create)],
 )
 def create_user(user_in: kwik.schemas.UserCreateSchema) -> kwik.models.User:
-    """
-    Create new user.
-    """
-
+    """Create new user."""
     user = kwik.crud.user.get_by_email(email=user_in.email)
     if user:
         raise DuplicatedEntity
@@ -83,10 +72,7 @@ def update_myself(
     user: kwik.api.deps.current_user,
     user_in: kwik.schemas.UserUpdateSchema,
 ) -> kwik.models.User:
-    """
-    Update details of the logged in user.
-    """
-
+    """Update details of the logged in user."""
     return kwik.crud.user.update(db_obj=user, obj_in=user_in)
 
 
@@ -99,10 +85,7 @@ def update_user(
     user_id: int,
     user_in: kwik.schemas.UserUpdateSchema,
 ) -> kwik.models.User:
-    """
-    Update a user.
-    """
-
+    """Update a user."""
     user = kwik.crud.user.get_if_exist(id=user_id)
     return kwik.crud.user.update(db_obj=user, obj_in=user_in)
 
@@ -117,11 +100,9 @@ def update_password(
     user: kwik.api.deps.current_user,
     obj_in: kwik.schemas.UserChangePasswordSchema,
 ) -> kwik.models.User:
-    """
-    Update the provided user's password.
+    """Update the provided user's password.
     If the user is not the same as the logged-in user, the logged-in user must have the user_management_update permission.
     """
-
     if user_id != user.id:
         if not kwik.crud.user.has_permissions(user_id=user.id, permissions=(Permissions.users_management_update,)):
             raise Forbidden

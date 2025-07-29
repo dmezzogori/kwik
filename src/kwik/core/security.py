@@ -3,13 +3,14 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any
 
-import kwik
-import kwik.typings
 from jose import jwt
-from kwik import schemas
-from kwik.exceptions.base import InvalidToken
 from passlib.context import CryptContext
 from pydantic import ValidationError
+
+import kwik
+import kwik.typings
+from kwik import schemas
+from kwik.exceptions.base import InvalidToken
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

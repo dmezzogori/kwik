@@ -1,5 +1,6 @@
-from kwik.schemas.mixins import RecordInfoMixin
 from pydantic import BaseModel
+
+from kwik.schemas.mixins import RecordInfoMixin
 
 
 class _BaseSchema(BaseModel):

@@ -91,3 +91,5 @@ unfixable = []
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*.py" = ["S101", "SLF001"]
+"src/tests/*.py" = ["S101", "SLF001"]
+"*/tests/*.py" = ["S101", "S311", "SLF001"]

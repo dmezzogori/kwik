@@ -1,2 +1,1 @@
-from . import setup
-from . import tokens
+from . import setup, tokens

@@ -20,8 +20,7 @@ if TYPE_CHECKING:
 
 
 class Kwik:
-    """
-    Kwik Application is a thin and opinionated wrapper around FastAPI.
+    """Kwik Application is a thin and opinionated wrapper around FastAPI.
     It instantiates the FastAPI application and adds some middlewares (CORS,
     RequestContextMiddleware, DBSessionMiddleware).
     It automatically registers all the endpoints from the api_router.
@@ -34,19 +33,17 @@ class Kwik:
         kwik.logger.info("Kwik App ready")
         kwik.logger.info(f"Kwik App running on {settings.PROTOCOL}://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}")
         kwik.logger.info(
-            f"Swagger available at {settings.PROTOCOL}://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}/docs"
+            f"Swagger available at {settings.PROTOCOL}://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}/docs",
         )
 
     def init_fastapi_app(self, *, api_router: APIRouter) -> FastAPI:
-        """
-        Initialize the FastAPI application.
+        """Initialize the FastAPI application.
 
         Based on the settings, it will also add the websockets on_startup and on_shutdown events.
         Register the api_router.
         Register the KwikException handler.
         Customize the swagger UI.
         """
-
         app = FastAPI(
             title=settings.PROJECT_NAME,
             openapi_url=f"{settings.API_V1_STR}/openapi.json",
@@ -65,13 +62,11 @@ class Kwik:
         return app
 
     def set_middlewares(self, *, app: FastAPI) -> FastAPI:
-        """
-        Set the middlewares for the FastAPI application.
+        """Set the middlewares for the FastAPI application.
 
         Add the GZipMiddleware, RequestContextMiddleware and DBSessionMiddleware.
         If CORS is enabled, add the CORSMiddleware.
         """
-
         app.add_middleware(ProxyHeadersMiddleware)
         app.add_middleware(GZipMiddleware)
         app.add_middleware(RequestContextMiddleware)
@@ -89,9 +84,7 @@ class Kwik:
         return app
 
     def customize_swagger_ui(self, *, app: FastAPI) -> FastAPI:
-        """
-        Customize the swagger UI to have collapsable sections.
-        """
+        """Customize the swagger UI to have collapsable sections."""
 
         @app.get("/docs", include_in_schema=False)
         async def custom_swagger_ui_html():
