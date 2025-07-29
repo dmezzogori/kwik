@@ -1,0 +1,68 @@
+# Build and distribution
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Cache directories
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Documentation build
+docs/handbook/site/
+
+# Dependencies
+uv.lock
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Generated images and assets
+docs/handbook/docs/img/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+
+# Test outputs
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
