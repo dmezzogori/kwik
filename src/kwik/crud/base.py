@@ -5,21 +5,27 @@ from typing import TYPE_CHECKING, Any, Generic, get_args
 
 import kwik
 from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
-from kwik.models import User
-from kwik.typings import (
-    CreateSchemaType,
-    ModelType,
-    PaginatedCRUDResult,
-    ParsedSortingQuery,
-    UpdateSchemaType,
-)
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
     from kwik.database.session import KwikSession
+    from kwik.models import User
+    from kwik.typings import (
+        CreateSchemaType,
+        ModelType,
+        PaginatedCRUDResult,
+        ParsedSortingQuery,
+        UpdateSchemaType,
+    )
 
-T = Generic[ModelType, CreateSchemaType, UpdateSchemaType]
+    T = Generic[ModelType, CreateSchemaType, UpdateSchemaType]
+else:
+    from typing import TypeVar
+    ModelType = TypeVar('ModelType')
+    CreateSchemaType = TypeVar('CreateSchemaType') 
+    UpdateSchemaType = TypeVar('UpdateSchemaType')
+    T = Generic[ModelType, CreateSchemaType, UpdateSchemaType]
 
 
 class DBSession:
@@ -30,14 +36,14 @@ class DBSession:
 
 
 class CurrentUser:
-    def __get__(self, obj, objtype=None) -> kwik.models.User | None:
+    def __get__(self, obj, objtype=None):
         user = current_user_ctx_var.get()
         return user
 
 
 class CRUDBase(abc.ABC, Generic[ModelType]):
     db: KwikSession = DBSession()
-    user: User | None = CurrentUser()
+    user = CurrentUser()
     model: type[ModelType]
 
     _instances: dict[str, T] = {}

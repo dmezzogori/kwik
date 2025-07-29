@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi.encoders import jsonable_encoder
 
@@ -8,14 +8,23 @@ from kwik import settings
 from kwik.exceptions import DuplicatedEntity, NotFound
 from kwik.middlewares import get_request_id
 from kwik.schemas import LogCreateSchema
-from kwik.typings import (
-    CreateSchemaType,
-    ModelType,
-    PaginatedCRUDResult,
-    ParsedSortingQuery,
-    UpdateSchemaType,
-)
 from kwik.utils import sort_query
+
+if TYPE_CHECKING:
+    from kwik.typings import (
+        CreateSchemaType,
+        ModelType,
+        PaginatedCRUDResult,
+        ParsedSortingQuery,
+        UpdateSchemaType,
+    )
+else:
+    from typing import TypeVar
+    ModelType = TypeVar('ModelType')
+    CreateSchemaType = TypeVar('CreateSchemaType') 
+    UpdateSchemaType = TypeVar('UpdateSchemaType')
+    PaginatedCRUDResult = TypeVar('PaginatedCRUDResult')
+    ParsedSortingQuery = TypeVar('ParsedSortingQuery')
 
 from .base import CRUDCreateBase, CRUDDeleteBase, CRUDReadBase, CRUDUpdateBase
 from .logs import logs

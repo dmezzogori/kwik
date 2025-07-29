@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 import contextlib
+from typing import TYPE_CHECKING
 
 from sqlalchemy import event
 from sqlalchemy.orm import Query
 
 from kwik import logger
-from kwik.typings import ModelType, ParsedSortingQuery
+
+if TYPE_CHECKING:
+    from kwik.typings import ModelType, ParsedSortingQuery
+else:
+    from typing import TypeVar
+    ModelType = TypeVar('ModelType')
+    ParsedSortingQuery = TypeVar('ParsedSortingQuery')
 
 
 def sort_query(*, model: type[ModelType], query: Query, sort: ParsedSortingQuery) -> Query:
