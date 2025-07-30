@@ -20,11 +20,11 @@ if TYPE_CHECKING:
     )
 else:
     from typing import TypeVar
-    ModelType = TypeVar('ModelType')
-    CreateSchemaType = TypeVar('CreateSchemaType') 
-    UpdateSchemaType = TypeVar('UpdateSchemaType')
-    PaginatedCRUDResult = TypeVar('PaginatedCRUDResult')
-    ParsedSortingQuery = TypeVar('ParsedSortingQuery')
+    ModelType = TypeVar("ModelType")
+    CreateSchemaType = TypeVar("CreateSchemaType")
+    UpdateSchemaType = TypeVar("UpdateSchemaType")
+    PaginatedCRUDResult = TypeVar("PaginatedCRUDResult")
+    ParsedSortingQuery = TypeVar("ParsedSortingQuery")
 
 from .base import CRUDCreateBase, CRUDDeleteBase, CRUDReadBase, CRUDUpdateBase
 from .logs import logs

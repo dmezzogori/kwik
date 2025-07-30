@@ -3,14 +3,12 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING, Any, Generic, get_args
 
-import kwik
 from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
     from kwik.database.session import KwikSession
-    from kwik.models import User
     from kwik.typings import (
         CreateSchemaType,
         ModelType,
@@ -22,9 +20,9 @@ if TYPE_CHECKING:
     T = Generic[ModelType, CreateSchemaType, UpdateSchemaType]
 else:
     from typing import TypeVar
-    ModelType = TypeVar('ModelType')
-    CreateSchemaType = TypeVar('CreateSchemaType') 
-    UpdateSchemaType = TypeVar('UpdateSchemaType')
+    ModelType = TypeVar("ModelType")
+    CreateSchemaType = TypeVar("CreateSchemaType")
+    UpdateSchemaType = TypeVar("UpdateSchemaType")
     T = Generic[ModelType, CreateSchemaType, UpdateSchemaType]
 
 

@@ -14,16 +14,16 @@ from .user_roles import user_roles
 from .users import user
 
 __all__ = [
-    "audit",
     "AutoCRUD",
     "AutoCRUDCreate",
     "AutoCRUDDelete",
     "AutoCRUDRead",
     "AutoCRUDUpdate",
+    "audit",
     "logs",
     "permission",
     "role",
     "roles_permissions",
-    "user_roles",
     "user",
+    "user_roles",
 ]

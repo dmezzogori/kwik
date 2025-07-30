@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, TypeVar, Generic
+from typing import Generic, TypeVar
 
 from pydantic.generics import GenericModel
 
 # Use TypeVar to avoid circular import
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class Paginated(GenericModel, Generic[T]):

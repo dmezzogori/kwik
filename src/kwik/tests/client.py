@@ -18,7 +18,7 @@ EndpointReturn = Mapping[str, Any] | list[Mapping[str, Any]]
 
 
 def assert_status_code_and_return_response(response: Response, status_code: int = 200) -> EndpointReturn:
-    assert response.status_code == status_code, response.text  # noqa: S101
+    assert response.status_code == status_code, response.text
     return response.json()
 
 

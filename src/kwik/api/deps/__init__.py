@@ -10,8 +10,8 @@ from .users import current_user
 __all__ = [
     "FilterQuery",
     "PaginatedQuery",
-    "has_permission",
     "SortingQuery",
     "current_token",
     "current_user",
+    "has_permission",
 ]

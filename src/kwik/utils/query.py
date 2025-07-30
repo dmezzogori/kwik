@@ -12,8 +12,8 @@ if TYPE_CHECKING:
     from kwik.typings import ModelType, ParsedSortingQuery
 else:
     from typing import TypeVar
-    ModelType = TypeVar('ModelType')
-    ParsedSortingQuery = TypeVar('ParsedSortingQuery')
+    ModelType = TypeVar("ModelType")
+    ParsedSortingQuery = TypeVar("ParsedSortingQuery")
 
 
 def sort_query(*, model: type[ModelType], query: Query, sort: ParsedSortingQuery) -> Query:
