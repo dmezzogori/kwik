@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Kwik is a web framework for building modern, batteries-included, RESTful backends with Python 3.10+. It's based on FastAPI and delivers an opinionated, concise, business-oriented API.
+Kwik is a web framework for building modern, batteries-included, RESTful backends with Python 3.11+. It's based on FastAPI and delivers an opinionated, concise, business-oriented API.
 
 **Key Technologies:**
 - FastAPI for web framework
