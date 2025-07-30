@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import HTTPException
 from starlette import status
@@ -13,6 +12,9 @@ from kwik.core.security import get_password_hash, verify_password
 from kwik.exceptions import IncorrectCredentials, UserInactive, UserNotFound
 
 from . import auto_crud
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, schemas.UserUpdateSchema]):
@@ -52,10 +54,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
     # noinspection PyMethodOverriding
     def update(self, *, db_obj: models.User, obj_in: schemas.UserUpdateSchema | dict[str, Any]) -> models.User:
         """Update user with password hashing support."""
-        if isinstance(obj_in, dict):
-            update_data = obj_in
-        else:
-            update_data = obj_in.dict(exclude_unset=True)
+        update_data = obj_in if isinstance(obj_in, dict) else obj_in.dict(exclude_unset=True)
         if update_data.get("password"):
             hashed_password = get_password_hash(update_data["password"])
             del update_data["password"]

@@ -36,7 +36,8 @@ class DBSession:
         """Get the database session from context variables."""
         if (db := db_conn_ctx_var.get()) is not None:
             return db
-        raise Exception("No database connection available")
+        msg = "No database connection available"
+        raise Exception(msg)
 
 
 class CurrentUser:
@@ -44,8 +45,7 @@ class CurrentUser:
 
     def __get__(self, obj, objtype=None):
         """Get the current user from context variables."""
-        user = current_user_ctx_var.get()
-        return user
+        return current_user_ctx_var.get()
 
 
 class CRUDBase(abc.ABC, Generic[ModelType]):
@@ -57,7 +57,7 @@ class CRUDBase(abc.ABC, Generic[ModelType]):
 
     _instances: dict[str, T] = {}
 
-    def __init__(self, model: type[ModelType] | None = None):
+    def __init__(self, model: type[ModelType] | None = None) -> None:
         """CRUD object with default methods to Create, Read, Update, Delete (CRUD).
 
         **Parameters**

@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.requests import Request
 
 from kwik.database.db_context_manager import DBContextManager
+
+if TYPE_CHECKING:
+    from starlette.requests import Request
 
 
 class DBSessionMiddleware(BaseHTTPMiddleware):
@@ -14,6 +18,5 @@ class DBSessionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
         """Handle request within database session context manager."""
         with DBContextManager():
-            response = await call_next(request)
+            return await call_next(request)
 
-        return response

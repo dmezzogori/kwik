@@ -99,14 +99,13 @@ class Settings(BaseSettings):
         """Build PostgreSQL connection string from individual components."""
         if isinstance(v, str):
             return v
-        ret = PostgresDsn.build(
+        return PostgresDsn.build(
             scheme="postgresql",
             user=values.get("POSTGRES_USER"),
             password=values.get("POSTGRES_PASSWORD"),
             host=values.get("POSTGRES_SERVER"),
             path=f"/{values.get('POSTGRES_DB') or ''}",
         )
-        return ret
 
     alternate_db: AlternateDBSettings = AlternateDBSettings()
 

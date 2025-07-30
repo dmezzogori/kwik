@@ -29,10 +29,7 @@ def iter_unique(
     """Restiuisce elementi unici dal generatore, in funzione del valore dell'attributo indicato."""
     seen = set()
     for t in generator:
-        if isinstance(attr, str):
-            x = getattr(t, attr)
-        else:
-            x = attr(t)
+        x = getattr(t, attr) if isinstance(attr, str) else attr(t)
         if x in seen:
             continue
         seen.add(x)

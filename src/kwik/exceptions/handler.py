@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
-from fastapi import Request
+from typing import TYPE_CHECKING
+
 from starlette.responses import JSONResponse
 
-from kwik.exceptions import KwikException
+if TYPE_CHECKING:
+    from fastapi import Request
+
+    from kwik.exceptions import KwikException
 
 
 async def kwik_exception_handler(request: Request, exc: KwikException):

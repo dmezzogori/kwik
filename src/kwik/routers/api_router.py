@@ -13,7 +13,7 @@ from .autorouter import AutoRouter
 class APIRouter(_APIRouter):
     """Extended FastAPI router with bulk module inclusion capabilities."""
 
-    def include_many(self, package):
+    def include_many(self, package) -> None:
         """Include all router modules from a package with auto-generated prefixes and tags."""
         for module_name, module in getmembers(package, ismodule):
             if module_name == "tests" and not kwik.settings.TEST_ENV:

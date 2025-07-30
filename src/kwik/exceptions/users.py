@@ -8,7 +8,7 @@ from .base import KwikException
 class IncorrectCredentials(KwikException):
     """Exception raised when user provides incorrect login credentials."""
 
-    def __init__(self, detail="Incorrect credentials"):
+    def __init__(self, detail="Incorrect credentials") -> None:
         """Initialize incorrect credentials exception with custom detail message."""
         super().__init__(status_code=status.HTTP_401_UNAUTHORIZED, detail=detail)
 
@@ -16,7 +16,7 @@ class IncorrectCredentials(KwikException):
 class UserNotFound(KwikException):
     """Exception raised when requested user does not exist."""
 
-    def __init__(self, detail="User not found"):
+    def __init__(self, detail="User not found") -> None:
         """Initialize user not found exception with custom detail message."""
         super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
 
@@ -24,6 +24,6 @@ class UserNotFound(KwikException):
 class UserInactive(KwikException):
     """Exception raised when attempting to authenticate inactive user."""
 
-    def __init__(self, detail="Inactive user"):
+    def __init__(self, detail="Inactive user") -> None:
         """Initialize inactive user exception with custom detail message."""
         super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)

@@ -39,12 +39,12 @@ class KwikCSVExporter(KwikExporter):
     def write_headers(self, writer_obj) -> None:
         """Write CSV column headers with field name transformations."""
         headers = []
-        for key in self.fields.as_dict().keys():
-            if key in self.substitutions.keys():
+        for key in self.fields.as_dict():
+            if key in self.substitutions:
                 headers.append(self.substitutions[key])
             else:
                 new_key = key
-                for sub_key in self.partial_substitutions.keys():
+                for sub_key in self.partial_substitutions:
                     if sub_key in new_key:
                         new_key = new_key.replace(
                             sub_key, self.partial_substitutions[sub_key],

@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import urllib.parse
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, Never, TypeVar
 
 from fastapi.encoders import jsonable_encoder
-from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
+    from fastapi.testclient import TestClient
     from httpx import Response
 
 
@@ -60,11 +60,11 @@ class TestClientBase:
         """Get URI for resource deletion."""
         return self.BASE_URI
 
-    def make_post_data(self, **kwargs):
+    def make_post_data(self, **kwargs) -> Never:
         """Create data for POST requests - must be implemented by subclasses."""
         raise NotImplementedError
 
-    def make_put_data(self, **kwargs):
+    def make_put_data(self, **kwargs) -> Never:
         """Create data for PUT requests - must be implemented by subclasses."""
         raise NotImplementedError
 
@@ -97,10 +97,7 @@ class TestClientBase:
         query_string = urllib.parse.urlencode(
             query={k: v for k, v in query.items() if v is not None and k not in exclude_keys},
         )
-        if query_string:
-            uri = f"{self.get_multi_uri}/?{query_string}"
-        else:
-            uri = self.get_multi_uri
+        uri = f"{self.get_multi_uri}/?{query_string}" if query_string else self.get_multi_uri
 
         return assert_status_code_and_return_response(self.client.get(uri, headers=self.headers))
 

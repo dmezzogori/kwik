@@ -16,4 +16,4 @@ class ExporterFields:
     @classmethod
     def as_dict(cls) -> dict[str, Any]:
         """Convert class attributes to dictionary format for field processing."""
-        return {k: v for k, v in cls._class_attrs()}
+        return dict(cls._class_attrs())

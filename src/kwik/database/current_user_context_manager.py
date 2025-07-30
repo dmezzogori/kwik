@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 from kwik.database.context_vars import current_user_ctx_var
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     import kwik.models
 
 

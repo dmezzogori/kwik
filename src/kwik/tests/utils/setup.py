@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from kwik.database import DBContextManager
 from kwik.database.base import Base
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def init_test_db(init_db: Callable, *args, **kwargs) -> None:

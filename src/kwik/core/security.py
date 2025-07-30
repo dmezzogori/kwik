@@ -22,7 +22,7 @@ ALGORITHM = "HS256"
 
 def create_access_token(
     subject: str | Any,
-    expires_delta: timedelta = None,
+    expires_delta: timedelta | None = None,
     impersonator_user_id: int | None = None,
 ) -> str:
     """Create JWT access token with optional expiration and impersonation support."""
@@ -34,8 +34,7 @@ def create_access_token(
     if impersonator_user_id is not None:
         to_encode["kwik_impersonate"] = str(impersonator_user_id)
 
-    encoded_jwt = jwt.encode(to_encode, kwik.settings.SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return jwt.encode(to_encode, kwik.settings.SECRET_KEY, algorithm=ALGORITHM)
 
 
 def create_token(user_id: int, impersonator_user_id: int | None = None) -> kwik.typings.Token:
@@ -55,8 +54,7 @@ def decode_token(token: str) -> schemas.TokenPayload:
     """Decode and validate JWT token, returning payload data."""
     try:
         payload = jwt.decode(token, kwik.settings.SECRET_KEY, algorithms=[ALGORITHM])
-        token_data = schemas.TokenPayload(**payload)
-        return token_data
+        return schemas.TokenPayload(**payload)
     except (jwt.JWTError, ValidationError):
         raise InvalidToken
 

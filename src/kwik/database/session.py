@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
+from typing import TYPE_CHECKING
 
-from fastapi import Request
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Query, Session
 from sqlalchemy.sql.elements import Label
@@ -14,6 +14,9 @@ import kwik.crud
 import kwik.crud.base
 import kwik.schemas
 import kwik.typings
+
+if TYPE_CHECKING:
+    from fastapi import Request
 
 
 class KwikSession(Session):
@@ -78,7 +81,7 @@ class KwikQuery(Query):
 
         for entity in entities:
             if _has_soft_delete(entity):
-                criterion = entity.deleted == False
+                criterion = not entity.deleted
                 self._soft_delete_criteria += (criterion,)
                 self._where_criteria += (criterion,)
 
@@ -133,7 +136,7 @@ class KwikQuery(Query):
         a filter condition on the joined table.
         """
         if _has_soft_delete(target):
-            self._where_criteria += (target.deleted == False,)
+            self._where_criteria += (not target.deleted,)
         return super().join(target, *args, **kwargs)
 
     def outerjoin(self, target, *props, **kwargs) -> KwikQuery:
@@ -143,7 +146,7 @@ class KwikQuery(Query):
         a filter condition on the joined table.
         """
         if _has_soft_delete(target):
-            self._where_criteria += (target.deleted == False,)
+            self._where_criteria += (not target.deleted,)
         return super().outerjoin(target, *props, **kwargs)
 
 

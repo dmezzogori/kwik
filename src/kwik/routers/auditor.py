@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.routing import APIRoute
@@ -15,6 +15,9 @@ from kwik.api.deps.token import get_token
 from kwik.api.deps.users import get_current_user
 from kwik.core import security
 from kwik.middlewares import get_request_id
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class KwikRequest(Request):
@@ -108,7 +111,7 @@ class AuditedRoute(APIRoute):
 class AuditorRouter(APIRouter):
     """Router with built-in audit logging for all registered routes."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         """Initialize auditor router with token dependency and audited route class."""
         kwargs.setdefault("dependencies", []).append(Depends(get_token))
         super().__init__(*args, route_class=AuditedRoute, **kwargs)

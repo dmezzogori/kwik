@@ -127,10 +127,7 @@ class AutoCRUDUpdate(CRUDUpdateBase[ModelType, UpdateSchemaType]):
 
     def update(self, *, db_obj: ModelType, obj_in: UpdateSchemaType | dict[str, Any]) -> ModelType:
         """Update existing record with new data and track changes."""
-        if isinstance(obj_in, dict):
-            update_data = obj_in
-        else:
-            update_data = obj_in.dict(exclude_unset=True)
+        update_data = obj_in if isinstance(obj_in, dict) else obj_in.dict(exclude_unset=True)
 
         # Import here to avoid circular import
         from kwik.database.session import _to_be_audited

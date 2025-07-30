@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
@@ -11,6 +10,8 @@ from kwik.database.db_context_manager import DBContextManager
 from kwik.database.session_local import AlternateSessionLocal
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from sqlalchemy.orm import Session
 
 
@@ -25,7 +26,8 @@ def DBContextSwitcher() -> Generator[Session, None, None]:  # noqa: N802
 
     """
     if AlternateSessionLocal is None:
-        raise ValueError("AlternateSessionLocal is not set. Check env variable ALTERNATE_SQLALCHEMY_DATABASE_URI")
+        msg = "AlternateSessionLocal is not set. Check env variable ALTERNATE_SQLALCHEMY_DATABASE_URI"
+        raise ValueError(msg)
 
     alternate_db_token = db_conn_ctx_var.set(AlternateSessionLocal())
 

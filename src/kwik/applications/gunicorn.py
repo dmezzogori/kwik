@@ -6,13 +6,13 @@ import gunicorn.app.base
 class KwikGunicornApplication(gunicorn.app.base.BaseApplication):
     """Gunicorn WSGI application wrapper for Kwik framework with custom configuration."""
 
-    def __init__(self, app, options=None):
+    def __init__(self, app, options=None) -> None:
         """Initialize Gunicorn application with WSGI app and options."""
         self.options = options or {}
         self.application = app
         super().__init__()
 
-    def load_config(self):
+    def load_config(self) -> None:
         """Load configuration settings from options dict into Gunicorn config."""
         config = {key: value for key, value in self.options.items() if key in self.cfg.settings and value is not None}
         for key, value in config.items():

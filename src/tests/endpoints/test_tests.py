@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from kwik.tests.client import TestClient
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def msg() -> str:
     """Generate random string message for testing."""
     import random

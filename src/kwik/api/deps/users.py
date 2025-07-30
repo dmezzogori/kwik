@@ -9,7 +9,6 @@ from fastapi import Depends
 import kwik.crud
 import kwik.exceptions
 import kwik.models
-
 from .token import current_token
 
 

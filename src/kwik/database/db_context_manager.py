@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from types import TracebackType
 from typing import TYPE_CHECKING
 
 from kwik.database.context_vars import db_conn_ctx_var
@@ -10,6 +9,7 @@ from kwik.database.session_local import SessionLocal
 
 if TYPE_CHECKING:
     from contextvars import Token
+    from types import TracebackType
 
     from sqlalchemy.orm import Session
 

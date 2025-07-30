@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import uvicorn
 
 from kwik import settings
 from kwik.applications.gunicorn import KwikGunicornApplication
 
-from .kwik import Kwik
+if TYPE_CHECKING:
+    from .kwik import Kwik
 
 
 def run(kwik_app: str | Kwik) -> None:

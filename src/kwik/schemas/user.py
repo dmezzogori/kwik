@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from pydantic import BaseModel, EmailStr
 
 from .mixins import ORMMixin
-from .permission import PermissionORMSchema
-from .role import Role
+
+if TYPE_CHECKING:
+    from .permission import PermissionORMSchema
+    from .role import Role
 
 
 class _BaseSchema(BaseModel):

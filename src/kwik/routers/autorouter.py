@@ -3,19 +3,21 @@
 from __future__ import annotations
 
 import inspect
-from typing import Generic, get_args
-
-from fastapi.params import Depends
+from typing import TYPE_CHECKING, Generic, get_args
 
 import kwik
 import kwik.exceptions
 import kwik.models
 import kwik.schemas
-from kwik.core.enum import PermissionNamesBase
 from kwik.crud import AutoCRUD
 from kwik.typings import BaseSchemaType, CreateSchemaType, ModelType, UpdateSchemaType
 
 from .auditor import AuditorRouter
+
+if TYPE_CHECKING:
+    from fastapi.params import Depends
+
+    from kwik.core.enum import PermissionNamesBase
 
 
 class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType]):
@@ -27,7 +29,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         model=None,
         schemas=None,
         permissions: list[PermissionNamesBase] | None = None,
-    ):
+    ) -> None:
         """Initialize auto-router with CRUD instance, model, schemas, and permissions."""
         m, b = get_args(self.__orig_bases__[0])[:2]
         model = m
@@ -53,7 +55,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         base = cls.__orig_bases__[0]
         Model, BaseSchema, CreateSchema, UpdateSchema = base.__args__
 
-        def modify_create_signature():
+        def modify_create_signature() -> None:
             async def new_create(*args, **kwargs):
                 return base.create(*args, **kwargs)
 
@@ -72,7 +74,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
             new_create.__signature__ = inspect.Signature(params)
             cls.create = new_create
 
-        def modify_update_sign():
+        def modify_update_sign() -> None:
             def new_update(*args, **kwargs):
                 return base.update(*args, **kwargs)
 
@@ -114,8 +116,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
     def read(self, id: int) -> ModelType:
         """Retrieve a {name}."""
         try:
-            db_obj = self.crud.get_if_exist(id=id)
-            return db_obj
+            return self.crud.get_if_exist(id=id)
         except kwik.exceptions.NotFound as e:
             raise e.http_exc
 
@@ -141,7 +142,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         except kwik.exceptions.NotFound as e:
             raise e.http_exc
 
-    def register(self, *, read_multi=True, read=True, create=True, update=True, delete=True):
+    def register(self, *, read_multi=True, read=True, create=True, update=True, delete=True) -> None:
         """Register CRUD endpoints with optional inclusion flags."""
         if read_multi:
             self.router.get(

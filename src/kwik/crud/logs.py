@@ -1,10 +1,13 @@
 """CRUD operations for logs database entities."""
 
+from typing import Never
+
 from fastapi.encoders import jsonable_encoder
 
-from .. import models
-from ..models import User
-from ..schemas import LogCreateSchema
+from kwik import models
+from kwik.models import User
+from kwik.schemas import LogCreateSchema
+
 from .base import CRUDCreateBase
 
 
@@ -23,7 +26,7 @@ class CRUDLogs(CRUDCreateBase):
         self.db.refresh(db_obj)
         return db_obj
 
-    def create_if_not_exist(self, *args, **kwargs):
+    def create_if_not_exist(self, *args, **kwargs) -> Never:
         """Not implemented for logs - raises NotImplementedError."""
         raise NotImplementedError
 

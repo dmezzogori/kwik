@@ -27,9 +27,11 @@ def parse_sorting_query(sorting: str | None = None) -> kwik.typings.ParsedSortin
         pattern = r"(\w+)(?::(asc|desc))?"
         for field, direction in re.findall(pattern, sorting):
             if direction and direction not in ("asc", "desc"):
-                raise ValueError(f"Invalid sorting {direction=} for {field=}")
+                msg = f"Invalid sorting {direction=} for {field=}"
+                raise ValueError(msg)
             sort.append((field, direction or "asc"))
         return sort
+    return None
 
 
 SortingQuery = Annotated[kwik.typings.ParsedSortingQuery, Depends(parse_sorting_query)]

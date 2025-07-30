@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from fastapi import APIRouter, Body, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -19,7 +21,7 @@ router = APIRouter()
 
 
 @router.post("/access-token", response_model=kwik.typings.Token)
-def login_access_token(form_data: OAuth2PasswordRequestForm = Depends()) -> kwik.typings.Token:
+def login_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> kwik.typings.Token:
     """OAuth2 compatible token login, get an access token for future requests.
 
     Raises:
@@ -58,7 +60,7 @@ def impersonate(user_id: int, current_user: kwik.api.deps.current_user):
 
 
 @router.post("/is_impersonating", response_model=bool)
-def is_impersonating(token: str = Depends(kwik.api.deps.token.reusable_oauth2)) -> bool:
+def is_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusable_oauth2)]) -> bool:
     """Check if the current token is impersonating another user.
 
     Raises:
@@ -70,7 +72,7 @@ def is_impersonating(token: str = Depends(kwik.api.deps.token.reusable_oauth2)) 
 
 
 @router.post("/stop_impersonating", response_model=kwik.typings.Token)
-def stop_impersonating(token: str = Depends(kwik.api.deps.token.reusable_oauth2)):
+def stop_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusable_oauth2)]):
     """Stop impersonating and return the original token.
 
     Raises:
@@ -83,7 +85,7 @@ def stop_impersonating(token: str = Depends(kwik.api.deps.token.reusable_oauth2)
 
 
 @router.post("/reset-password", response_model=kwik.schemas.Msg)
-def reset_password(token: str = Body(...), password: str = Body(...)) -> dict:
+def reset_password(token: Annotated[str, Body()], password: Annotated[str, Body()]) -> dict:
     """Reset password."""
     email = kwik.utils.verify_password_reset_token(token)
     if not email:
