@@ -1,3 +1,9 @@
+"""Utility functions package for kwik framework.
+
+This package provides common utility functions for email handling, file operations,
+authentication token management, and database query utilities.
+"""
+
 from __future__ import annotations
 
 from .emails import (

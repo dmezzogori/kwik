@@ -1,3 +1,9 @@
+"""WebSocket utilities package for kwik framework.
+
+This package provides WebSocket functionality and utilities for real-time
+communication within the kwik web framework.
+"""
+
 from fastapi import WebSocket
 
 
@@ -16,3 +22,8 @@ async def send(
         await websocket.send_json(data)
     else:
         raise ValueError("Either data or message should be provided")
+
+
+__all__ = [
+    "send",
+]

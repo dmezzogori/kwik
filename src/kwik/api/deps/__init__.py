@@ -1,3 +1,9 @@
+"""API dependencies package for kwik framework.
+
+This package contains FastAPI dependency providers for authentication,
+database access, and other common API requirements.
+"""
+
 from __future__ import annotations
 
 from .filter_query import FilterQuery

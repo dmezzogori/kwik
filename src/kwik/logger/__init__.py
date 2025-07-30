@@ -1,3 +1,9 @@
+"""Logging package for kwik framework.
+
+This package provides custom logging functionality including formatters
+and configuration for the kwik web framework.
+"""
+
 import logging
 
 from kwik import settings
@@ -12,9 +18,7 @@ class CustomFormatter(logging.Formatter):
     red = "\x1b[31;20m"
     bold_red = "\x1b[31;1m"
     reset = "\x1b[0m"
-    format = (
-        "%(asctime)s | %(levelname)s | %(name)s [%(filename)s:%(lineno)d] | %(message)s"
-    )
+    format = "%(asctime)s | %(levelname)s | %(name)s [%(filename)s:%(lineno)d] | %(message)s"
 
     FORMATS = {
         logging.DEBUG: grey + format + reset,
