@@ -2,12 +2,7 @@
 
 from __future__ import annotations
 
-import contextlib
 from typing import TYPE_CHECKING
-
-from sqlalchemy import event
-
-from kwik import logger
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Query
@@ -30,20 +25,3 @@ def sort_query(*, model: type[ModelType], query: Query, sort: ParsedSortingQuery
         else:
             order_by.append(model_attr.desc())
     return query.order_by(*order_by)
-
-
-@contextlib.contextmanager
-def count_queries(conn):
-    """Context manager to count and log SQL queries executed."""
-    queries = []
-
-    def before_cursor_execute(conn, cursor, statement, parameters, context, executemany) -> None:
-        logger.error(statement)
-        queries.append(statement)
-
-    event.listen(conn, "before_cursor_execute", before_cursor_execute)
-    try:
-        yield queries
-    finally:
-        event.remove(conn, "before_cursor_execute", before_cursor_execute)
-        logger.error(f"Queries: {len(queries)}")
