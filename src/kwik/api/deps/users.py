@@ -9,7 +9,8 @@ from fastapi import Depends
 import kwik.crud
 import kwik.exceptions
 import kwik.models
-from .token import current_token
+
+from .token import current_token  # noqa: TC001
 
 
 def get_current_user(token: current_token) -> kwik.models.User:
