@@ -41,16 +41,71 @@ uv run python -m kwik.applications.gunicorn
 ```
 
 ### Testing
+
+#### Local Testing Setup
 ```bash
-# Run tests with coverage
+# Start PostgreSQL test database (required for database tests)
+docker compose -f docker-compose.test.yml up -d
+
+# Wait for database to be ready
+docker compose -f docker-compose.test.yml exec postgres-test pg_isready -U postgres -d kwik_test
+
+# Run all tests with coverage
 uv run pytest
 
-# Run tests with coverage report
+# Run tests with detailed coverage report
 uv run pytest --cov=src/kwik --cov-report=term-missing
 
-# Run specific test
-uv run pytest src/tests/endpoints/test_docs.py
+# Run specific test file
+uv run pytest src/tests/test_crud_users.py
+
+# Run specific test method
+uv run pytest src/tests/test_crud_users.py::TestUserCRUD::test_create_user
+
+# Run tests in parallel (faster)
+uv run pytest -n auto
+
+# Run only unit tests (skip integration tests)
+uv run pytest -m "not integration"
+
+# Stop and clean up test database
+docker compose -f docker-compose.test.yml down -v
 ```
+
+#### Test Database
+- **PostgreSQL Test Database**: Runs on port 5433 (different from development)
+- **Database Name**: kwik_test
+- **Credentials**: postgres/root (test-only, safe to use)
+- **Docker Compose**: `docker-compose.test.yml`
+
+#### Test Structure
+```
+src/tests/
+├── conftest.py              # Pytest configuration and fixtures
+├── utils/                   # Test utilities and factories
+│   ├── __init__.py
+│   ├── factories.py         # Factory Boy factories for test data
+│   └── helpers.py           # Helper functions for tests
+├── test_crud_users.py       # CRUD operation tests
+├── test_crud_roles.py       # Role CRUD tests
+├── test_api_endpoints.py    # API endpoint tests
+└── endpoints/
+    └── test_docs.py         # Documentation endpoint tests
+```
+
+#### Writing Tests
+- Use `db_session` fixture for database access
+- Use `clean_db` fixture to ensure clean state between tests
+- Use factories from `tests.utils` for creating test data
+- Mark integration tests with `@pytest.mark.integration`
+- Mark slow tests with `@pytest.mark.slow`
+
+#### Continuous Integration
+- **GitHub Actions**: Automatically runs tests on PRs and pushes to main/develop
+- **Test Workflow**: `.github/workflows/test.yml`
+- **Database**: Uses the same Docker Compose setup as local testing
+- **Coverage**: Uploads coverage reports to Codecov (if configured)
+- **Linting**: Runs ruff checks and formatting validation
 
 ### Code Quality
 ```bash

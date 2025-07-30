@@ -1,0 +1,178 @@
+"""Tests for role CRUD operations."""
+
+from __future__ import annotations
+
+import pytest
+
+from kwik import crud, schemas
+from kwik.database.context_vars import db_conn_ctx_var
+from kwik.exceptions import NotFound
+from kwik.models.user import Role
+from tests.utils import create_test_role, cleanup_database
+
+
+class TestRoleCRUD:
+    """Test cases for role CRUD operations."""
+
+    def test_create_role(self, db_session, clean_db) -> None:
+        """Test creating a new role."""
+        role_data = schemas.RoleCreateSchema(
+            name="Test Role",
+            is_active=True,
+            is_locked=False,
+        )
+
+        # Set the database session in context
+        db_conn_ctx_var.set(db_session)
+
+        created_role = crud.role.create(obj_in=role_data)
+
+        assert created_role.name == "Test Role"
+        assert created_role.is_active is True
+        assert created_role.is_locked is False
+        assert created_role.id is not None
+
+    def test_get_role_by_id(self, db_session, clean_db) -> None:
+        """Test getting a role by ID."""
+        # Set the database session in context
+        db_conn_ctx_var.set(db_session)
+
+        # Create a test role
+        role = create_test_role(db_session, name="Get Test Role")
+
+        # Get the role by ID
+        retrieved_role = crud.role.get(id=role.id)
+
+        assert retrieved_role is not None
+        assert retrieved_role.id == role.id
+        assert retrieved_role.name == "Get Test Role"
+
+    def test_get_role_by_nonexistent_id_returns_none(self, db_session, clean_db) -> None:
+        """Test getting a role by non-existent ID returns None."""
+        # Set the database session in context
+        db_conn_ctx_var.set(db_session)
+
+        retrieved_role = crud.role.get(id=99999)
+        assert retrieved_role is None
+
+    def test_update_role(self, db_session, clean_db) -> None:
+        """Test updating a role."""
+        # Set the database session in context
+        db_conn_ctx_var.set(db_session)
+
+        # Create a test role
+        role = create_test_role(db_session, name="Original Role")
+
+        # Update the role
+        update_data = schemas.RoleUpdateSchema(name="Updated Role")
+        updated_role = crud.role.update(db_obj=role, obj_in=update_data)
+
+        assert updated_role.id == role.id
+        assert updated_role.name == "Updated Role"
+        assert updated_role.is_active == role.is_active  # Should remain unchanged
+
+    def test_get_if_exist_with_existing_role(self, db_session, clean_db) -> None:
+        """Test get_if_exist with an existing role."""
+        # Set the database session in context
+        db_conn_ctx_var.set(db_session)
+
+        # Create a test role
+        role = create_test_role(db_session)
+
+        # Get the role using get_if_exist
+        retrieved_role = crud.role.get_if_exist(id=role.id)
+
+        assert retrieved_role.id == role.id
+
+    def test_get_if_exist_with_nonexistent_role_raises_error(self, db_session, clean_db) -> None:
+        """Test get_if_exist with non-existent role raises NotFound."""
+        # Set the database session in context
+        db_conn_ctx_var.set(db_session)
+
+        with pytest.raises(NotFound):
+            crud.role.get_if_exist(id=99999)
+
+    def test_get_multi_roles(self, db_session, clean_db) -> None:
+        """Test getting multiple roles with pagination."""
+        # Set the database session in context
+        db_conn_ctx_var.set(db_session)
+
+        # Create multiple test roles
+        roles = []
+        for i in range(5):
+            role = create_test_role(db_session, name=f"Role {i}")
+            roles.append(role)
+
+        # Get multiple roles
+        count, retrieved_roles = crud.role.get_multi(skip=0, limit=3)
+
+        assert count == 5  # Total count
+        assert len(retrieved_roles) == 3  # Limited to 3
+
+        # Test pagination
+        count, second_page = crud.role.get_multi(skip=3, limit=3)
+        assert count == 5
+        assert len(second_page) == 2  # Remaining roles
+
+    def test_get_multi_with_filters(self, db_session, clean_db) -> None:
+        """Test getting multiple roles with filters."""
+        # Set the database session in context
+        db_conn_ctx_var.set(db_session)
+
+        # Create test roles with different attributes
+        create_test_role(db_session, name="Active Role", is_active=True)
+        create_test_role(db_session, name="Inactive Role", is_active=False)
+        create_test_role(db_session, name="Locked Role", is_locked=True)
+
+        # Filter by is_active
+        count, active_roles = crud.role.get_multi(is_active=True)
+        assert count == 2  # Active Role and Locked Role
+
+        count, inactive_roles = crud.role.get_multi(is_active=False)
+        assert count == 1
+        assert inactive_roles[0].name == "Inactive Role"
+
+        # Filter by is_locked
+        count, locked_roles = crud.role.get_multi(is_locked=True)
+        assert count == 1
+        assert locked_roles[0].name == "Locked Role"
+
+    def test_soft_delete_role(self, db_session, clean_db) -> None:
+        """Test soft deleting a role (since Role inherits from SoftDeleteMixin)."""
+        # Set the database session in context
+        db_conn_ctx_var.set(db_session)
+
+        # Create a test role
+        role = create_test_role(db_session, name="To Delete")
+        role_id = role.id
+
+        # Delete the role (should be soft delete)
+        deleted_role = crud.role.remove(id=role_id)
+
+        assert deleted_role.id == role_id
+
+        # Verify role is soft deleted (not returned in normal queries)
+        retrieved_role = crud.role.get(id=role_id)
+        assert retrieved_role is None  # Should not be found due to soft delete
+
+        # But should still exist in database with deleted=True
+        # Note: We'd need to test this with a direct database query that ignores soft delete
+
+    def test_get_all_roles(self, db_session, clean_db) -> None:
+        """Test getting all roles."""
+        # Set the database session in context
+        db_conn_ctx_var.set(db_session)
+
+        # Create test roles
+        create_test_role(db_session, name="Role 1")
+        create_test_role(db_session, name="Role 2")
+        create_test_role(db_session, name="Role 3")
+
+        # Get all roles
+        all_roles = crud.role.get_all()
+
+        assert len(all_roles) == 3
+        role_names = [role.name for role in all_roles]
+        assert "Role 1" in role_names
+        assert "Role 2" in role_names
+        assert "Role 3" in role_names
