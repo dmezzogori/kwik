@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
 class Kwik:
     """Kwik Application is a thin and opinionated wrapper around FastAPI.
+
     It instantiates the FastAPI application and adds some middlewares (CORS,
     RequestContextMiddleware, DBSessionMiddleware).
     It automatically registers all the endpoints from the api_router.

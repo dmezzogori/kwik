@@ -41,7 +41,8 @@ class Settings(BaseSettings):
 
     @validator("BACKEND_WORKERS", pre=True)
     def get_number_of_workers(cls, v: int, values: dict[str, Any]) -> int:
-        """Returns the number of workers to use in Uvicorn.
+        """Get the number of workers to use in Uvicorn.
+
         If the BACKEND_WORKERS environment variable is set, it will return that number.
         If the APP_ENV is set to development, it will default to 1.
         Otherwise, it will return half the number of CPU cores.
@@ -54,7 +55,8 @@ class Settings(BaseSettings):
 
     @validator("HOTRELOAD", pre=True)
     def get_hotreload(cls, v: bool | None, values: dict[str, Any]) -> bool:
-        """Returns the hotreload flag.
+        """Get the hotreload flag.
+
         If the APP_ENV is set to something else than development, it will return False, ignoring the value of HOTRELOAD.
         """
         if values.get("BACKEND_WORKERS") > 1:
@@ -65,7 +67,8 @@ class Settings(BaseSettings):
 
     @validator("DEBUG", pre=True)
     def get_debug(cls, v: bool | None, values: dict[str, Any]) -> bool:
-        """Returns the debug flag.
+        """Get the debug flag.
+
         If the APP_ENV is set to something else than development, it will return False, ignoring the value of DEBUG.
         """
         if values.get("APP_ENV") != "development":
@@ -148,4 +151,6 @@ class Settings(BaseSettings):
     WEBSERVICE_PASSWORD: str | None = None
 
     class Config:
+        """Pydantic configuration for Settings."""
+
         case_sensitive = True

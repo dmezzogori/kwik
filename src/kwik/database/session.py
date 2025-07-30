@@ -18,6 +18,7 @@ import kwik.typings
 
 class KwikSession(Session):
     """Kwik extension of the SQLAlchemy Session class.
+
     Needed to override the delete method (i.e. database.delete(some_instance))
     to implement the Soft Delete pattern.
     It is automatically registered by the DBContextManager.
@@ -28,7 +29,8 @@ class KwikSession(Session):
         return super().query(*entities, **kwargs)
 
     def delete(
-        self, instances: kwik.typings.ModelType | Sequence[kwik.typings.ModelType],
+        self,
+        instances: kwik.typings.ModelType | Sequence[kwik.typings.ModelType],
     ) -> None:
         """Delete instances using soft delete pattern when supported."""
         if not isinstance(instances, Iterable):
@@ -51,6 +53,7 @@ class KwikSession(Session):
 
 class KwikQuery(Query):
     """Kwik extension of the SQLAlchemy Query class.
+
     Needed to override the instantiation of the class (i.e. database.query(some_model)),
     and the join method(i.e. database.query(some_model).join(other_model)),
     to implement the Soft Delete pattern.
@@ -58,10 +61,13 @@ class KwikQuery(Query):
     """
 
     def __init__(
-        self, entities: tuple[kwik.typings.ModelType, ...], session: Session = None,
+        self,
+        entities: tuple[kwik.typings.ModelType, ...],
+        session: Session = None,
     ) -> None:
-        """Ovverides the superclass init to inject automatically soft delete
-        filters, for any entity which requires that.
+        """Override the superclass init to inject automatically soft delete filters.
+
+        For any entity which requires that.
         """
         super().__init__(entities, session=session)
 
@@ -102,14 +108,12 @@ class KwikQuery(Query):
         return len(self._soft_delete_criteria) > 0
 
     def ignore_soft_delete(self) -> KwikQuery:
-        """Additional method to explicitly disable the application
-        of soft delete filter in SELECT statements.
+        """Explicitly disable the application of soft delete filter in SELECT statements.
+
         i.e. database.query(some_model_with_soft_delete).ignore_soft_delete().all()
         return all records, ignoring soft delete flags.
         """
-        self._where_criteria = [
-            c for c in self._where_criteria if c not in self._soft_delete_criteria
-        ]
+        self._where_criteria = [c for c in self._where_criteria if c not in self._soft_delete_criteria]
         return self
 
     def get(self, ident: int):
@@ -124,6 +128,7 @@ class KwikQuery(Query):
 
     def join(self, target, *args, **kwargs) -> KwikQuery:
         """Automatically inject soft delete filters for target models involved in a join.
+
         i.e. database.query(some_model).join(other_model_with_soft_delete) automatically add
         a filter condition on the joined table.
         """
@@ -133,6 +138,7 @@ class KwikQuery(Query):
 
     def outerjoin(self, target, *props, **kwargs) -> KwikQuery:
         """Automatically inject soft delete filters for target models involved in a join.
+
         i.e. database.query(some_model).outerjoin(other_model_with_soft_delete) automatically add
         a filter condition on the joined table.
         """
@@ -142,8 +148,9 @@ class KwikQuery(Query):
 
 
 def _has_soft_delete(model: kwik.typings.ModelType) -> bool:
-    """Checks if an entity (model class) is marked to implement
-    the soft delete pattern (i.e. is a subclass of SoftDeleteMixin).
+    """Check if an entity (model class) is marked to implement the soft delete pattern.
+
+    (i.e. is a subclass of SoftDeleteMixin).
     """
     t = model
     if hasattr(t, "class_"):
@@ -174,5 +181,5 @@ def _to_be_audited(model: kwik.typings.ModelType) -> bool:
 
 
 def get_db_from_request(request: Request) -> KwikSession:
-    """Returns the session instance attached to a Kwik request."""
+    """Get the session instance attached to a Kwik request."""
     return request.state.db

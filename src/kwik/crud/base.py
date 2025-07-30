@@ -33,6 +33,7 @@ class DBSession:
     """Descriptor for accessing database session from context variables."""
 
     def __get__(self, obj, objtype=None) -> Session:
+        """Get the database session from context variables."""
         if (db := db_conn_ctx_var.get()) is not None:
             return db
         raise Exception("No database connection available")
@@ -42,6 +43,7 @@ class CurrentUser:
     """Descriptor for accessing current user from context variables."""
 
     def __get__(self, obj, objtype=None):
+        """Get the current user from context variables."""
         user = current_user_ctx_var.get()
         return user
 

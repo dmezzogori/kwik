@@ -18,7 +18,7 @@ router = AuditorRouter()
     dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_read),),
 )
 def get_many_permissions(paginated: kwik.api.deps.PaginatedQuery) -> kwik.typings.PaginatedResponse[models.Permission]:
-    """Returns all permissions, paginated.
+    """Get all permissions, paginated.
 
     Permissions required:
 
@@ -34,7 +34,7 @@ def get_many_permissions(paginated: kwik.api.deps.PaginatedQuery) -> kwik.typing
     dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_read),),
 )
 def get_single_permission(permission_id: int) -> models.Permission:
-    """Returns a single permission by id.
+    """Get a single permission by id.
 
     Permissions required:
         * `permissions_management_read`
@@ -112,6 +112,7 @@ def update_permission(permission_id: int, permission_in: schemas.PermissionUpdat
 )
 def purge_all_roles(permission_id: int) -> models.Permission:
     """Remove all existing associations of a permission to any role.
+
     Does not delete the permission itself.
 
     Raises:

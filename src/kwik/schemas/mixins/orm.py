@@ -9,4 +9,6 @@ class ORMMixin(BaseModel):
     id: int
 
     class Config:
+        """Pydantic configuration for ORM compatibility."""
+
         orm_mode = True

@@ -26,7 +26,8 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionCreate, schem
         role = crud.role.get_if_exist(id=role_id)
 
         role_permission_db = roles_permissions.get_by_permission_id_and_role_id(
-            role_id=role.id, permission_id=permission.id,
+            role_id=role.id,
+            permission_id=permission.id,
         )
         if role_permission_db is None:
             roles_permissions.create(
@@ -46,7 +47,8 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionCreate, schem
         role = crud.role.get_if_exist(id=role_id)
 
         role_permission_db = roles_permissions.get_by_permission_id_and_role_id(
-            role_id=role.id, permission_id=permission.id,
+            role_id=role.id,
+            permission_id=permission.id,
         )
         if role_permission_db is not None:
             roles_permissions.delete(id=role_permission_db.id)
@@ -72,6 +74,7 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionCreate, schem
 
     def delete(self, *, id: int) -> models.Permission:
         """Delete a permission by id.
+
         Remove all the associations between the permission and the roles associated with it.
 
         Raises:

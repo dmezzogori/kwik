@@ -13,10 +13,8 @@ class _BaseSchema(BaseModel):
 class RolePermissionORMSchema(_BaseSchema, RecordInfoMixin):
     """ORM schema for role-permission associations with record tracking."""
 
-    pass
 
 
 class RolePermissionCreate(_BaseSchema):
     """Schema for creating role-permission associations."""
 
-    pass

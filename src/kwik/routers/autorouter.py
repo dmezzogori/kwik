@@ -49,6 +49,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         self.register()
 
     def __init_subclass__(cls):
+        """Initialize subclass with model and schema types."""
         base = cls.__orig_bases__[0]
         Model, BaseSchema, CreateSchema, UpdateSchema = base.__args__
 
@@ -103,6 +104,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         filters: kwik.FilterQuery,
     ) -> kwik.schemas.Paginated[BaseSchemaType]:
         """Retrieve many {name} items.
+
         Sorting field:[asc|desc].
         """
         total, result = self.crud.get_multi(sort=sorting, **paginated, **filters)

@@ -14,7 +14,7 @@ from .token import current_token
 
 
 def get_current_user(token: current_token) -> kwik.models.User:
-    """Returns the user associated with the token.
+    """Get the user associated with the token.
 
     Raises:
         Forbidden: if the user is not found

@@ -13,6 +13,8 @@ class BaseModel(pydantic.BaseModel):
     """Base Pydantic model with ORM mode configuration for database integration."""
 
     class Config:
+        """Pydantic configuration for ORM compatibility."""
+
         orm_mode = True
 
 

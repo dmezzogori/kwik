@@ -11,7 +11,8 @@ import kwik.typings
 
 
 def parse_sorting_query(sorting: str | None = None) -> kwik.typings.ParsedSortingQuery:
-    """Sorting query parameter parser, to be used as endpoint dependency
+    """Sorting query parameter parser, to be used as endpoint dependency.
+
     The sorting parameter is a comma-separated list of fields to sort by.
     Each field can be postfixed with a colon and a direction ("asc" or "desc").
     If no direction is specified, "asc" is assumed.

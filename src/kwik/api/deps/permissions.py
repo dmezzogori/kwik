@@ -10,6 +10,7 @@ from kwik.exceptions import Forbidden
 
 def has_permission(*permissions: str) -> Depends:
     """Endpoint dependency to check if the current user has the required permissions.
+
     Implemented as a decorator to allow passing multiple permissions as arguments.
 
     Raises:

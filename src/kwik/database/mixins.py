@@ -11,7 +11,9 @@ class TimeStampsMixin:
 
     creation_time = Column(DateTime, nullable=False, server_default=func.now())
     last_modification_time = Column(
-        DateTime, server_onupdate=func.now(), onupdate=func.now(),
+        DateTime,
+        server_onupdate=func.now(),
+        onupdate=func.now(),
     )
 
 
@@ -20,19 +22,17 @@ class UserMixin:
 
     @declared_attr
     def creator_user_id(self):
-        """Reference to the user who created this record."""
+        """Get reference to the user who created this record."""
         return Column(BigInteger, ForeignKey("users.id"), nullable=False)
 
     @declared_attr
     def last_modifier_user_id(self):
-        """Reference to the user who last modified this record."""
+        """Get reference to the user who last modified this record."""
         return Column(BigInteger, ForeignKey("users.id"))
 
 
 class RecordInfoMixin(TimeStampsMixin, UserMixin):
     """Combined mixin providing both timestamps and user tracking functionality."""
-
-    pass
 
 
 class SoftDeleteMixin(RecordInfoMixin):
@@ -46,5 +46,3 @@ class SoftDeleteMixin(RecordInfoMixin):
 
 class LogMixin:
     """Mixin for log-specific database model behavior."""
-
-    pass

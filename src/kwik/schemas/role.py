@@ -28,8 +28,6 @@ class UserRoleCreate(BaseModel):
 class UserRoleRemove(UserRoleCreate):
     """Schema for removing user-role associations."""
 
-    pass
-
 
 class RoleUpdate(RoleBase):
     """Schema for updating existing roles."""
@@ -43,19 +41,17 @@ class RoleInDBBase(RoleBase):
     id: int | None = None
 
     class Config:
+        """Pydantic configuration for ORM compatibility."""
+
         orm_mode = True
 
 
 class Role(RoleInDBBase):
     """Role schema for API responses."""
 
-    pass
-
 
 class RoleInDB(RoleInDBBase):
     """Role schema for internal database operations."""
-
-    pass
 
 
 class RoleLookupSchema(BaseModel):
@@ -65,4 +61,6 @@ class RoleLookupSchema(BaseModel):
     name: str
 
     class Config:
+        """Pydantic configuration for ORM compatibility."""
+
         orm_mode = True

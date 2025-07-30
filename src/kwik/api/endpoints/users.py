@@ -41,6 +41,7 @@ def read_user_by_id(
     user: kwik.api.deps.current_user,
 ) -> kwik.models.User:
     """Get a specific user by id.
+
     If the user requested is not the same as the logged-in user, the user must have the user_management_read permission.
     """
     if user_id != user.id:
@@ -103,7 +104,9 @@ def update_password(
     obj_in: kwik.schemas.UserChangePasswordSchema,
 ) -> kwik.models.User:
     """Update the provided user's password.
-    If the user is not the same as the logged-in user, the logged-in user must have the user_management_update permission.
+
+    If the user is not the same as the logged-in user, the logged-in user must have the
+    user_management_update permission.
     """
     if user_id != user.id:
         if not kwik.crud.user.has_permissions(user_id=user.id, permissions=(Permissions.users_management_update,)):
