@@ -9,6 +9,7 @@ Token = dict[str, str]
 
 class TokensManager:
     def __init__(self, client: TestClient):
+        """Initialize tokens manager with test client."""
         self.client = client
         self._tokens: dict[str, Token] = {}
 

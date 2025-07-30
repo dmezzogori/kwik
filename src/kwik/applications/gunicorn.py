@@ -3,6 +3,7 @@ import gunicorn.app.base
 
 class KwikGunicornApplication(gunicorn.app.base.BaseApplication):
     def __init__(self, app, options=None):
+        """Initialize Gunicorn application with WSGI app and options."""
         self.options = options or {}
         self.application = app
         super().__init__()

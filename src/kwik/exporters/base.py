@@ -11,6 +11,7 @@ class KwikExporter:
     partial_substitutions: dict[str, str]
 
     def __init__(self, fields: ExporterFields, filename: str | None = None) -> None:
+        """Initialize exporter with field configuration and optional filename."""
         self.fields = fields
         self.already_written = False
 

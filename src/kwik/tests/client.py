@@ -29,6 +29,7 @@ class TestClientBase:
     BASE_URI: str
 
     def __init__(self, client: TestClient, headers: dict[str, str]) -> None:
+        """Initialize test client with HTTP client and request headers."""
         self.client = client
         self.headers = headers
 

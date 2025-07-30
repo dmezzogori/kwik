@@ -24,6 +24,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         schemas=None,
         permissions: list[PermissionNamesBase] | None = None,
     ):
+        """Initialize auto-router with CRUD instance, model, schemas, and permissions."""
         m, b = get_args(self.__orig_bases__[0])[:2]
         model = m
         self.BaseSchemaType: BaseSchemaType = b

@@ -7,6 +7,7 @@ class KwikException(Exception):
     """Base class for all Kwik exceptions."""
 
     def __init__(self, status_code: int, detail: str) -> None:
+        """Initialize Kwik exception with status code and detail message."""
         self.status_code: int = status_code
         self.detail: str = detail
         super().__init__()
@@ -19,19 +20,23 @@ class KwikException(Exception):
 
 class DuplicatedEntity(KwikException):
     def __init__(self, detail="Entity already exists"):
+        """Initialize duplicated entity exception with custom detail message."""
         super().__init__(status_code=status.HTTP_412_PRECONDITION_FAILED, detail=detail)
 
 
 class Forbidden(KwikException):
     def __init__(self, detail="Not enough privileges"):
+        """Initialize forbidden access exception with custom detail message."""
         super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
 
 
 class NotFound(KwikException):
     def __init__(self, detail="Entity not found"):
+        """Initialize not found exception with custom detail message."""
         super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
 
 
 class InvalidToken(KwikException):
     def __init__(self, detail="Invalid token"):
+        """Initialize invalid token exception with custom detail message."""
         super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)

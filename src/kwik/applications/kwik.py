@@ -28,6 +28,7 @@ class Kwik:
     """
 
     def __init__(self, api_router: APIRouter) -> None:
+        """Initialize Kwik application with API router."""
         self._app = self.init_fastapi_app(api_router=api_router)
 
         kwik.logger.info("Kwik App ready")

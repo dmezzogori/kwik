@@ -101,5 +101,6 @@ class AuditedRoute(APIRoute):
 
 class AuditorRouter(APIRouter):
     def __init__(self, *args, **kwargs):
+        """Initialize auditor router with token dependency and audited route class."""
         kwargs.setdefault("dependencies", []).append(Depends(get_token))
         super().__init__(*args, route_class=AuditedRoute, **kwargs)
