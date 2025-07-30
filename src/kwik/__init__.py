@@ -18,7 +18,6 @@ from .api.deps import (  # noqa: E402
 )
 from .applications import Kwik, run  # noqa: E402
 from .database.session import KwikQuery, KwikSession  # noqa: E402
-from .exporters.base import KwikExporter  # noqa: E402
 from .logger import logger  # noqa: E402
 from .routers.autorouter import AutoRouter  # noqa: E402
 from .websocket.deps import broadcast  # noqa: E402
@@ -27,7 +26,6 @@ __all__ = [
     "AutoRouter",
     "FilterQuery",
     "Kwik",
-    "KwikExporter",
     "KwikQuery",
     "KwikSession",
     "PaginatedQuery",
