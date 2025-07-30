@@ -54,7 +54,7 @@ class Settings(BaseSettings):
         return cpu_count() // 2
 
     @validator("HOTRELOAD", pre=True)
-    def get_hotreload(cls, v: bool | None, values: dict[str, Any]) -> bool:
+    def get_hotreload(cls, v: bool | None, values: dict[str, Any]) -> bool:  # noqa: N805
         """Get the hotreload flag.
 
         If the APP_ENV is set to something else than development, it will return False, ignoring the value of HOTRELOAD.
@@ -76,7 +76,7 @@ class Settings(BaseSettings):
         return v if v is not None else True
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
-    def assemble_cors_origins(cls, v: str | list[str]) -> list[str] | str:
+    def assemble_cors_origins(cls, v: str | list[str]) -> list[str] | str:  # noqa: N805
         """Parse CORS origins from comma-separated string or return as-is."""
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
@@ -108,30 +108,6 @@ class Settings(BaseSettings):
         )
 
     alternate_db: AlternateDBSettings = AlternateDBSettings()
-
-    SMTP_HOST: str | None = None
-    SMTP_PORT: int | None = None
-    SMTP_USER: str | None = None
-    SMTP_PASSWORD: str | None = None
-    SMTP_TLS: bool = True
-    EMAILS_FROM_EMAIL: EmailStr | None = None
-    EMAILS_FROM_NAME: str | None = None
-
-    @validator("EMAILS_FROM_NAME")
-    def get_project_name(cls, v: str | None, values: dict[str, Any]) -> str:
-        """Use project name as default sender name if not provided."""
-        if not v:
-            return values["PROJECT_NAME"]
-        return v
-
-    EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
-    EMAIL_TEMPLATES_DIR: str = "/src/app/email-templates"
-    EMAILS_ENABLED: bool = False
-
-    @validator("EMAILS_ENABLED", pre=True)
-    def get_emails_enabled(cls, v: bool, values: dict[str, Any]) -> bool:
-        """Enable emails only if SMTP configuration is complete."""
-        return bool(values.get("SMTP_HOST") and values.get("SMTP_PORT") and values.get("EMAILS_FROM_EMAIL"))
 
     FIRST_SUPERUSER: EmailStr = "admin@example.com"
     FIRST_SUPERUSER_PASSWORD: str = "admin"

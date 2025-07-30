@@ -10,7 +10,6 @@ import kwik.typings
 from kwik.core.enum import Permissions
 from kwik.exceptions import DuplicatedEntity, Forbidden
 from kwik.routers import AuditorRouter
-from kwik.utils import send_new_account_email
 
 router = AuditorRouter()
 
@@ -62,12 +61,7 @@ def create_user(user_in: kwik.schemas.UserCreateSchema) -> kwik.models.User:
     if user:
         raise DuplicatedEntity
 
-    user = kwik.crud.user.create(obj_in=user_in)
-
-    if kwik.settings.EMAILS_ENABLED:
-        send_new_account_email(email_to=user_in.email, username=user_in.email, password=user_in.password)
-
-    return user
+    return kwik.crud.user.create(obj_in=user_in)
 
 
 @router.put("/me", response_model=kwik.schemas.UserORMSchema)
