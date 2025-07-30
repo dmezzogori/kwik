@@ -29,6 +29,10 @@ else:
     T = Generic[ModelType, CreateSchemaType, UpdateSchemaType]
 
 
+class NoDatabaseConnectionError(Exception):
+    """Raised when no database connection is available."""
+
+
 class DBSession:
     """Descriptor for accessing database session from context variables."""
 
@@ -37,7 +41,7 @@ class DBSession:
         if (db := db_conn_ctx_var.get()) is not None:
             return db
         msg = "No database connection available"
-        raise Exception(msg)
+        raise NoDatabaseConnectionError(msg)
 
 
 class CurrentUser:

@@ -47,18 +47,22 @@ def synth_schemas(cls):
             if default is not None and not callable(default):
                 kw[col_name] = default
             elif nullable:
-                kw[col_name] = typing.Optional[type_], None
+                kw[col_name] = typing.Optional[type_], None  # noqa: UP045
             else:
                 kw[col_name] = type_, ...
 
     bkw = dict(kw)
     BaseSchema: BaseModel = create_model(
-        f"{cls.__name__}Base", __base__=typings.BaseModel, **bkw,
+        f"{cls.__name__}Base",
+        __base__=typings.BaseModel,
+        **bkw,
     )
     CreateModel: BaseModel = create_model(
-        f"{cls.__name__}Create", **{k: v for k, v in kw.items() if k != "id"},
+        f"{cls.__name__}Create",
+        **{k: v for k, v in kw.items() if k != "id"},
     )
     UpdateModel: BaseModel = create_model(
-        f"{cls.__name__}Update", **{k: v for k, v in kw.items() if k != "id"},
+        f"{cls.__name__}Update",
+        **{k: v for k, v in kw.items() if k != "id"},
     )
     return BaseSchema, CreateModel, UpdateModel

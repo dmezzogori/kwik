@@ -47,7 +47,8 @@ class KwikCSVExporter(KwikExporter):
                 for sub_key in self.partial_substitutions:
                     if sub_key in new_key:
                         new_key = new_key.replace(
-                            sub_key, self.partial_substitutions[sub_key],
+                            sub_key,
+                            self.partial_substitutions[sub_key],
                         )
                 headers.append(new_key.replace("_", " ").capitalize())
         writer_obj.writerow(headers)
@@ -90,10 +91,9 @@ class KwikCSVExporter(KwikExporter):
     def streaming_response(self) -> StreamingResponse:
         """Return CSV file as streaming response and clean up temporary file."""
         response = StreamingResponse(
-            open(self.filename, mode="rb"), media_type="text/csv",
+            open(self.filename, mode="rb"),  # noqa: PTH123, SIM115
+            media_type="text/csv",
         )
-        response.headers[
-            "Content-Disposition"
-        ] = f"attachment; filename={self.filename}"
-        os.remove(self.filename)
+        response.headers["Content-Disposition"] = f"attachment; filename={self.filename}"
+        os.remove(self.filename)  # noqa: PTH107
         return response

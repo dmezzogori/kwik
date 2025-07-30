@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm  # noqa: TC002
 
 import kwik.api.deps
 import kwik.core.enum
@@ -43,7 +43,7 @@ def test_token(current_user: kwik.api.deps.current_user) -> kwik.models.User:
     response_model=kwik.typings.Token,
     dependencies=(kwik.api.deps.has_permission(kwik.core.enum.Permissions.impersonification),),
 )
-def impersonate(user_id: int, current_user: kwik.api.deps.current_user):
+def impersonate(user_id: int, current_user: kwik.api.deps.current_user) -> kwik.typings.Token:
     """Impersonate a user.
 
     Permissions:
