@@ -1,3 +1,5 @@
+"""Enhanced test client for API testing."""
+
 from __future__ import annotations
 
 import urllib.parse

@@ -1,3 +1,5 @@
+"""Pydantic schemas for synth validation."""
+
 import typing
 from datetime import datetime
 

@@ -1,3 +1,5 @@
+"""Pydantic schemas for soft delete validation."""
+
 from .record_info import RecordInfoMixin
 
 

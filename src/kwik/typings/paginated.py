@@ -1,3 +1,5 @@
+"""Type definitions for paginated responses."""
+
 from __future__ import annotations
 
 from typing import Generic, TypedDict

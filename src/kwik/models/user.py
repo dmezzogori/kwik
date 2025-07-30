@@ -1,3 +1,5 @@
+"""Database models for user management and permissions."""
+
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 

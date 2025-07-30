@@ -1,3 +1,5 @@
+"""Database model for application event logs."""
+
 from sqlalchemy import JSON, Column, Integer, String
 
 from kwik.database import base

@@ -1,3 +1,5 @@
+"""Database current user context manager for Kwik framework."""
+
 from __future__ import annotations
 
 from collections.abc import Generator

@@ -1,3 +1,5 @@
+"""Database current user for Kwik framework."""
+
 from __future__ import annotations
 
 from contextvars import ContextVar

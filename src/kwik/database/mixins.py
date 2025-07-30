@@ -1,3 +1,5 @@
+"""Database model mixins for common functionality."""
+
 from __future__ import annotations
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, func

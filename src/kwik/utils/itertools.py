@@ -1,3 +1,5 @@
+"""Iterator utility functions with limits."""
+
 from collections.abc import Callable, Generator, Iterable
 from typing import Any, TypeVar
 

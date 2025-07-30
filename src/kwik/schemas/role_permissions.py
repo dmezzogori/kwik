@@ -1,3 +1,5 @@
+"""Pydantic schemas for role permissions validation."""
+
 from pydantic import BaseModel
 
 from kwik.schemas.mixins import RecordInfoMixin

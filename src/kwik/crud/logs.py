@@ -1,3 +1,5 @@
+"""CRUD operations for logs database entities."""
+
 from fastapi.encoders import jsonable_encoder
 
 from .. import models

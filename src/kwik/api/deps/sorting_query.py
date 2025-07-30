@@ -1,3 +1,5 @@
+"""Sorting query dependency for FastAPI endpoints."""
+
 from __future__ import annotations
 
 import re

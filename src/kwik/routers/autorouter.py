@@ -1,3 +1,5 @@
+"""Automatic router generation for CRUD operations."""
+
 from __future__ import annotations
 
 import inspect

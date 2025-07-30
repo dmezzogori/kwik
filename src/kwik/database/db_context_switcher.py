@@ -1,3 +1,5 @@
+"""Database db context switcher for Kwik framework."""
+
 from __future__ import annotations
 
 from collections.abc import Generator

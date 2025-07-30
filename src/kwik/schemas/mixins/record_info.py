@@ -1,3 +1,5 @@
+"""Pydantic schemas for record info validation."""
+
 from datetime import datetime
 
 from .orm import ORMMixin

@@ -1,3 +1,5 @@
+"""Configuration settings for Kwik framework using Pydantic."""
+
 from __future__ import annotations
 
 import secrets

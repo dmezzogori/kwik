@@ -1,3 +1,5 @@
+"""Kwik framework entry point module."""
+
 import kwik
 
 if __name__ == "__main__":

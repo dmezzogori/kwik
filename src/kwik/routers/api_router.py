@@ -1,3 +1,5 @@
+"""Enhanced APIRouter with automatic CRUD generation."""
+
 from inspect import getmembers, ismodule
 
 from fastapi import APIRouter as _APIRouter

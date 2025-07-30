@@ -1,3 +1,5 @@
+"""CRUD operations for permissions database entities."""
+
 from __future__ import annotations
 
 from kwik import crud, models, schemas

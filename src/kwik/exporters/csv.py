@@ -1,3 +1,5 @@
+"""CSV data export functionality."""
+
 import enum
 import os
 from _csv import writer

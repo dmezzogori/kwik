@@ -1,3 +1,5 @@
+"""File handling and storage utilities."""
+
 from pathlib import Path
 from uuid import uuid1
 

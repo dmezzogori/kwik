@@ -1,3 +1,5 @@
+"""Token authentication dependencies for FastAPI endpoints."""
+
 from __future__ import annotations
 
 from typing import Annotated

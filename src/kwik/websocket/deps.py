@@ -1,3 +1,5 @@
+"""WebSocket dependencies and broadcast configuration."""
+
 from broadcaster import Broadcast
 
 from kwik import settings

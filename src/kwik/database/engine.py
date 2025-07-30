@@ -1,3 +1,5 @@
+"""Database engine configuration for SQLAlchemy."""
+
 from __future__ import annotations
 
 from sqlalchemy import create_engine

@@ -1,3 +1,5 @@
+"""Test utilities and test tests for Kwik framework."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

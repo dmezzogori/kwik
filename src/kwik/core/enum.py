@@ -1,3 +1,5 @@
+"""Enumerations for Kwik framework permissions and core types."""
+
 from __future__ import annotations
 
 from enum import StrEnum
@@ -5,8 +7,6 @@ from enum import StrEnum
 
 class PermissionNamesBase(StrEnum):
     """Base class for defining permission name enumerations."""
-
-    pass
 
 
 class Permissions(StrEnum):

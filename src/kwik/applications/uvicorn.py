@@ -1,3 +1,5 @@
+"""Uvicorn worker configuration for Kwik framework."""
+
 from uvicorn.workers import UvicornWorker
 
 

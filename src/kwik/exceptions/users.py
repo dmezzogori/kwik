@@ -1,3 +1,5 @@
+"""Exception classes for users functionality."""
+
 from fastapi import status
 
 from .base import KwikException

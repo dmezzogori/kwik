@@ -1,3 +1,5 @@
+"""Security utilities for JWT tokens and password hashing."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta

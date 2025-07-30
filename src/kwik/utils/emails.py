@@ -1,3 +1,5 @@
+"""Email sending utilities and templates."""
+
 import smtplib
 import ssl
 from email.header import Header

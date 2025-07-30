@@ -1,3 +1,5 @@
+"""Database session management and query utilities."""
+
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence

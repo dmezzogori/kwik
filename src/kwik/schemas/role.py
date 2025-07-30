@@ -1,3 +1,5 @@
+"""Pydantic schemas for role validation."""
+
 from pydantic import BaseModel
 
 

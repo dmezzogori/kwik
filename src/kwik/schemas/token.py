@@ -1,3 +1,5 @@
+"""Schemas for authentication tokens."""
+
 from pydantic import BaseModel
 
 

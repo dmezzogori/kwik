@@ -1,3 +1,5 @@
+"""Authentication and login API endpoints."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Body, Depends

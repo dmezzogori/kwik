@@ -1,3 +1,5 @@
+"""Database base configuration and declarative base."""
+
 from sqlalchemy.ext.declarative import as_declarative
 
 

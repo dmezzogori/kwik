@@ -1,3 +1,5 @@
+"""Request context middleware for request tracking."""
+
 from contextvars import ContextVar
 from uuid import uuid4
 

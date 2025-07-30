@@ -1,3 +1,5 @@
+"""CRUD operations for roles database entities."""
+
 from __future__ import annotations
 
 from sqlalchemy import or_

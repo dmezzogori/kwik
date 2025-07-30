@@ -1,3 +1,5 @@
+"""Database session middleware for request lifecycle."""
+
 from __future__ import annotations
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint

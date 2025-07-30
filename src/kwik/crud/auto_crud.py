@@ -1,3 +1,5 @@
+"""Automatic CRUD operations base class for database models."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -20,6 +22,7 @@ if TYPE_CHECKING:
     )
 else:
     from typing import TypeVar
+
     ModelType = TypeVar("ModelType")
     CreateSchemaType = TypeVar("CreateSchemaType")
     UpdateSchemaType = TypeVar("UpdateSchemaType")
@@ -81,6 +84,7 @@ class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
 
         # Import here to avoid circular import
         from kwik.database.session import _to_be_audited
+
         if self.user is not None and _to_be_audited(self.model):
             obj_in_data["creator_user_id"] = self.user.id
 
@@ -130,6 +134,7 @@ class AutoCRUDUpdate(CRUDUpdateBase[ModelType, UpdateSchemaType]):
 
         # Import here to avoid circular import
         from kwik.database.session import _to_be_audited
+
         if self.user is not None and _to_be_audited(self.model):
             update_data["last_modifier_user_id"] = self.user.id
 
@@ -181,5 +186,3 @@ class AutoCRUD(
     AutoCRUDDelete[ModelType],
 ):
     """Complete CRUD implementation combining create, read, update, and delete operations."""
-
-    pass

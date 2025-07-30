@@ -1,3 +1,5 @@
+"""Login and authentication utility functions."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta

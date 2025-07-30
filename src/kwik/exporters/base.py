@@ -1,3 +1,5 @@
+"""Base classes for data exporters."""
+
 from starlette.responses import StreamingResponse
 
 from kwik.database.base import Base

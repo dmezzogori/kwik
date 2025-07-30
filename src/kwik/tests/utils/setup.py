@@ -1,3 +1,5 @@
+"""Test setup utilities and database management."""
+
 from __future__ import annotations
 
 from collections.abc import Callable

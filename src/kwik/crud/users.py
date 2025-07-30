@@ -1,3 +1,5 @@
+"""CRUD operations for users database entities."""
+
 from __future__ import annotations
 
 from collections.abc import Sequence

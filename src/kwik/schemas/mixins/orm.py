@@ -1,3 +1,5 @@
+"""Pydantic schemas for orm validation."""
+
 from pydantic import BaseModel
 
 

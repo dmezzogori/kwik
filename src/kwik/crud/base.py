@@ -1,3 +1,5 @@
+"""Base CRUD classes and operations for database models."""
+
 from __future__ import annotations
 
 import abc
@@ -20,6 +22,7 @@ if TYPE_CHECKING:
     T = Generic[ModelType, CreateSchemaType, UpdateSchemaType]
 else:
     from typing import TypeVar
+
     ModelType = TypeVar("ModelType")
     CreateSchemaType = TypeVar("CreateSchemaType")
     UpdateSchemaType = TypeVar("UpdateSchemaType")
@@ -75,12 +78,10 @@ class CRUDReadBase(CRUDBase[ModelType]):
     @abc.abstractmethod
     def get(self, *, id: int) -> ModelType | None:
         """Get single record by primary key ID."""
-        pass
 
     @abc.abstractmethod
     def get_all(self) -> list[ModelType]:
         """Get all records from the table."""
-        pass
 
     @abc.abstractmethod
     def get_multi(
@@ -92,12 +93,10 @@ class CRUDReadBase(CRUDBase[ModelType]):
         **filters,
     ) -> PaginatedCRUDResult[ModelType]:
         """Get multiple records with pagination, filtering, and sorting."""
-        pass
 
     @abc.abstractmethod
     def get_if_exist(self, *, id: int) -> ModelType:
         """Get record by ID or raise exception if it doesn't exist."""
-        pass
 
 
 class CRUDCreateBase(CRUDBase, Generic[ModelType, CreateSchemaType]):
@@ -110,7 +109,6 @@ class CRUDCreateBase(CRUDBase, Generic[ModelType, CreateSchemaType]):
         obj_in: CreateSchemaType,
     ) -> ModelType:
         """Create new record from schema data."""
-        pass
 
     @abc.abstractmethod
     def create_if_not_exist(
@@ -121,7 +119,6 @@ class CRUDCreateBase(CRUDBase, Generic[ModelType, CreateSchemaType]):
         raise_on_error: bool = False,
     ) -> ModelType:
         """Create record if it doesn't exist, or return existing record."""
-        pass
 
 
 class CRUDUpdateBase(CRUDBase, Generic[ModelType, UpdateSchemaType]):
@@ -135,7 +132,6 @@ class CRUDUpdateBase(CRUDBase, Generic[ModelType, UpdateSchemaType]):
         obj_in: UpdateSchemaType | dict[str, Any],
     ) -> ModelType:
         """Update existing record with new data."""
-        pass
 
 
 class CRUDDeleteBase(CRUDBase[ModelType]):
@@ -144,4 +140,3 @@ class CRUDDeleteBase(CRUDBase[ModelType]):
     @abc.abstractmethod
     def delete(self, *, id: int) -> ModelType:
         """Delete record by ID and return the deleted object."""
-        pass

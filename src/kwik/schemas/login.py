@@ -1,3 +1,5 @@
+"""Schemas for authentication and login operations."""
+
 from pydantic import BaseModel
 
 

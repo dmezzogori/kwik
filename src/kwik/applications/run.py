@@ -1,3 +1,5 @@
+"""Kwik application runner with multiple server options."""
+
 from __future__ import annotations
 
 import uvicorn

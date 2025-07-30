@@ -1,3 +1,5 @@
+"""Gunicorn WSGI server application wrapper for Kwik framework."""
+
 import gunicorn.app.base
 
 

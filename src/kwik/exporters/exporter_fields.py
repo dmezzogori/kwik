@@ -1,3 +1,5 @@
+"""Field configuration for data exporters."""
+
 from collections.abc import Iterable
 from typing import Any
 

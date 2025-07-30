@@ -1,3 +1,5 @@
+"""Base exception classes for Kwik framework."""
+
 from __future__ import annotations
 
 from fastapi import HTTPException, status

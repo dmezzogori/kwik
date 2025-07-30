@@ -1,3 +1,5 @@
+"""CRUD operations for user roles database entities."""
+
 from kwik import models, schemas
 
 from . import auto_crud

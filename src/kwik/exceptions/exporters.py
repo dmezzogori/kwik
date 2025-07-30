@@ -1,3 +1,5 @@
+"""Exception classes for exporters functionality."""
+
 from fastapi import HTTPException, status
 
 

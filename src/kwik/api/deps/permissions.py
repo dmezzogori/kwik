@@ -1,3 +1,5 @@
+"""Permission checking dependencies for FastAPI endpoints."""
+
 from __future__ import annotations
 
 from fastapi import Depends

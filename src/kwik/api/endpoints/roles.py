@@ -1,3 +1,5 @@
+"""Role management API endpoints."""
+
 from __future__ import annotations
 
 import kwik.api.deps

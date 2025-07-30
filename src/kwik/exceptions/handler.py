@@ -1,3 +1,5 @@
+"""Exception handlers for FastAPI error responses."""
+
 from __future__ import annotations
 
 from fastapi import Request

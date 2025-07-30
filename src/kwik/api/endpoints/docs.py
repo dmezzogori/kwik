@@ -1,3 +1,5 @@
+"""API documentation endpoints and utilities."""
+
 import json
 from typing import Any
 

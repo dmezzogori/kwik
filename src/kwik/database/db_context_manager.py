@@ -1,3 +1,5 @@
+"""Database db context manager for Kwik framework."""
+
 from __future__ import annotations
 
 from types import TracebackType

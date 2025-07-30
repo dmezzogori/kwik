@@ -1,3 +1,5 @@
+"""Pydantic schemas for logs validation."""
+
 from typing import Any
 
 from pydantic import BaseModel

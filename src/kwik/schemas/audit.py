@@ -1,3 +1,5 @@
+"""Pydantic schemas for audit validation."""
+
 from pydantic import BaseModel
 
 from kwik.schemas.mixins.orm import ORMMixin

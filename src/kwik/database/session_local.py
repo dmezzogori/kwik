@@ -1,3 +1,5 @@
+"""Local database session factory configuration."""
+
 from __future__ import annotations
 
 from sqlalchemy.orm import sessionmaker

@@ -1,3 +1,5 @@
+"""Pydantic schemas for user validation."""
+
 from __future__ import annotations
 
 from pydantic import BaseModel, EmailStr
