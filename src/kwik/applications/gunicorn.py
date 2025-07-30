@@ -8,9 +8,11 @@ class KwikGunicornApplication(gunicorn.app.base.BaseApplication):
         super().__init__()
 
     def load_config(self):
+        """Load configuration settings from options dict into Gunicorn config."""
         config = {key: value for key, value in self.options.items() if key in self.cfg.settings and value is not None}
         for key, value in config.items():
             self.cfg.set(key.lower(), value)
 
     def load(self):
+        """Return the WSGI application instance to be served."""
         return self.application

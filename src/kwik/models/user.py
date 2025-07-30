@@ -26,6 +26,7 @@ class User(Base):
 
     @property
     def permissions(self):
+        """Get all permissions from all user roles."""
         return [permission for role in self.roles for permission in role.permissions]
 
 

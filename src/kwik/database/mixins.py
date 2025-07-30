@@ -14,10 +14,12 @@ class TimeStampsMixin:
 class UserMixin:
     @declared_attr
     def creator_user_id(self):
+        """Reference to the user who created this record."""
         return Column(BigInteger, ForeignKey("users.id"), nullable=False)
 
     @declared_attr
     def last_modifier_user_id(self):
+        """Reference to the user who last modified this record."""
         return Column(BigInteger, ForeignKey("users.id"))
 
 
@@ -28,6 +30,7 @@ class RecordInfoMixin(TimeStampsMixin, UserMixin):
 class SoftDeleteMixin(RecordInfoMixin):
     @declared_attr
     def deleted(self):
+        """Boolean flag indicating if record is soft-deleted."""
         return Column(Boolean, default=False)
 
 

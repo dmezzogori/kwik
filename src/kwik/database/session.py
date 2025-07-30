@@ -22,11 +22,13 @@ class KwikSession(Session):
     """
 
     def query(self, *entities, **kwargs) -> KwikQuery:
+        """Create a KwikQuery instance with soft delete support."""
         return super().query(*entities, **kwargs)
 
     def delete(
         self, instances: kwik.typings.ModelType | Sequence[kwik.typings.ModelType],
     ) -> None:
+        """Delete instances using soft delete pattern when supported."""
         if not isinstance(instances, Iterable):
             instances = (instances,)
         for instance in instances:
@@ -73,23 +75,28 @@ class KwikQuery(Query):
                 self._where_criteria += (criterion,)
 
     def filter(self, *criterion) -> KwikQuery:
+        """Apply WHERE clauses and return self for method chaining."""
         super().filter(*criterion)
         return self
 
     def order_by(self, *clauses) -> KwikQuery:
+        """Apply ORDER BY clauses and return self for method chaining."""
         super().order_by(*clauses)
         return self
 
     def limit(self, limit) -> KwikQuery:
+        """Apply LIMIT clause and return self for method chaining."""
         super().limit(limit)
         return self
 
     def offset(self, offset) -> KwikQuery:
+        """Apply OFFSET clause and return self for method chaining."""
         super().offset(offset)
         return self
 
     @property
     def soft_delete_enabled(self) -> bool:
+        """Check if soft delete filtering is active for this query."""
         return len(self._soft_delete_criteria) > 0
 
     def ignore_soft_delete(self) -> KwikQuery:
@@ -104,6 +111,7 @@ class KwikQuery(Query):
         return self
 
     def get(self, ident: int):
+        """Get single record by primary key with soft delete handling."""
         if self.soft_delete_enabled:
             orig_where_criteria = list(self._where_criteria)
             self._where_criteria = []

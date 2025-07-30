@@ -70,6 +70,7 @@ class Settings(BaseSettings):
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: str | list[str]) -> list[str] | str:
+        """Parse CORS origins from comma-separated string or return as-is."""
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
         if isinstance(v, (list, str)):
@@ -88,6 +89,7 @@ class Settings(BaseSettings):
 
     @validator("SQLALCHEMY_DATABASE_URI", pre=True)
     def assemble_db_connection(cls, v: str | None, values: dict[str, Any]) -> Any:
+        """Build PostgreSQL connection string from individual components."""
         if isinstance(v, str):
             return v
         ret = PostgresDsn.build(
@@ -111,6 +113,7 @@ class Settings(BaseSettings):
 
     @validator("EMAILS_FROM_NAME")
     def get_project_name(cls, v: str | None, values: dict[str, Any]) -> str:
+        """Use project name as default sender name if not provided."""
         if not v:
             return values["PROJECT_NAME"]
         return v
@@ -121,6 +124,7 @@ class Settings(BaseSettings):
 
     @validator("EMAILS_ENABLED", pre=True)
     def get_emails_enabled(cls, v: bool, values: dict[str, Any]) -> bool:
+        """Enable emails only if SMTP configuration is complete."""
         return bool(values.get("SMTP_HOST") and values.get("SMTP_PORT") and values.get("EMAILS_FROM_EMAIL"))
 
     FIRST_SUPERUSER: EmailStr = "admin@example.com"

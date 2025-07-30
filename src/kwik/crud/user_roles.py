@@ -9,6 +9,7 @@ class AutoCRUDUserRoles(
     def get_by_user_id_and_role_id(
         self, *, user_id: int, role_id: int,
     ) -> models.UserRole | None:
+        """Get user-role association by user ID and role ID."""
         return (
             self.db.query(models.UserRole)
             .filter(
@@ -18,6 +19,7 @@ class AutoCRUDUserRoles(
         )
 
     def get_multi_by_role_id(self, *, role_id: int) -> list[models.UserRole]:
+        """Get all user-role associations for a specific role."""
         return (
             self.db.query(models.UserRole)
             .filter(models.UserRole.role_id == role_id)

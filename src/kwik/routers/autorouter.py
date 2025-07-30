@@ -135,6 +135,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
             raise e.http_exc
 
     def register(self, *, read_multi=True, read=True, create=True, update=True, delete=True):
+        """Register CRUD endpoints with optional inclusion flags."""
         if read_multi:
             self.router.get(
                 "/",

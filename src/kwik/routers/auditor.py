@@ -17,6 +17,7 @@ from kwik.middlewares import get_request_id
 
 class KwikRequest(Request):
     async def body(self) -> bytes:
+        """Cache request body for multiple reads."""
         if not hasattr(self, "_body"):
             body = await super().body()
             # noinspection PyAttributeOutsideInit
@@ -25,6 +26,7 @@ class KwikRequest(Request):
 
     @property
     def token(self) -> str | None:
+        """Extract JWT token from Authorization header."""
         auth = self.headers.get("Authorization")
         if auth is not None and "Bearer " in auth:
             return auth.replace("Bearer ", "")
@@ -33,6 +35,7 @@ class KwikRequest(Request):
 
 class AuditedRoute(APIRoute):
     def get_route_handler(self) -> Callable:
+        """Create route handler with audit logging support."""
         original_route_handler = super().get_route_handler()
 
         async def custom_route_handler(request: Request) -> Response:

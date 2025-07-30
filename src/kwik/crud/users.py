@@ -15,13 +15,16 @@ from . import auto_crud
 
 class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, schemas.UserUpdateSchema]):
     def get_by_email(self, *, email: str) -> models.User | None:
+        """Get user by email address."""
         return self.db.query(models.User).filter(models.User.email == email).first()
 
     def get_by_name(self, *, name: str) -> models.User | None:
+        """Get user by name."""
         return self.db.query(models.User).filter(models.User.name == name).first()
 
     # noinspection PyMethodOverriding
     def create(self, *, obj_in: schemas.UserCreateSchema) -> models.User:
+        """Create new user with hashed password."""
         db_obj = models.User(
             name=obj_in.name,
             surname=obj_in.surname,
@@ -36,6 +39,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         return db_obj
 
     def create_if_not_exist(self, *, filters: dict, obj_in: schemas.UserCreateSchema, **kwargs) -> models.User:
+        """Create user if it doesn't exist based on filters, otherwise return existing user."""
         obj_db = self.db.query(models.User).filter_by(**filters).one_or_none()
         if obj_db is None:
             obj_db = self.create(obj_in=obj_in)
@@ -43,6 +47,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
 
     # noinspection PyMethodOverriding
     def update(self, *, db_obj: models.User, obj_in: schemas.UserUpdateSchema | dict[str, Any]) -> models.User:
+        """Update user with password hashing support."""
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
@@ -54,6 +59,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         return super().update(db_obj=db_obj, obj_in=update_data)
 
     def change_password(self, *, user_id: int, obj_in: schemas.UserChangePasswordSchema) -> models.User:
+        """Change user password after validating old password."""
         user_db = self.get(id=user_id)
         if not user_db:
             raise HTTPException(
@@ -71,6 +77,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         return user_db
 
     def reset_password(self, *, email: str, password: str) -> models.User:
+        """Reset user password by email."""
         user_db = self.get_by_email(email=email)
         if user_db is None:
             raise UserNotFound
@@ -101,11 +108,13 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
 
     @staticmethod
     def is_active(user: models.User) -> models.User:
+        """Check if user is active, raise exception if not."""
         if not user.is_active:
             raise UserInactive
         return user
 
     def is_superuser(self, *, user_id: int) -> bool:
+        """Check if user has superuser privileges."""
         user_db = self.get_if_exist(id=user_id)
         return user_db.is_superuser
 

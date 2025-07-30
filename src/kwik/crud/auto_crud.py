@@ -105,6 +105,7 @@ class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
         raise_on_error: bool = False,
         **kwargs: Any,
     ) -> ModelType:
+        """Create record if it doesn't exist, or return existing record."""
         obj_db: ModelType | None = self.db.query(self.model).filter_by(**filters).one_or_none()
         if obj_db is None:
             obj_db: ModelType = self.create(obj_in=obj_in, **kwargs)
@@ -115,6 +116,7 @@ class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
 
 class AutoCRUDUpdate(CRUDUpdateBase[ModelType, UpdateSchemaType]):
     def update(self, *, db_obj: ModelType, obj_in: UpdateSchemaType | dict[str, Any]) -> ModelType:
+        """Update existing record with new data and track changes."""
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
@@ -147,6 +149,7 @@ class AutoCRUDUpdate(CRUDUpdateBase[ModelType, UpdateSchemaType]):
 
 class AutoCRUDDelete(CRUDDeleteBase[ModelType]):
     def delete(self, *, id: int) -> ModelType:
+        """Delete record by ID and return the deleted object."""
         obj: ModelType = self.db.query(self.model).get(id)
 
         if settings.DB_LOGGER:

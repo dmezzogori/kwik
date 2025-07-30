@@ -22,7 +22,9 @@ class KwikExporter:
             self.filename = filename
 
     def load(self, data: list[Base]) -> None:
+        """Load data into exporter for processing - must be implemented by subclasses."""
         raise NotImplementedError
 
     def streaming_response(self) -> StreamingResponse:
+        """Return streaming response for file download - must be implemented by subclasses."""
         raise NotImplementedError

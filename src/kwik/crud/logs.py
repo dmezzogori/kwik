@@ -8,6 +8,7 @@ from .base import CRUDCreateBase
 
 class CRUDLogs(CRUDCreateBase):
     def create(self, *, obj_in: LogCreateSchema, user: User | None = None) -> models.Log:
+        """Create new log entry with optional user association."""
         obj_in_data = jsonable_encoder(obj_in)
         if user is not None:
             db_obj: models.Log = self.model(**obj_in_data, creator_user_id=user.id)
@@ -19,6 +20,7 @@ class CRUDLogs(CRUDCreateBase):
         return db_obj
 
     def create_if_not_exist(self, *args, **kwargs):
+        """Not implemented for logs - raises NotImplementedError."""
         raise NotImplementedError
 
 

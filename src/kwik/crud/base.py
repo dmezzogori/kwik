@@ -59,16 +59,19 @@ class CRUDBase(abc.ABC, Generic[ModelType]):
 
     @classmethod
     def get_instance(cls: T, model: type[ModelType]) -> T:
+        """Get existing CRUD instance for the given model."""
         return CRUDBase._instances[model]
 
 
 class CRUDReadBase(CRUDBase[ModelType]):
     @abc.abstractmethod
     def get(self, *, id: int) -> ModelType | None:
+        """Get single record by primary key ID."""
         pass
 
     @abc.abstractmethod
     def get_all(self) -> list[ModelType]:
+        """Get all records from the table."""
         pass
 
     @abc.abstractmethod
@@ -80,10 +83,12 @@ class CRUDReadBase(CRUDBase[ModelType]):
         sort: ParsedSortingQuery | None = None,
         **filters,
     ) -> PaginatedCRUDResult[ModelType]:
+        """Get multiple records with pagination, filtering, and sorting."""
         pass
 
     @abc.abstractmethod
     def get_if_exist(self, *, id: int) -> ModelType:
+        """Get record by ID or raise exception if it doesn't exist."""
         pass
 
 
@@ -94,6 +99,7 @@ class CRUDCreateBase(CRUDBase, Generic[ModelType, CreateSchemaType]):
         *,
         obj_in: CreateSchemaType,
     ) -> ModelType:
+        """Create new record from schema data."""
         pass
 
     @abc.abstractmethod
@@ -104,6 +110,7 @@ class CRUDCreateBase(CRUDBase, Generic[ModelType, CreateSchemaType]):
         filters: dict[str, str],
         raise_on_error: bool = False,
     ) -> ModelType:
+        """Create record if it doesn't exist, or return existing record."""
         pass
 
 
@@ -115,10 +122,12 @@ class CRUDUpdateBase(CRUDBase, Generic[ModelType, UpdateSchemaType]):
         db_obj: ModelType,
         obj_in: UpdateSchemaType | dict[str, Any],
     ) -> ModelType:
+        """Update existing record with new data."""
         pass
 
 
 class CRUDDeleteBase(CRUDBase[ModelType]):
     @abc.abstractmethod
     def delete(self, *, id: int) -> ModelType:
+        """Delete record by ID and return the deleted object."""
         pass

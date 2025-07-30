@@ -24,6 +24,7 @@ class CustomFormatter(logging.Formatter):
     }
 
     def format(self, record):
+        """Format log record with color based on log level."""
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)

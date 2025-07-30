@@ -18,6 +18,7 @@ def get_request_id() -> str:
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
+        """Set unique request ID in context for request lifetime."""
         token = _request_id_ctx_var.set(str(uuid4()))
         response = await call_next(request)
         _request_id_ctx_var.reset(token)

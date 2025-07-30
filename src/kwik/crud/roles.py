@@ -10,12 +10,15 @@ from .user_roles import user_roles
 
 class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleCreate, schemas.RoleUpdate]):
     def get_by_name(self, *, name: str) -> models.Role | None:
+        """Get role by name."""
         return self.db.query(models.Role).filter(models.Role.name == name).first()
 
     def get_multi_by_user_id(self, *, user_id: int) -> list[models.Role]:
+        """Get all roles assigned to a specific user."""
         return self.db.query(models.Role).join(models.UserRole).filter(models.UserRole.user_id == user_id).all()
 
     def get_users_by_name(self, *, name: str) -> list[models.User]:
+        """Get all users assigned to a role by role name."""
         # TODO: va sostituita con un metodo sul crud degli utenti
         #  crud.users.get_multi_by_role_name(name=name)
         return (
@@ -27,6 +30,7 @@ class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleCreate, schemas.RoleUpdate]
         )
 
     def get_users_by_role_id(self, *, role_id: int) -> list[models.User]:
+        """Get all users assigned to a specific role."""
         # TODO: va sostituita con un metodo sul crud degli utenti
         return (
             self.db.query(models.User)
@@ -45,6 +49,7 @@ class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleCreate, schemas.RoleUpdate]
         )
 
     def get_permissions_not_assigned_to_role(self, *, role_id: int) -> list[models.Permission]:
+        """Get all permissions not assigned to the specified role."""
         return (
             self.db.query(models.Permission)
             .join(models.RolePermission)
@@ -53,6 +58,7 @@ class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleCreate, schemas.RoleUpdate]
         )
 
     def get_permissions_by_role_id(self, *, role_id: int) -> list[models.Permission]:
+        """Get all permissions assigned to a specific role."""
         # TODO: va sostituita con un metodo sul crud dei permessi
         return (
             self.db.query(models.Permission)
@@ -63,6 +69,7 @@ class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleCreate, schemas.RoleUpdate]
 
     @staticmethod
     def associate_user(*, role_db: models.Role, user_db: models.User) -> models.Role:
+        """Associate a user with a role."""
         user_role_db = user_roles.get_by_user_id_and_role_id(user_id=user_db.id, role_id=role_db.id)
         if user_role_db is None:
             user_role_in = schemas.UserRoleCreate(
@@ -74,11 +81,13 @@ class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleCreate, schemas.RoleUpdate]
 
     @staticmethod
     def purge_user(*, role_db: models.Role, user_db: models.User) -> models.Role:
+        """Remove user association from a role."""
         user_role_db = user_roles.get_by_user_id_and_role_id(user_id=user_db.id, role_id=role_db.id)
         user_roles.delete(id=user_role_db.id)
         return role_db
 
     def deprecate(self, *, name: str) -> models.Role:
+        """Deprecate role by removing all user associations."""
         role_db = self.get_by_name(name=name)
         user_roles_db = user_roles.get_multi_by_role_id(role_id=role_db.id)
         for user_role_db in user_roles_db:
