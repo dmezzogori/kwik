@@ -4,10 +4,14 @@ from enum import StrEnum
 
 
 class PermissionNamesBase(StrEnum):
+    """Base class for defining permission name enumerations."""
+
     pass
 
 
 class Permissions(StrEnum):
+    """System-wide permission definitions for user access control."""
+
     impersonification = "impersonification"
 
     users_management_create = "users_management_create"

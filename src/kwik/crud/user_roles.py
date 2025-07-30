@@ -6,6 +6,8 @@ from . import auto_crud
 class AutoCRUDUserRoles(
     auto_crud.AutoCRUD[models.UserRole, schemas.UserRoleCreate, None],
 ):
+    """CRUD operations for user-role associations and relationship management."""
+
     def get_by_user_id_and_role_id(
         self, *, user_id: int, role_id: int,
     ) -> models.UserRole | None:

@@ -6,6 +6,8 @@ from .exporter_fields import ExporterFields
 
 
 class KwikExporter:
+    """Base class for data export functionality with file generation support."""
+
     file_extension: str
     substitutions: dict[str, str]
     partial_substitutions: dict[str, str]

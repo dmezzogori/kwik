@@ -4,6 +4,8 @@ from kwik.database import base
 
 
 class Log(base.Base):
+    """Database model for storing application event logs."""
+
     __tablename__ = "logs"
 
     id = Column(Integer, primary_key=True, index=True)

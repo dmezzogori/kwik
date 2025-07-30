@@ -2,6 +2,8 @@ import gunicorn.app.base
 
 
 class KwikGunicornApplication(gunicorn.app.base.BaseApplication):
+    """Gunicorn WSGI application wrapper for Kwik framework with custom configuration."""
+
     def __init__(self, app, options=None):
         """Initialize Gunicorn application with WSGI app and options."""
         self.options = options or {}

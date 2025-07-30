@@ -8,6 +8,8 @@ Token = dict[str, str]
 
 
 class TokensManager:
+    """Manager for handling authentication tokens in test scenarios."""
+
     def __init__(self, client: TestClient):
         """Initialize tokens manager with test client."""
         self.client = client

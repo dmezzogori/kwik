@@ -8,6 +8,8 @@ from kwik.database.base import Base
 
 
 class BaseModel(pydantic.BaseModel):
+    """Base Pydantic model with ORM mode configuration for database integration."""
+
     class Config:
         orm_mode = True
 

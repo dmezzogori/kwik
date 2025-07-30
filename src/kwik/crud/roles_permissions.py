@@ -9,6 +9,8 @@ from .auto_crud import AutoCRUD
 class CRUDRolesPermissions(
     AutoCRUD[kwik.models.RolePermission, kwik.schemas.role_permissions.RolePermissionCreate, None],
 ):
+    """CRUD operations for role-permission associations and relationship management."""
+
     def get_by_permission_id_and_role_id(
         self, *, permission_id: int, role_id: int,
     ) -> kwik.models.RolePermission | None:

@@ -7,6 +7,8 @@ from kwik.database.db_context_manager import DBContextManager
 
 
 class DBSessionMiddleware(BaseHTTPMiddleware):
+    """Middleware providing database session management for HTTP requests."""
+
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
         """Handle request within database session context manager."""
         with DBContextManager():

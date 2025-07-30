@@ -16,6 +16,8 @@ from kwik.middlewares import get_request_id
 
 
 class KwikRequest(Request):
+    """Extended Request class with body caching and token extraction support."""
+
     async def body(self) -> bytes:
         """Cache request body for multiple reads."""
         if not hasattr(self, "_body"):
@@ -34,6 +36,8 @@ class KwikRequest(Request):
 
 
 class AuditedRoute(APIRoute):
+    """API route with automatic audit logging and user context management."""
+
     def get_route_handler(self) -> Callable:
         """Create route handler with audit logging support."""
         original_route_handler = super().get_route_handler()
@@ -100,6 +104,8 @@ class AuditedRoute(APIRoute):
 
 
 class AuditorRouter(APIRouter):
+    """Router with built-in audit logging for all registered routes."""
+
     def __init__(self, *args, **kwargs):
         """Initialize auditor router with token dependency and audited route class."""
         kwargs.setdefault("dependencies", []).append(Depends(get_token))

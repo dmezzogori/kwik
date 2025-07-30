@@ -9,6 +9,8 @@ from .user_roles import user_roles
 
 
 class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleCreate, schemas.RoleUpdate]):
+    """CRUD operations for roles with user and permission management."""
+
     def get_by_name(self, *, name: str) -> models.Role | None:
         """Get role by name."""
         return self.db.query(models.Role).filter(models.Role.name == name).first()

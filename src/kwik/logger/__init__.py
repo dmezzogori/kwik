@@ -4,6 +4,7 @@ from kwik import settings
 
 
 class CustomFormatter(logging.Formatter):
+    """Custom logging formatter with color-coded output for different log levels."""
 
     grey = "\x1b[38;20m"
     blue = "\x1b[34;20m"

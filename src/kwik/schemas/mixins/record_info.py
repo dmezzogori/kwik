@@ -4,6 +4,8 @@ from .orm import ORMMixin
 
 
 class RecordInfoMixin(ORMMixin):
+    """Mixin providing record creation and modification tracking fields."""
+
     creation_time: datetime
     last_modification_time: datetime | None = None
     creator_user_id: int

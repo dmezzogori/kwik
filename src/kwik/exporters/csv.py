@@ -10,6 +10,8 @@ from .base import KwikExporter
 
 
 class CellFormats(enum.Enum):
+    """Enumeration of cell formatting options for CSV export."""
+
     WRAP: str = "WRAP"
     DATE: str = ("DATE",)
     BOOL: str = "BOOL"
@@ -23,6 +25,8 @@ class CellFormats(enum.Enum):
 
 
 class KwikCSVExporter(KwikExporter):
+    """CSV file exporter implementation with formatting and streaming support."""
+
     file_extension = "csv"
 
     @staticmethod

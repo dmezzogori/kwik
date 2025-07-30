@@ -4,6 +4,8 @@ from kwik.database.base import Base
 
 
 class Audit(Base):
+    """Database model for storing HTTP request audit logs."""
+
     __tablename__ = "audits"
 
     id = Column(Integer, primary_key=True, index=True)

@@ -13,8 +13,12 @@ class _BaseSchema(BaseModel):
 
 
 class LogORMSchema(ORMMixin, _BaseSchema):
+    """ORM schema for application log entries with database ID."""
+
     pass
 
 
 class LogCreateSchema(_BaseSchema):
+    """Schema for creating new application log entries."""
+
     pass

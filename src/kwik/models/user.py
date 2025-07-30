@@ -6,6 +6,8 @@ from kwik.database.mixins import RecordInfoMixin, SoftDeleteMixin
 
 
 class User(Base):
+    """Database model for user accounts with authentication and authorization."""
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -31,6 +33,8 @@ class User(Base):
 
 
 class Role(Base, SoftDeleteMixin):
+    """Database model for user roles with soft delete support."""
+
     __tablename__ = "roles"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -44,6 +48,8 @@ class Role(Base, SoftDeleteMixin):
 
 
 class UserRole(Base, SoftDeleteMixin):
+    """Database model for user-role associations with soft delete support."""
+
     __tablename__ = "users_roles"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -52,6 +58,8 @@ class UserRole(Base, SoftDeleteMixin):
 
 
 class Permission(Base, RecordInfoMixin):
+    """Database model for system permissions with record tracking."""
+
     __tablename__ = "permissions"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -59,6 +67,8 @@ class Permission(Base, RecordInfoMixin):
 
 
 class RolePermission(Base, RecordInfoMixin):
+    """Database model for role-permission associations with record tracking."""
+
     __tablename__ = "roles_permissions"
 
     id = Column(Integer, primary_key=True, index=True)

@@ -14,6 +14,8 @@ from . import auto_crud
 
 
 class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, schemas.UserUpdateSchema]):
+    """CRUD operations for users with authentication and authorization support."""
+
     def get_by_email(self, *, email: str) -> models.User | None:
         """Get user by email address."""
         return self.db.query(models.User).filter(models.User.email == email).first()

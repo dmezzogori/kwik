@@ -31,6 +31,8 @@ from .logs import logs
 
 
 class AutoCRUDRead(CRUDReadBase[ModelType]):
+    """Read operations implementation for auto-generated CRUD with database querying."""
+
     # noinspection PyShadowingBuiltins
     def get(self, *, id: int) -> ModelType | None:
         """Get single record by primary key ID."""
@@ -71,6 +73,8 @@ class AutoCRUDRead(CRUDReadBase[ModelType]):
 
 
 class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
+    """Create operations implementation for auto-generated CRUD with logging support."""
+
     def create(self, *, obj_in: CreateSchemaType, **kwargs: Any) -> ModelType:
         """Create new record from schema data."""
         obj_in_data = dict(obj_in)
@@ -115,6 +119,8 @@ class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
 
 
 class AutoCRUDUpdate(CRUDUpdateBase[ModelType, UpdateSchemaType]):
+    """Update operations implementation for auto-generated CRUD with change tracking."""
+
     def update(self, *, db_obj: ModelType, obj_in: UpdateSchemaType | dict[str, Any]) -> ModelType:
         """Update existing record with new data and track changes."""
         if isinstance(obj_in, dict):
@@ -148,6 +154,8 @@ class AutoCRUDUpdate(CRUDUpdateBase[ModelType, UpdateSchemaType]):
 
 
 class AutoCRUDDelete(CRUDDeleteBase[ModelType]):
+    """Delete operations implementation for auto-generated CRUD with soft delete support."""
+
     def delete(self, *, id: int) -> ModelType:
         """Delete record by ID and return the deleted object."""
         obj: ModelType = self.db.query(self.model).get(id)
@@ -172,4 +180,6 @@ class AutoCRUD(
     AutoCRUDUpdate[ModelType, UpdateSchemaType],
     AutoCRUDDelete[ModelType],
 ):
+    """Complete CRUD implementation combining create, read, update, and delete operations."""
+
     pass

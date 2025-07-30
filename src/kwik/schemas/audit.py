@@ -19,8 +19,12 @@ class _BaseSchema(BaseModel):
 
 
 class AuditORMSchema(ORMMixin, _BaseSchema):
+    """ORM schema for audit entries with database ID."""
+
     pass
 
 
 class AuditCreateSchema(_BaseSchema):
+    """Schema for creating new audit log entries."""
+
     pass

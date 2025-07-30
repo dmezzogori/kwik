@@ -7,6 +7,8 @@ from .base import CRUDCreateBase
 
 
 class CRUDLogs(CRUDCreateBase):
+    """CRUD operations for application log entries with user tracking."""
+
     def create(self, *, obj_in: LogCreateSchema, user: User | None = None) -> models.Log:
         """Create new log entry with optional user association."""
         obj_in_data = jsonable_encoder(obj_in)

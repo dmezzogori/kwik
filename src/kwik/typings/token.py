@@ -4,5 +4,7 @@ from typing import TypedDict
 
 
 class Token(TypedDict):
+    """Type definition for authentication token structure."""
+
     access_token: str
     token_type: str

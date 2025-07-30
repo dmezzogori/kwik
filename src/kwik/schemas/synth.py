@@ -39,7 +39,6 @@ def get_column_fields(cls):
 
 def synth_schemas(cls):
     """Generate Pydantic schemas from SQLAlchemy model automatically."""
-
     kw = {}
     for col_name, type_, default, nullable in get_column_fields(cls):
         if col_name not in ("creation_time", "creator_user_id"):

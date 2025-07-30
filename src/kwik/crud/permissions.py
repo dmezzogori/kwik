@@ -7,6 +7,8 @@ from .roles_permissions import roles_permissions
 
 
 class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionCreate, schemas.PermissionUpdate]):
+    """CRUD operations for permissions with role association management."""
+
     def get_by_name(self, *, name: str) -> models.Permission | None:
         """Get a permission by name, if any."""
         return self.db.query(models.Permission).filter(models.Permission.name == name).one_or_none()

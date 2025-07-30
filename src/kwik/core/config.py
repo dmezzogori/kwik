@@ -15,6 +15,8 @@ class AlternateDBSettings(BaseSettings):
 
 
 class Settings(BaseSettings):
+    """Main application settings with database, server, security, and feature configuration."""
+
     APP_ENV: str = "development"
     SERVER_NAME: str = "backend"
     BACKEND_HOST = "localhost"

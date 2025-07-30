@@ -9,5 +9,7 @@ T = TypeVar("T")
 
 
 class Paginated(GenericModel, Generic[T]):
+    """Generic pagination container for API responses with total count and data."""
+
     total: int
     data: list[T]

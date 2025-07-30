@@ -3,6 +3,8 @@ from typing import Any
 
 
 class ExporterFields:
+    """Base class for defining field configurations in data exporters."""
+
     @classmethod
     def _class_attrs(cls) -> Iterable[tuple[str, Any]]:
         for k, v in cls.__dict__.items():

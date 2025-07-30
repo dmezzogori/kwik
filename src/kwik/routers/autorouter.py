@@ -17,6 +17,8 @@ from .auditor import AuditorRouter
 
 
 class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSchemaType]):
+    """Auto-generated CRUD router with generic type safety and permission controls."""
+
     def __init__(
         self,
         crud: AutoCRUD[ModelType, CreateSchemaType, UpdateSchemaType] | None = None,

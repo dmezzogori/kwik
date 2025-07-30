@@ -16,7 +16,6 @@ def get_swagger_ui_html(
     init_oauth: dict[str, Any] | None = None,
 ) -> HTMLResponse:
     """Generate custom Swagger UI HTML page with configured assets and OAuth support."""
-
     html = f"""
     <!DOCTYPE html>
     <html>

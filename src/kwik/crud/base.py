@@ -27,6 +27,8 @@ else:
 
 
 class DBSession:
+    """Descriptor for accessing database session from context variables."""
+
     def __get__(self, obj, objtype=None) -> Session:
         if (db := db_conn_ctx_var.get()) is not None:
             return db
@@ -34,12 +36,16 @@ class DBSession:
 
 
 class CurrentUser:
+    """Descriptor for accessing current user from context variables."""
+
     def __get__(self, obj, objtype=None):
         user = current_user_ctx_var.get()
         return user
 
 
 class CRUDBase(abc.ABC, Generic[ModelType]):
+    """Base class for all CRUD operations with model type safety and context access."""
+
     db: KwikSession = DBSession()
     user = CurrentUser()
     model: type[ModelType]
@@ -64,6 +70,8 @@ class CRUDBase(abc.ABC, Generic[ModelType]):
 
 
 class CRUDReadBase(CRUDBase[ModelType]):
+    """Abstract base class defining read operation interface for CRUD implementations."""
+
     @abc.abstractmethod
     def get(self, *, id: int) -> ModelType | None:
         """Get single record by primary key ID."""
@@ -93,6 +101,8 @@ class CRUDReadBase(CRUDBase[ModelType]):
 
 
 class CRUDCreateBase(CRUDBase, Generic[ModelType, CreateSchemaType]):
+    """Abstract base class defining create operation interface for CRUD implementations."""
+
     @abc.abstractmethod
     def create(
         self,
@@ -115,6 +125,8 @@ class CRUDCreateBase(CRUDBase, Generic[ModelType, CreateSchemaType]):
 
 
 class CRUDUpdateBase(CRUDBase, Generic[ModelType, UpdateSchemaType]):
+    """Abstract base class defining update operation interface for CRUD implementations."""
+
     @abc.abstractmethod
     def update(
         self,
@@ -127,6 +139,8 @@ class CRUDUpdateBase(CRUDBase, Generic[ModelType, UpdateSchemaType]):
 
 
 class CRUDDeleteBase(CRUDBase[ModelType]):
+    """Abstract base class defining delete operation interface for CRUD implementations."""
+
     @abc.abstractmethod
     def delete(self, *, id: int) -> ModelType:
         """Delete record by ID and return the deleted object."""

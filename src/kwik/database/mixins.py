@@ -5,6 +5,8 @@ from sqlalchemy.ext.declarative import declared_attr
 
 
 class TimeStampsMixin:
+    """Mixin providing automatic creation and modification timestamps."""
+
     creation_time = Column(DateTime, nullable=False, server_default=func.now())
     last_modification_time = Column(
         DateTime, server_onupdate=func.now(), onupdate=func.now(),
@@ -12,6 +14,8 @@ class TimeStampsMixin:
 
 
 class UserMixin:
+    """Mixin providing user tracking fields for record creation and modification."""
+
     @declared_attr
     def creator_user_id(self):
         """Reference to the user who created this record."""
@@ -24,10 +28,14 @@ class UserMixin:
 
 
 class RecordInfoMixin(TimeStampsMixin, UserMixin):
+    """Combined mixin providing both timestamps and user tracking functionality."""
+
     pass
 
 
 class SoftDeleteMixin(RecordInfoMixin):
+    """Mixin adding soft delete capability with record info tracking."""
+
     @declared_attr
     def deleted(self):
         """Boolean flag indicating if record is soft-deleted."""
@@ -35,4 +43,6 @@ class SoftDeleteMixin(RecordInfoMixin):
 
 
 class LogMixin:
+    """Mixin for log-specific database model behavior."""
+
     pass
