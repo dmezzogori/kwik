@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 @pytest.fixture(scope="session")
 def app():
+    """Create FastAPI application instance for testing."""
     import os
 
     os.environ["TEST_ENV"] = "True"
@@ -19,5 +20,6 @@ def app():
 
 @pytest.fixture(scope="session")
 def client(app):
+    """Create test client for API testing."""
     with TestClient(app) as c:
         yield c

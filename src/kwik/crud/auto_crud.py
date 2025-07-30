@@ -33,9 +33,11 @@ from .logs import logs
 class AutoCRUDRead(CRUDReadBase[ModelType]):
     # noinspection PyShadowingBuiltins
     def get(self, *, id: int) -> ModelType | None:
+        """Get single record by primary key ID."""
         return self.db.query(self.model).get(id)
 
     def get_all(self) -> list[ModelType]:
+        """Get all records from the table."""
         return self.db.query(self.model).all()
 
     def get_multi(
@@ -46,6 +48,7 @@ class AutoCRUDRead(CRUDReadBase[ModelType]):
         sort: ParsedSortingQuery | None = None,
         **filters: Any,
     ) -> PaginatedCRUDResult[ModelType]:
+        """Get multiple records with pagination, filtering, and sorting."""
         q = self.db.query(self.model)
         if filters:
             q = q.filter_by(**filters)
@@ -60,6 +63,7 @@ class AutoCRUDRead(CRUDReadBase[ModelType]):
 
     # noinspection PyShadowingBuiltins
     def get_if_exist(self, *, id: int) -> ModelType:
+        """Get record by ID or raise NotFound exception if it doesn't exist."""
         r = self.get(id=id)
         if r is None:
             raise NotFound(detail=f"Entity [{self.model.__tablename__}] with id={id} does not exist")
@@ -68,6 +72,7 @@ class AutoCRUDRead(CRUDReadBase[ModelType]):
 
 class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
     def create(self, *, obj_in: CreateSchemaType, **kwargs: Any) -> ModelType:
+        """Create new record from schema data."""
         obj_in_data = dict(obj_in)
 
         # Import here to avoid circular import

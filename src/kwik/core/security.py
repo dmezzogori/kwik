@@ -23,6 +23,7 @@ def create_access_token(
     expires_delta: timedelta = None,
     impersonator_user_id: int | None = None,
 ) -> str:
+    """Create JWT access token with optional expiration and impersonation support."""
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
@@ -36,6 +37,7 @@ def create_access_token(
 
 
 def create_token(user_id: int, impersonator_user_id: int | None = None) -> kwik.typings.Token:
+    """Create OAuth2 bearer token response for user authentication."""
     access_token_expires = timedelta(minutes=kwik.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return {
         "access_token": create_access_token(
@@ -48,6 +50,7 @@ def create_token(user_id: int, impersonator_user_id: int | None = None) -> kwik.
 
 
 def decode_token(token: str) -> schemas.TokenPayload:
+    """Decode and validate JWT token, returning payload data."""
     try:
         payload = jwt.decode(token, kwik.settings.SECRET_KEY, algorithms=[ALGORITHM])
         token_data = schemas.TokenPayload(**payload)
@@ -57,8 +60,10 @@ def decode_token(token: str) -> schemas.TokenPayload:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify plain password against bcrypt hashed password."""
     return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
+    """Generate bcrypt hash for password."""
     return pwd_context.hash(password)

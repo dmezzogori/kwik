@@ -6,6 +6,7 @@ async def send(
     data: dict | None = None,
     message: str | None = None,
 ):
+    """Send data or text message through WebSocket connection."""
     if data is not None and message is not None:
         raise ValueError("Only one of data or message should be provided")
 

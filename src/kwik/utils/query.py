@@ -17,6 +17,7 @@ else:
 
 
 def sort_query(*, model: type[ModelType], query: Query, sort: ParsedSortingQuery) -> Query:
+    """Apply sorting parameters to SQLAlchemy query."""
     order_by = []
     for attr, order in sort:
         model_attr = getattr(model, attr)
@@ -29,6 +30,7 @@ def sort_query(*, model: type[ModelType], query: Query, sort: ParsedSortingQuery
 
 @contextlib.contextmanager
 def count_queries(conn):
+    """Context manager to count and log SQL queries executed."""
     queries = []
     def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
         logger.error(statement)

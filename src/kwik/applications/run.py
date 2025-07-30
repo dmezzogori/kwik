@@ -9,6 +9,7 @@ from .kwik import Kwik
 
 
 def run(kwik_app: str | Kwik) -> None:
+    """Run Kwik application with appropriate server based on environment."""
     reload = settings.HOTRELOAD
     workers = settings.BACKEND_WORKERS
     if isinstance(kwik_app, str):

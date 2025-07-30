@@ -8,6 +8,7 @@ from fastapi import UploadFile
 async def store_file(
     *, in_file: UploadFile, path: str | None = None,
 ) -> tuple[str, int]:
+    """Store uploaded file to filesystem and return filename and size."""
     root_upload_directory = "/uploads"
 
     if path is not None and len(path) > 1:

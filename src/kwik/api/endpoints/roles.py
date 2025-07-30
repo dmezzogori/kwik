@@ -102,6 +102,7 @@ def update_role(role_id: int, role_in: schemas.RoleUpdate) -> models.Role:
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_update),),
 )
 def associate_user_to_role(user_role_in: schemas.UserRoleCreate) -> models.Role:
+    """Associate user with role."""
     user = crud.user.get_if_exist(id=user_role_in.user_id)
     role = crud.role.get_if_exist(id=user_role_in.role_id)
     return crud.role.associate_user(user_db=user, role_db=role)

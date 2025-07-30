@@ -18,6 +18,7 @@ EndpointReturn = Mapping[str, Any] | list[Mapping[str, Any]]
 
 
 def assert_status_code_and_return_response(response: Response, status_code: int = 200) -> EndpointReturn:
+    """Assert HTTP response status code and return JSON response data."""
     assert response.status_code == status_code, response.text
     return response.json()
 
@@ -33,31 +34,39 @@ class TestClientBase:
 
     @property
     def get_uri(self) -> str:
+        """Get URI for single resource retrieval."""
         return self.BASE_URI
 
     @property
     def get_multi_uri(self) -> str:
+        """Get URI for multiple resource retrieval."""
         return self.BASE_URI
 
     @property
     def post_uri(self) -> str:
+        """Get URI for resource creation."""
         return f"{self.BASE_URI}/"
 
     @property
     def put_uri(self) -> str:
+        """Get URI for resource updates."""
         return self.BASE_URI
 
     @property
     def delete_uri(self) -> str:
+        """Get URI for resource deletion."""
         return self.BASE_URI
 
     def make_post_data(self, **kwargs):
+        """Create data for POST requests - must be implemented by subclasses."""
         raise NotImplementedError
 
     def make_put_data(self, **kwargs):
+        """Create data for PUT requests - must be implemented by subclasses."""
         raise NotImplementedError
 
     def get(self, id_: int, status_code: int = 200) -> EndpointReturn | None:
+        """Get single resource by ID."""
         return assert_status_code_and_return_response(
             self.client.get(f"{self.get_uri}/{id_}", headers=self.headers), status_code=status_code,
         )
@@ -69,6 +78,7 @@ class TestClientBase:
         skip: int | None = None,
         limit: int | None = None,
     ) -> EndpointReturn:
+        """Get multiple resources with optional filtering, sorting, and pagination."""
         exclude_keys = {
             "creation_time",
             "last_modification_time",
@@ -92,6 +102,7 @@ class TestClientBase:
         return assert_status_code_and_return_response(self.client.get(uri, headers=self.headers))
 
     def post(self, data: BaseModel, status_code: int = 200, post_uri: str | None = None) -> EndpointReturn:
+        """Create new resource via POST request."""
         if post_uri is None:
             post_uri = self.post_uri
 
@@ -101,6 +112,7 @@ class TestClientBase:
         )
 
     def update(self, id_: int, data: BaseModel, put_uri: str | None = None) -> EndpointReturn:
+        """Update existing resource via PUT request."""
         put_uri = put_uri or f"{self.put_uri}/{id_}"
         return assert_status_code_and_return_response(
             self.client.put(
@@ -111,6 +123,7 @@ class TestClientBase:
         )
 
     def delete(self, id_: int) -> EndpointReturn:
+        """Delete resource by ID via DELETE request."""
         return assert_status_code_and_return_response(
             self.client.delete(f"{self.delete_uri}/{id_}", headers=self.headers),
         )

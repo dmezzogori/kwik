@@ -7,5 +7,6 @@ if TYPE_CHECKING:
 
 
 def test_docs(client: TestClient) -> None:
+    """Test that API documentation endpoint is accessible."""
     response = client.get("/docs")
     assert response.status_code == 200

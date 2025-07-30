@@ -12,6 +12,7 @@ _request_id_ctx_var: ContextVar[str | None] = ContextVar(
 
 
 def get_request_id() -> str:
+    """Get current request ID from context variable."""
     return _request_id_ctx_var.get()
 
 

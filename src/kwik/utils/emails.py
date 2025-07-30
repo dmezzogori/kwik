@@ -12,6 +12,7 @@ import kwik
 
 
 def send_email(*, email_to: str, subject: str = "", body: str = "") -> None:
+    """Send HTML email via SMTP using configured email settings."""
     try:
         context = ssl.create_default_context()
         email_from = kwik.settings.EMAILS_FROM_EMAIL
@@ -36,6 +37,7 @@ def send_email(*, email_to: str, subject: str = "", body: str = "") -> None:
 
 
 def send_reset_password_email(email_to: str, email: str, token: str) -> None:
+    """Send password reset email with JWT token link."""
     project_name = kwik.settings.PROJECT_NAME
     subject = f"{project_name} - Password recovery"
     server_host = kwik.settings.SERVER_HOST
@@ -62,6 +64,7 @@ def send_reset_password_email(email_to: str, email: str, token: str) -> None:
 
 
 def send_new_account_email(email_to: str, username: str, password: str) -> None:
+    """Send welcome email for new user account with login credentials."""
     project_name = kwik.settings.PROJECT_NAME
     subject = f"{project_name} - New account for user {username}"
     template_file = Path(kwik.settings.EMAIL_TEMPLATES_DIR) / "new_account.html"
@@ -84,6 +87,7 @@ def send_new_account_email(email_to: str, username: str, password: str) -> None:
 
 
 def send_test_email(email_to: str) -> None:
+    """Send test email to verify SMTP configuration."""
     project_name = kwik.settings.PROJECT_NAME
     subject = f"{project_name} - Test email"
     send_email(email_to=email_to, subject=subject, body="Only a test!!! CAN BE DELETED")

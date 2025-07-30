@@ -8,6 +8,7 @@ import kwik
 
 
 def generate_password_reset_token(email: str) -> str:
+    """Generate JWT token for password reset with expiration."""
     delta = timedelta(hours=kwik.settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS)
     now = datetime.utcnow()
     expires = now + delta
@@ -21,5 +22,6 @@ def generate_password_reset_token(email: str) -> str:
 
 
 def verify_password_reset_token(token: str) -> str | None:
+    """Verify password reset token and return email if valid."""
     decoded_token = jwt.decode(token, kwik.settings.SECRET_KEY, algorithms=["HS256"])
     return decoded_token.get("sub", None)

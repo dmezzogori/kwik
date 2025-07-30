@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 @pytest.fixture(scope="function")
 def msg() -> str:
+    """Generate random string message for testing."""
     import random
     import string
 
@@ -17,6 +18,7 @@ def msg() -> str:
 
 
 def test_get(client: TestClient, msg: str) -> None:
+    """Test GET endpoint with message parameter."""
     response = client.get(f"http://localhost:8080/api/v1/tests/get/?msg={msg}")
 
     assert response.status_code == 200
@@ -24,6 +26,7 @@ def test_get(client: TestClient, msg: str) -> None:
 
 
 def test_post(client: TestClient, msg: str) -> None:
+    """Test POST endpoint with message parameter."""
     response = client.post(f"http://localhost:8080/api/v1/tests/post/?msg={msg}")
 
     assert response.status_code == 200
@@ -31,6 +34,7 @@ def test_post(client: TestClient, msg: str) -> None:
 
 
 def test_put(client: TestClient, msg: str) -> None:
+    """Test PUT endpoint with message parameter."""
     response = client.put(f"http://localhost:8080/api/v1/tests/put/?msg={msg}")
 
     assert response.status_code == 200
@@ -38,6 +42,7 @@ def test_put(client: TestClient, msg: str) -> None:
 
 
 def test_delete(client: TestClient, msg: str) -> None:
+    """Test DELETE endpoint with message parameter."""
     response = client.delete(f"http://localhost:8080/api/v1/tests/delete/?msg={msg}")
 
     assert response.status_code == 200

@@ -27,6 +27,7 @@ TYPE_MAPPINGS = {
 
 
 def get_column_fields(cls):
+    """Extract column metadata from SQLAlchemy model for schema generation."""
     i = ins(cls)
     for column in i.columns:
         colname = column.key
@@ -37,6 +38,7 @@ def get_column_fields(cls):
 
 
 def synth_schemas(cls):
+    """Generate Pydantic schemas from SQLAlchemy model automatically."""
 
     kw = {}
     for col_name, type_, default, nullable in get_column_fields(cls):

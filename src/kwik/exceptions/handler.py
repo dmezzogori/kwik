@@ -7,6 +7,7 @@ from kwik.exceptions import KwikException
 
 
 async def kwik_exception_handler(request: Request, exc: KwikException):
+    """Handle KwikException by returning JSON response with error details."""
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail},

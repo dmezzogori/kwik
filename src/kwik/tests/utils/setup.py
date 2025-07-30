@@ -7,6 +7,7 @@ from kwik.database.base import Base
 
 
 def init_test_db(init_db: Callable, *args, **kwargs) -> None:
+    """Initialize test database with tables and seed data."""
     # Initialize the database
     with DBContextManager() as db:
         Base.metadata.create_all(bind=db.get_bind())
@@ -14,6 +15,7 @@ def init_test_db(init_db: Callable, *args, **kwargs) -> None:
 
 
 def drop_test_db() -> None:
+    """Drop all test database tables."""
     # Drop the database
     with DBContextManager() as db:
         Base.metadata.drop_all(bind=db.get_bind())
