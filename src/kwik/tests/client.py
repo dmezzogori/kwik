@@ -71,7 +71,8 @@ class TestClientBase:
     def get(self, id_: int, status_code: int = 200) -> EndpointReturn | None:
         """Get single resource by ID."""
         return assert_status_code_and_return_response(
-            self.client.get(f"{self.get_uri}/{id_}", headers=self.headers), status_code=status_code,
+            self.client.get(f"{self.get_uri}/{id_}", headers=self.headers),
+            status_code=status_code,
         )
 
     def get_multi(

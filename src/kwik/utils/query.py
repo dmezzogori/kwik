@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from kwik.typings import ModelType, ParsedSortingQuery
 else:
     from typing import TypeVar
+
     ModelType = TypeVar("ModelType")
     ParsedSortingQuery = TypeVar("ParsedSortingQuery")
 
@@ -35,6 +36,7 @@ def sort_query(*, model: type[ModelType], query: Query, sort: ParsedSortingQuery
 def count_queries(conn):
     """Context manager to count and log SQL queries executed."""
     queries = []
+
     def before_cursor_execute(conn, cursor, statement, parameters, context, executemany) -> None:
         logger.error(statement)
         queries.append(statement)

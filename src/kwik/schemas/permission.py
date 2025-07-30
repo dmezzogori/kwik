@@ -15,12 +15,9 @@ class PermissionORMSchema(ORMMixin, _BaseSchema):
     """ORM schema for permissions with database ID."""
 
 
-
 class PermissionCreate(_BaseSchema):
     """Schema for creating new permissions."""
 
 
-
 class PermissionUpdate(_BaseSchema):
     """Schema for updating existing permissions."""
-

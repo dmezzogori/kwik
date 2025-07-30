@@ -20,7 +20,8 @@ class APIRouter(_APIRouter):
                 continue
 
             router = getmembers(
-                module, lambda x: isinstance(x, (_APIRouter, AuditorRouter, AutoRouter)),
+                module,
+                lambda x: isinstance(x, (_APIRouter, AuditorRouter, AutoRouter)),
             )[0][1]
 
             if isinstance(router, AutoRouter):

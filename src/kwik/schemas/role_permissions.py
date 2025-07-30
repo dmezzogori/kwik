@@ -14,7 +14,5 @@ class RolePermissionORMSchema(_BaseSchema, RecordInfoMixin):
     """ORM schema for role-permission associations with record tracking."""
 
 
-
 class RolePermissionCreate(_BaseSchema):
     """Schema for creating role-permission associations."""
-

@@ -19,4 +19,3 @@ class DBSessionMiddleware(BaseHTTPMiddleware):
         """Handle request within database session context manager."""
         with DBContextManager():
             return await call_next(request)
-

@@ -45,7 +45,9 @@ class Role(Base, SoftDeleteMixin):
     is_locked = Column(Boolean(), default=False, nullable=False)
 
     permissions = relationship(
-        "Permission", secondary="roles_permissions", viewonly=True,
+        "Permission",
+        secondary="roles_permissions",
+        viewonly=True,
     )
 
 

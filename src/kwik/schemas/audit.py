@@ -24,7 +24,5 @@ class AuditORMSchema(ORMMixin, _BaseSchema):
     """ORM schema for audit entries with database ID."""
 
 
-
 class AuditCreateSchema(_BaseSchema):
     """Schema for creating new audit log entries."""
-
