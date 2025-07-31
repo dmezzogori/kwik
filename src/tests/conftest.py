@@ -11,7 +11,20 @@ from sqlalchemy.orm import Session, sessionmaker
 
 import kwik
 from kwik import configure_kwik
-from kwik.core.settings import BaseKwikSettings
+from kwik.api.api import api_router
+from kwik.core.settings import BaseKwikSettings, reset_settings
+from kwik.database.base import Base
+from kwik.database.context_vars import db_conn_ctx_var
+from kwik.database.override_current_user import override_current_user
+from tests.utils import create_test_user
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from fastapi import FastAPI
+    from sqlalchemy.engine import Engine
+
+    from kwik.models.user import User
 
 
 class TestSettings(BaseKwikSettings):
@@ -25,23 +38,8 @@ class TestSettings(BaseKwikSettings):
     POSTGRES_PASSWORD: str = "root"  # noqa: S105
 
 
-# Configure Kwik with test settings before importing other modules
+# Configure Kwik with test settings
 configure_kwik(settings_class=TestSettings)
-
-# Import kwik modules after configuration to ensure settings are applied
-from kwik.api.api import api_router  # noqa: E402
-from kwik.core.settings import reset_settings  # noqa: E402
-from kwik.database.base import Base  # noqa: E402
-from kwik.database.override_current_user import override_current_user  # noqa: E402
-from tests.utils import create_test_user  # noqa: E402
-
-if TYPE_CHECKING:
-    from collections.abc import Generator
-
-    from fastapi import FastAPI
-    from sqlalchemy.engine import Engine
-
-    from kwik.models.user import User
 
 
 @pytest.fixture(scope="session")
@@ -113,8 +111,6 @@ def app() -> FastAPI:
 @pytest.fixture
 def client(app: FastAPI, db_session: Session, user_context: None) -> Generator[TestClient, None, None]:  # noqa: ARG001
     """Create test client with database session and user context."""
-    from kwik.database.context_vars import db_conn_ctx_var  # noqa: PLC0415
-
     # Set the database session in the context variable
     db_conn_ctx_var.set(db_session)
 
