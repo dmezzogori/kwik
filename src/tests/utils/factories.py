@@ -6,6 +6,7 @@ import factory
 from factory.faker import Faker
 
 from kwik.core.security import get_password_hash
+from kwik.database.context_vars import current_user_ctx_var
 from kwik.models.user import Permission, Role, User
 
 
@@ -38,6 +39,9 @@ class RoleFactory(factory.Factory):
     name = Faker("job")
     is_active = True
     is_locked = False
+    creator_user_id = factory.LazyAttribute(
+        lambda obj: current_user_ctx_var.get().id if current_user_ctx_var.get() else None
+    )
 
 
 class PermissionFactory(factory.Factory):
@@ -47,3 +51,6 @@ class PermissionFactory(factory.Factory):
         model = Permission
 
     name = Faker("word")
+    creator_user_id = factory.LazyAttribute(
+        lambda obj: current_user_ctx_var.get().id if current_user_ctx_var.get() else None
+    )

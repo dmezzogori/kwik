@@ -26,6 +26,8 @@ import kwik
 from kwik.api.api import api_router
 from kwik.core.settings import reset_settings
 from kwik.database.base import Base
+from kwik.database.override_current_user import override_current_user
+from tests.utils import create_test_user
 
 
 @pytest.fixture(scope="session")
@@ -87,6 +89,26 @@ def db_session(test_session_factory) -> Generator[Session, None, None]:  # noqa:
         session.close()
 
 
+@pytest.fixture
+def test_user(db_session):  # noqa: ANN201
+    """Create a test user in the current database session."""
+    user = create_test_user(
+        db_session,
+        name="testuser",
+        surname="testsurname", 
+        email="test@example.com",
+        password="testpassword123"
+    )
+    return user
+
+
+@pytest.fixture
+def user_context(test_user) -> Generator[None, None, None]:  # noqa: ANN001
+    """Set up user context using framework's override_current_user."""
+    with override_current_user(test_user):
+        yield
+
+
 @pytest.fixture(scope="session")
 def app():
     """Create FastAPI application instance for testing."""
@@ -95,8 +117,8 @@ def app():
 
 
 @pytest.fixture
-def client(app, db_session) -> Generator[TestClient, None, None]:  # noqa: ANN001
-    """Create test client with database session context override."""
+def client(app, db_session, user_context) -> Generator[TestClient, None, None]:  # noqa: ANN001
+    """Create test client with database session and user context."""
     from kwik.database.context_vars import db_conn_ctx_var
 
     # Set the database session in the context variable
