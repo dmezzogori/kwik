@@ -22,6 +22,7 @@ os.environ["POSTGRES_PASSWORD"] = "root"
 
 import kwik
 from kwik.api.api import api_router
+from kwik.core.settings import reset_settings
 from kwik.database.base import Base
 from sqlalchemy.orm import Session
 
@@ -117,3 +118,13 @@ def clean_db(db_session: Session) -> Generator[None, None, None]:
     yield
     # Rollback any changes made during the test
     db_session.rollback()
+
+
+@pytest.fixture
+def clean_settings() -> Generator[None, None, None]:
+    """Reset settings system between tests to ensure isolation."""
+    # Reset settings before test runs
+    reset_settings()
+    yield
+    # Reset settings after test completes
+    reset_settings()

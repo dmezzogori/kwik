@@ -129,3 +129,6 @@ class Settings(BaseSettings):
         """Pydantic configuration for Settings."""
 
         case_sensitive = True
+        # Allow extra fields to prevent validation errors from environment variables
+        # that aren't defined as settings fields
+        extra = "allow"

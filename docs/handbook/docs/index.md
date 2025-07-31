@@ -17,10 +17,11 @@ Kwik is a web framework for building modern, batteries-included, RESTful backend
 
 The key features are:
 
-
 * **Conciseness**: Kwik is quick (pun-intended :smile:)
 * **Battle-tested**: developed internally at [Kheperer](https://kheperer.it), we use it every day to build robust and modern solutions for our customers.
-* **Standards-based**
+* **Standards-based**: Built on FastAPI and SQLAlchemy
+* **Extensible Configuration**: Powerful settings system that supports custom fields, multiple configuration sources, and environment-specific adaptations
+* **Type Safety**: Full type hints and Pydantic validation throughout
 
 !!! warning
     While Kwik is in active development, and already used for production, it is still in a pre-release state.
@@ -52,9 +53,9 @@ Installed
 
 It will install kwik and all its dependencies.
 
-## Example
+## Quick Start
 
-### Run it
+### Basic Usage
 
 <div class="termy">
 
@@ -65,7 +66,35 @@ Uvicorn running on http://localhost:8080 (Press CTRL+C to quit)
 
 </div>
 
-If kwik is started in this way, it automatically creates a development server on port `8080`, with hot-reloading enabled
+If kwik is started in this way, it automatically creates a development server on port `8080`, with hot-reloading enabled.
+
+### Custom Configuration
+
+Kwik now supports extensible configuration with custom settings:
+
+```python
+from kwik import BaseKwikSettings, configure_kwik
+
+class MyAppSettings(BaseKwikSettings):
+    # Add your own settings
+    FEATURE_X_ENABLED: bool = False
+    API_TIMEOUT: int = 30
+    CUSTOM_CACHE_TTL: int = 300
+
+# Configure Kwik with your custom settings
+configure_kwik(settings_class=MyAppSettings)
+
+# Or use programmatic configuration
+configure_kwik(config_dict={
+    "PROJECT_NAME": "my_awesome_api",
+    "BACKEND_PORT": 9000,
+    "FEATURE_X_ENABLED": True
+})
+
+# Your app works exactly the same
+import kwik
+app = kwik.Kwik(api_router)
+```
 
 
 ### Check it
