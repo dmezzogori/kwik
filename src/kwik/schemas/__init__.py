@@ -13,7 +13,6 @@ from .login import RecoverPassword
 from .logs import LogCreateSchema, LogORMSchema
 from .mixins.orm import ORMMixin
 from .mixins.record_info import RecordInfoMixin
-from .mixins.soft_delete import SoftDeleteMixin
 from .msg import Msg
 from .permission import PermissionCreate, PermissionORMSchema, PermissionUpdate
 from .role import Role, RoleCreate, RoleInDB, RoleUpdate, UserRoleCreate, UserRoleRemove
@@ -43,7 +42,6 @@ __all__ = [
     "RoleCreate",
     "RoleInDB",
     "RoleUpdate",
-    "SoftDeleteMixin",
     "Token",
     "TokenPayload",
     "UserChangePasswordSchema",

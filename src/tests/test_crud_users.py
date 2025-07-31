@@ -212,7 +212,7 @@ class TestUserCRUD:
         user_id = user.id
 
         # Delete the user
-        deleted_user = crud.user.remove(id=user_id)
+        deleted_user = crud.user.delete(id=user_id)
 
         assert deleted_user.id == user_id
 

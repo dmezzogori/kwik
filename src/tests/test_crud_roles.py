@@ -16,7 +16,7 @@ class TestRoleCRUD:
 
     def test_create_role(self, db_session, clean_db) -> None:
         """Test creating a new role."""
-        role_data = schemas.RoleCreateSchema(
+        role_data = schemas.RoleCreate(
             name="Test Role",
             is_active=True,
             is_locked=False,
@@ -64,7 +64,7 @@ class TestRoleCRUD:
         role = create_test_role(db_session, name="Original Role")
 
         # Update the role
-        update_data = schemas.RoleUpdateSchema(name="Updated Role")
+        update_data = schemas.RoleUpdate(name="Updated Role")
         updated_role = crud.role.update(db_obj=role, obj_in=update_data)
 
         assert updated_role.id == role.id
@@ -137,8 +137,8 @@ class TestRoleCRUD:
         assert count == 1
         assert locked_roles[0].name == "Locked Role"
 
-    def test_soft_delete_role(self, db_session, clean_db) -> None:
-        """Test soft deleting a role (since Role inherits from SoftDeleteMixin)."""
+    def test_delete_role(self, db_session, clean_db) -> None:
+        """Test deleting a role (hard delete)."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
 
@@ -146,17 +146,14 @@ class TestRoleCRUD:
         role = create_test_role(db_session, name="To Delete")
         role_id = role.id
 
-        # Delete the role (should be soft delete)
-        deleted_role = crud.role.remove(id=role_id)
+        # Delete the role (hard delete)
+        deleted_role = crud.role.delete(id=role_id)
 
         assert deleted_role.id == role_id
 
-        # Verify role is soft deleted (not returned in normal queries)
+        # Verify role is completely removed
         retrieved_role = crud.role.get(id=role_id)
-        assert retrieved_role is None  # Should not be found due to soft delete
-
-        # But should still exist in database with deleted=True
-        # Note: We'd need to test this with a direct database query that ignores soft delete
+        assert retrieved_role is None  # Should not be found after deletion
 
     def test_get_all_roles(self, db_session, clean_db) -> None:
         """Test getting all roles."""

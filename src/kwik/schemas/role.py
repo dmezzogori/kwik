@@ -32,7 +32,8 @@ class UserRoleRemove(UserRoleCreate):
 class RoleUpdate(RoleBase):
     """Schema for updating existing roles."""
 
-    is_active: bool
+    name: str | None = None
+    is_active: bool | None = None
 
 
 class RoleInDBBase(RoleBase):

@@ -9,10 +9,10 @@ from kwik.models.user import User, Role, Permission
 from kwik.core.security import get_password_hash
 
 if TYPE_CHECKING:
-    from kwik.database.session import KwikSession
+    from sqlalchemy.orm import Session
 
 
-def cleanup_database(db_session: KwikSession) -> None:
+def cleanup_database(db_session: Session) -> None:
     """Clean all data from database tables in correct order to handle foreign keys."""
     # Delete in reverse order to handle foreign key constraints
     for table in reversed(Base.metadata.sorted_tables):
@@ -21,7 +21,7 @@ def cleanup_database(db_session: KwikSession) -> None:
 
 
 def create_test_user(
-    db_session: KwikSession,
+    db_session: Session,
     *,
     name: str = "testuser",
     surname: str = "testsurname",
@@ -46,7 +46,7 @@ def create_test_user(
 
 
 def create_test_role(
-    db_session: KwikSession,
+    db_session: Session,
     *,
     name: str = "test_role",
     is_active: bool = True,
@@ -65,7 +65,7 @@ def create_test_role(
 
 
 def create_test_permission(
-    db_session: KwikSession,
+    db_session: Session,
     *,
     name: str = "test_permission",
 ) -> Permission:

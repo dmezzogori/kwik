@@ -10,7 +10,6 @@ from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
-    from kwik.database.session import KwikSession
     from kwik.typings import (
         CreateSchemaType,
         ModelType,
@@ -55,7 +54,7 @@ class CurrentUser:
 class CRUDBase(abc.ABC, Generic[ModelType]):
     """Base class for all CRUD operations with model type safety and context access."""
 
-    db: KwikSession = DBSession()
+    db: Session = DBSession()
     user = CurrentUser()
     model: type[ModelType]
 

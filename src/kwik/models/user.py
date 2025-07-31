@@ -4,7 +4,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from kwik.database.base import Base
-from kwik.database.mixins import RecordInfoMixin, SoftDeleteMixin
+from kwik.database.mixins import RecordInfoMixin
 
 
 class User(Base):
@@ -34,8 +34,8 @@ class User(Base):
         return [permission for role in self.roles for permission in role.permissions]
 
 
-class Role(Base, SoftDeleteMixin):
-    """Database model for user roles with soft delete support."""
+class Role(Base, RecordInfoMixin):
+    """Database model for user roles with record tracking."""
 
     __tablename__ = "roles"
 
@@ -51,8 +51,8 @@ class Role(Base, SoftDeleteMixin):
     )
 
 
-class UserRole(Base, SoftDeleteMixin):
-    """Database model for user-role associations with soft delete support."""
+class UserRole(Base, RecordInfoMixin):
+    """Database model for user-role associations with record tracking."""
 
     __tablename__ = "users_roles"
 

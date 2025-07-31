@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from typing import TYPE_CHECKING, Any
 
 from fastapi.encoders import jsonable_encoder
@@ -78,14 +79,14 @@ class AutoCRUDRead(CRUDReadBase[ModelType]):
 class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
     """Create operations implementation for auto-generated CRUD with logging support."""
 
-    def create(self, *, obj_in: CreateSchemaType, **kwargs: Any) -> ModelType:
+    def create(self, *, obj_in: CreateSchemaType, **kwargs) -> ModelType:
         """Create new record from schema data."""
         obj_in_data = dict(obj_in)
 
         # Import here to avoid circular import
-        from kwik.database.session import _to_be_audited
+        from kwik.database.mixins import RecordInfoMixin  # noqa: PLC0415
 
-        if self.user is not None and _to_be_audited(self.model):
+        if self.user is not None and inspect.isclass(self.model) and issubclass(self.model, RecordInfoMixin):
             obj_in_data["creator_user_id"] = self.user.id
 
         db_obj = self.model(**obj_in_data)
@@ -130,9 +131,9 @@ class AutoCRUDUpdate(CRUDUpdateBase[ModelType, UpdateSchemaType]):
         update_data = obj_in if isinstance(obj_in, dict) else obj_in.dict(exclude_unset=True)
 
         # Import here to avoid circular import
-        from kwik.database.session import _to_be_audited
+        from kwik.database.mixins import RecordInfoMixin  # noqa: PLC0415
 
-        if self.user is not None and _to_be_audited(self.model):
+        if self.user is not None and inspect.isclass(self.model) and issubclass(self.model, RecordInfoMixin):
             update_data["last_modifier_user_id"] = self.user.id
 
         for field in update_data:

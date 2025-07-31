@@ -23,7 +23,7 @@ os.environ["POSTGRES_PASSWORD"] = "root"
 import kwik
 from kwik.api.api import api_router
 from kwik.database.base import Base
-from kwik.database.session import KwikSession
+from sqlalchemy.orm import Session
 
 
 @pytest.fixture(scope="session")
@@ -60,7 +60,6 @@ def test_engine() -> Engine:
 def test_session_factory(test_engine: Engine):  # noqa: ANN201
     """Create test session factory."""
     return sessionmaker(
-        class_=KwikSession,
         autocommit=False,
         autoflush=False,
         bind=test_engine,
@@ -76,7 +75,7 @@ def setup_test_database(test_engine: Engine) -> Generator[None, None, None]:
 
 
 @pytest.fixture
-def db_session(test_session_factory) -> Generator[KwikSession, None, None]:  # noqa: ANN001
+def db_session(test_session_factory) -> Generator[Session, None, None]:  # noqa: ANN001
     """Create a test database session with transaction rollback."""
     session = test_session_factory()
     try:
@@ -109,7 +108,7 @@ def client(app, db_session) -> Generator[TestClient, None, None]:  # noqa: ANN00
 
 
 @pytest.fixture
-def clean_db(db_session: KwikSession) -> Generator[None, None, None]:
+def clean_db(db_session: Session) -> Generator[None, None, None]:
     """Clean database tables between tests."""
     # Delete all data from tables (in reverse order to handle foreign keys)
     for table in reversed(Base.metadata.sorted_tables):
