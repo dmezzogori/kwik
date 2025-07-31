@@ -129,6 +129,19 @@ def client(app: FastAPI, db_session: Session, user_context: None) -> Generator[T
 
 
 @pytest.fixture
+def client_no_auth(app: FastAPI, db_session: Session) -> Generator[TestClient, None, None]:
+    """Create test client with database session but without user context (for unauthenticated tests)."""
+    # Set the database session in the context variable
+    db_conn_ctx_var.set(db_session)
+
+    with TestClient(app) as c:
+        yield c
+
+    # Clean up the context variable
+    db_conn_ctx_var.set(None)
+
+
+@pytest.fixture
 def clean_db(db_session: Session) -> Generator[None, None, None]:
     """Clean database tables between tests."""
     # Delete all data from tables (in reverse order to handle foreign keys)
