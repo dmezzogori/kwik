@@ -43,6 +43,7 @@ class EnvironmentSource(ConfigurationSource):
 
         """
         self.env_file = env_file
+        self._priority = 1
 
     def load(self) -> dict[str, Any]:
         """Load configuration from environment variables."""
@@ -64,7 +65,12 @@ class EnvironmentSource(ConfigurationSource):
     @property
     def priority(self) -> int:
         """Environment variables have high priority."""
-        return 1
+        return self._priority
+    
+    @priority.setter
+    def priority(self, value: int) -> None:
+        """Set the priority for this source."""
+        self._priority = value
 
 
 class DictSource(ConfigurationSource):
@@ -78,6 +84,7 @@ class DictSource(ConfigurationSource):
 
         """
         self.config_dict = config_dict
+        self._priority = 2
 
     def load(self) -> dict[str, Any]:
         """Load configuration from dictionary."""
@@ -86,7 +93,12 @@ class DictSource(ConfigurationSource):
     @property
     def priority(self) -> int:
         """Dictionary sources have medium priority."""
-        return 2
+        return self._priority
+    
+    @priority.setter
+    def priority(self, value: int) -> None:
+        """Set the priority for this source."""
+        self._priority = value
 
 
 class FileSource(ConfigurationSource):
@@ -100,6 +112,7 @@ class FileSource(ConfigurationSource):
 
         """
         self.file_path = Path(file_path)
+        self._priority = 3
 
     def load(self) -> dict[str, Any]:
         """Load configuration from file."""
@@ -124,7 +137,12 @@ class FileSource(ConfigurationSource):
     @property
     def priority(self) -> int:
         """File sources have low priority."""
-        return 3
+        return self._priority
+    
+    @priority.setter
+    def priority(self, value: int) -> None:
+        """Set the priority for this source."""
+        self._priority = value
 
 
 class SettingsRegistry:

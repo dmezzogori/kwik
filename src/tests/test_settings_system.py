@@ -120,7 +120,7 @@ class TestSettingsSources:
 
     def test_file_source_raises_for_unsupported_format(self):
         """Test FileSource raises error for unsupported file formats."""
-        with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode='w', suffix=".txt", delete=False) as f:
             f.write("test content")
             txt_file = f.name
 

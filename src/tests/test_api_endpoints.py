@@ -95,7 +95,7 @@ class TestUserEndpointsWithoutAuth:
 
     def test_get_users_without_auth_returns_401(self, client_no_auth: TestClient) -> None:
         """Test that getting users without auth returns 401."""
-        response = client_no_auth.get("/api/v1/users")
+        response = client_no_auth.get("/api/v1/users/")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_get_user_me_without_auth_returns_401(self, client_no_auth: TestClient) -> None:

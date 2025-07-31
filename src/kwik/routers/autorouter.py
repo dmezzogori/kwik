@@ -104,7 +104,7 @@ class AutoRouter(Generic[ModelType, BaseSchemaType, CreateSchemaType, UpdateSche
         sorting: kwik.SortingQuery,
         paginated: kwik.PaginatedQuery,
         filters: kwik.FilterQuery,
-    ) -> kwik.schemas.Paginated[BaseSchemaType]:
+    ):
         """Retrieve many {name} items.
 
         Sorting field:[asc|desc].
