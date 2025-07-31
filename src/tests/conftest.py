@@ -4,12 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import os
-from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
-from sqlalchemy.engine import Engine
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 # Set test environment before importing kwik
@@ -20,6 +18,8 @@ os.environ["POSTGRES_DB"] = "kwik_test"
 os.environ["POSTGRES_USER"] = "postgres"
 os.environ["POSTGRES_PASSWORD"] = "root"
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy.orm import Session
 
 import kwik
@@ -28,6 +28,14 @@ from kwik.core.settings import reset_settings
 from kwik.database.base import Base
 from kwik.database.override_current_user import override_current_user
 from tests.utils import create_test_user
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from fastapi import FastAPI
+    from sqlalchemy.engine import Engine
+
+    from kwik.models.user import User
 
 
 @pytest.fixture(scope="session")
@@ -43,25 +51,15 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 def test_engine() -> Engine:
     """Create test database engine."""
     test_db_url = "postgresql://postgres:root@localhost:5433/kwik_test"
-    engine = create_engine(
+    return create_engine(
         test_db_url,
         pool_pre_ping=True,
         echo=False,  # Set to True for SQL debugging
     )
 
-    # Enable foreign key constraints for SQLite if needed
-    @event.listens_for(Engine, "connect")
-    def set_sqlite_pragma(dbapi_connection, _connection_record: object) -> None:
-        if "sqlite" in str(dbapi_connection):
-            cursor = dbapi_connection.cursor()
-            cursor.execute("PRAGMA foreign_keys=ON")
-            cursor.close()
-
-    return engine
-
 
 @pytest.fixture(scope="session")
-def test_session_factory(test_engine: Engine):  # noqa: ANN201
+def test_session_factory(test_engine: Engine) -> sessionmaker:
     """Create test session factory."""
     return sessionmaker(
         autocommit=False,
@@ -79,7 +77,7 @@ def setup_test_database(test_engine: Engine) -> Generator[None, None, None]:
 
 
 @pytest.fixture
-def db_session(test_session_factory) -> Generator[Session, None, None]:  # noqa: ANN001
+def db_session(test_session_factory: sessionmaker) -> Generator[Session, None, None]:
     """Create a test database session with transaction rollback."""
     session = test_session_factory()
     try:
@@ -90,16 +88,15 @@ def db_session(test_session_factory) -> Generator[Session, None, None]:  # noqa:
 
 
 @pytest.fixture
-def test_user(db_session):  # noqa: ANN201
+def test_user(db_session: Session) -> User:
     """Create a test user in the current database session."""
-    user = create_test_user(
+    return create_test_user(
         db_session,
         name="testuser",
-        surname="testsurname", 
+        surname="testsurname",
         email="test@example.com",
-        password="testpassword123"
+        password="testpassword123",
     )
-    return user
 
 
 @pytest.fixture
@@ -117,7 +114,7 @@ def app():
 
 
 @pytest.fixture
-def client(app, db_session, user_context) -> Generator[TestClient, None, None]:  # noqa: ANN001
+def client(app: FastAPI, db_session: Session, user_context: None) -> Generator[TestClient, None, None]:
     """Create test client with database session and user context."""
     from kwik.database.context_vars import db_conn_ctx_var
 
