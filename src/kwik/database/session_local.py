@@ -37,6 +37,13 @@ def get_alternate_session_local() -> sessionmaker | None:
     return _alternate_session_local
 
 
+def reset_session_locals() -> None:
+    """Reset cached session factories to force recreation with new engines."""
+    global _session_local, _alternate_session_local  # noqa: PLW0603
+    _session_local = None
+    _alternate_session_local = None
+
+
 # Backward compatibility: provide SessionLocal and AlternateSessionLocal as module-level attributes
 def __getattr__(name: str) -> sessionmaker | None:
     """Provide backward compatibility for direct access to session factory attributes."""

@@ -40,6 +40,13 @@ def get_alternate_engine() -> Engine | None:
     return _alternate_engine
 
 
+def reset_engines() -> None:
+    """Reset cached engines to force recreation with new settings."""
+    global _engine, _alternate_engine  # noqa: PLW0603
+    _engine = None
+    _alternate_engine = None
+
+
 # Backward compatibility: provide engine and alternate_engine as module-level attributes
 # These will be created lazily when first accessed
 def __getattr__(name: str) -> Engine | None:

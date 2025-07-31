@@ -229,6 +229,7 @@ class BaseKwikSettings(BaseSettings):
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "root"
     POSTGRES_DB: str = "db"
+    POSTGRES_PORT: str = "5432"
     POSTGRES_MAX_CONNECTIONS: int = 100
     ENABLE_SOFT_DELETE: bool = False
     SQLALCHEMY_DATABASE_URI: PostgresDsn | str | None = None
@@ -296,11 +297,13 @@ class BaseKwikSettings(BaseSettings):
         """Build PostgreSQL connection string from individual components."""
         if isinstance(v, str):
             return v
+        port = values.get("POSTGRES_PORT")
         return PostgresDsn.build(
             scheme="postgresql",
             user=values.get("POSTGRES_USER"),
             password=values.get("POSTGRES_PASSWORD"),
             host=values.get("POSTGRES_SERVER"),
+            port=str(port) if port is not None else None,
             path=f"/{values.get('POSTGRES_DB') or ''}",
         )
 
@@ -446,5 +449,3 @@ def reset_settings() -> None:
     returning to the default state.
     """
     _settings_factory.reset()
-
-
