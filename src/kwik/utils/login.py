@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from jose import jwt
 
-import kwik
+from kwik.core.settings import get_settings
 
 
 def generate_password_reset_token(email: str) -> str:
@@ -17,12 +17,12 @@ def generate_password_reset_token(email: str) -> str:
     exp = expires.timestamp()
     return jwt.encode(
         {"exp": exp, "nbf": now, "sub": email},
-        kwik.settings.SECRET_KEY,
+        get_settings().SECRET_KEY,
         algorithm="HS256",
     )
 
 
 def verify_password_reset_token(token: str) -> str | None:
     """Verify password reset token and return email if valid."""
-    decoded_token = jwt.decode(token, kwik.settings.SECRET_KEY, algorithms=["HS256"])
+    decoded_token = jwt.decode(token, get_settings().SECRET_KEY, algorithms=["HS256"])
     return decoded_token.get("sub", None)

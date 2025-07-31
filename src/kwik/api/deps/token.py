@@ -7,11 +7,11 @@ from typing import Annotated
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
-import kwik
 import kwik.core.security
 import kwik.schemas
+from kwik.core.settings import get_settings
 
-reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{kwik.settings.API_V1_STR}/login/access-token")
+reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{get_settings().API_V1_STR}/login/access-token")
 
 
 def get_token(token: str = Depends(reusable_oauth2)) -> kwik.schemas.TokenPayload:

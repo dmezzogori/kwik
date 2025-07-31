@@ -9,8 +9,8 @@ from fastapi import APIRouter, Depends, Request, Response
 from fastapi.routing import APIRoute
 from jose import jwt
 
-import kwik
 from kwik import crud, schemas
+from kwik.core.settings import get_settings
 from kwik.api.deps.token import get_token
 from kwik.api.deps.users import get_current_user
 from kwik.core import security
@@ -68,7 +68,7 @@ class AuditedRoute(APIRoute):
 
                 payload = jwt.decode(
                     request.token,
-                    kwik.settings.SECRET_KEY,
+                    get_settings().SECRET_KEY,
                     algorithms=[security.ALGORITHM],
                 )
                 token_data = schemas.TokenPayload(**payload)

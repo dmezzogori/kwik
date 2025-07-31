@@ -6,7 +6,7 @@ and configuration for the kwik web framework.
 
 import logging
 
-from kwik import settings
+from kwik.core.settings import get_settings
 
 
 class CustomFormatter(logging.Formatter):
@@ -36,7 +36,7 @@ class CustomFormatter(logging.Formatter):
 
 
 # https://docs.python.org/3/library/logging.html
-logging.basicConfig(level=settings.LOG_LEVEL)
+logging.basicConfig(level=get_settings().LOG_LEVEL)
 
 uvicorn_logger = logging.getLogger("uvicorn.error")
 uvicorn_logger.propagate = False
@@ -48,7 +48,7 @@ if logger.hasHandlers():
 
 
 logger.propagate = False
-logger.setLevel(settings.LOG_LEVEL)
+logger.setLevel(get_settings().LOG_LEVEL)
 
 # create console handler with a higher log level
 ch = logging.StreamHandler()

@@ -448,5 +448,3 @@ def reset_settings() -> None:
     _settings_factory.reset()
 
 
-# For backward compatibility, create an alias to the original Settings class
-Settings = BaseKwikSettings

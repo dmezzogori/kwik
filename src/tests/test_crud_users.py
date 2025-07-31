@@ -8,8 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from kwik import crud, schemas
 from kwik.database.context_vars import db_conn_ctx_var
 from kwik.exceptions import NotFound
-from kwik.models.user import User
-from tests.utils import create_test_user, cleanup_database
+from tests.utils import create_test_user
 
 
 class TestUserCRUD:

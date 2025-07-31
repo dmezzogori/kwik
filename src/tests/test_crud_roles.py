@@ -7,8 +7,7 @@ import pytest
 from kwik import crud, schemas
 from kwik.database.context_vars import db_conn_ctx_var
 from kwik.exceptions import NotFound
-from kwik.models.user import Role
-from tests.utils import create_test_role, cleanup_database
+from tests.utils import create_test_role
 
 
 class TestRoleCRUD:

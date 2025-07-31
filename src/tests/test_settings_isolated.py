@@ -5,9 +5,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from pathlib import Path
 
-import pytest
 from pydantic import validator
 
 from kwik.core.settings import (
@@ -15,7 +13,6 @@ from kwik.core.settings import (
     DictSource,
     EnvironmentSource,
     FileSource,
-    SettingsFactory,
     SettingsRegistry,
     configure_kwik,
     get_settings,
@@ -43,11 +40,11 @@ def test_environment_source_loads_from_env():
     """Test EnvironmentSource loads from environment variables."""
     # Set up environment variable
     os.environ["TEST_SETTING"] = "test_value"
-    
+
     try:
         source = EnvironmentSource()
         config = source.load()
-        
+
         assert "TEST_SETTING" in config
         assert config["TEST_SETTING"] == "test_value"
         assert source.priority == 1
@@ -62,10 +59,10 @@ def test_dict_source_loads_from_dict():
         "TEST_SETTING": "dict_value",
         "INT_SETTING": 123,
     }
-    
+
     source = DictSource(test_dict)
     config = source.load()
-    
+
     assert config == test_dict
     assert source.priority == 2
 
@@ -77,15 +74,15 @@ def test_file_source_loads_json():
         "DEBUG": True,
         "PROJECT_NAME": "test_project",
     }
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump(test_config, f)
         json_file = f.name
 
     try:
         source = FileSource(json_file)
         config = source.load()
-        
+
         assert config == test_config
         assert source.priority == 3
     finally:
@@ -95,16 +92,16 @@ def test_file_source_loads_json():
 def test_settings_registry_add_source_and_priority_ordering():
     """Test adding sources and priority ordering."""
     registry = SettingsRegistry()
-    
+
     env_source = EnvironmentSource()
     dict_source = DictSource({"TEST": "dict"})
     file_source = FileSource("test.json")
-    
+
     # Add in random order
     registry.add_source(file_source)
     registry.add_source(env_source)
     registry.add_source(dict_source)
-    
+
     # Should be sorted by priority (env=1, dict=2, file=3)
     assert registry._sources[0] == env_source
     assert registry._sources[1] == dict_source
@@ -114,20 +111,20 @@ def test_settings_registry_add_source_and_priority_ordering():
 def test_settings_registry_merged_config():
     """Test configuration merging with priority."""
     registry = SettingsRegistry()
-    
+
     # Add sources with conflicting values
     dict_source1 = DictSource({"SETTING": "low_priority", "UNIQUE1": "value1"})
     dict_source2 = DictSource({"SETTING": "high_priority", "UNIQUE2": "value2"})
-    
+
     # Manually set priorities to test merging
     dict_source1.priority = 3  # Lower priority
     dict_source2.priority = 1  # Higher priority
-    
+
     registry.add_source(dict_source1)
     registry.add_source(dict_source2)
-    
+
     config = registry.get_merged_config()
-    
+
     # High priority should win
     assert config["SETTING"] == "high_priority"
     # Both unique values should be present
@@ -141,7 +138,7 @@ def test_configure_kwik_with_custom_settings():
         reset_settings()
         configure_kwik(settings_class=TestCustomSettings)
         settings = get_settings()
-        
+
         assert isinstance(settings, TestCustomSettings)
         assert settings.CUSTOM_SETTING == "DEFAULT_VALUE"  # Validator uppercases
         assert settings.CUSTOM_INT_SETTING == 42
@@ -155,7 +152,7 @@ def test_configure_kwik_with_dict():
         reset_settings()
         configure_kwik(config_dict={"PROJECT_NAME": "configured_project"})
         settings = get_settings()
-        
+
         assert settings.PROJECT_NAME == "configured_project"
     finally:
         reset_settings()
@@ -175,7 +172,7 @@ def test_extensibility_custom_feature_flags():
             config_dict={
                 "FEATURE_X_ENABLED": True,
                 "FEATURE_Z_ROLLOUT_PERCENTAGE": 50,
-            }
+            },
         )
 
         settings = get_settings()
@@ -190,17 +187,17 @@ def test_priority_ordering_with_env():
     """Test configuration source priority ordering with environment variables."""
     # Set up environment variable (highest priority)
     os.environ["PROJECT_NAME"] = "from_env"
-    
+
     try:
         reset_settings()
-        
+
         config_dict = {"PROJECT_NAME": "from_dict"}
-        
+
         # Configure with dict source
         configure_kwik(config_dict=config_dict)
-        
+
         settings = get_settings()
-        
+
         # Environment should win (highest priority)
         assert settings.PROJECT_NAME == "from_env"
     finally:
@@ -212,12 +209,12 @@ def test_multiple_configure_calls():
     """Test multiple configure_kwik calls."""
     try:
         reset_settings()
-        
+
         # First configuration
         configure_kwik(config_dict={"PROJECT_NAME": "first"})
         settings1 = get_settings()
         assert settings1.PROJECT_NAME == "first"
-        
+
         # Second configuration should replace the first
         configure_kwik(config_dict={"PROJECT_NAME": "second"})
         settings2 = get_settings()
@@ -230,10 +227,10 @@ def test_lazy_loading():
     """Test that settings are loaded lazily."""
     try:
         reset_settings()
-        
+
         # Configure before accessing
         configure_kwik(config_dict={"PROJECT_NAME": "lazy_test"})
-        
+
         # First access should load the configured settings
         settings = get_settings()
         assert settings.PROJECT_NAME == "lazy_test"

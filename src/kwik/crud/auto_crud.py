@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from fastapi.encoders import jsonable_encoder
 
-from kwik import settings
+from kwik.core.settings import get_settings
 from kwik.exceptions import DuplicatedEntity, NotFound
 from kwik.middlewares import get_request_id
 from kwik.schemas import LogCreateSchema
@@ -95,7 +95,7 @@ class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
         self.db.flush()
         self.db.refresh(db_obj)
 
-        if settings.DB_LOGGER:
+        if get_settings().DB_LOGGER:
             log_in = LogCreateSchema(
                 request_id=get_request_id(),
                 entity=db_obj.__tablename__,
@@ -144,7 +144,7 @@ class AutoCRUDUpdate(CRUDUpdateBase[ModelType, UpdateSchemaType]):
         self.db.flush()
         self.db.refresh(db_obj)
 
-        if settings.DB_LOGGER:
+        if get_settings().DB_LOGGER:
             log_in = LogCreateSchema(
                 request_id=get_request_id(),
                 entity=db_obj.__tablename__,
@@ -163,7 +163,7 @@ class AutoCRUDDelete(CRUDDeleteBase[ModelType]):
         """Delete record by ID and return the deleted object."""
         obj: ModelType = self.db.query(self.model).get(id)
 
-        if settings.DB_LOGGER:
+        if get_settings().DB_LOGGER:
             log_in = LogCreateSchema(
                 request_id=get_request_id(),
                 entity=obj.__tablename__,

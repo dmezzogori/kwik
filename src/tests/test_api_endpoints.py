@@ -88,7 +88,6 @@ class TestLoginEndpoints:
         """Test test-token endpoint with valid authentication."""
         # TODO: Implement authentication mocking for this test
         # This would require creating a valid JWT token and setting it in headers
-        pass
 
 
 class TestUserEndpointsWithoutAuth:
@@ -154,4 +153,3 @@ class TestAPIIntegration:
     def test_full_user_lifecycle(self, client: TestClient, db_session, clean_db) -> None:
         """Test full user lifecycle: create, read, update, delete."""
         # TODO: Implement full integration test once authentication is properly mocked
-        pass

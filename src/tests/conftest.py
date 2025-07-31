@@ -20,11 +20,12 @@ os.environ["POSTGRES_DB"] = "kwik_test"
 os.environ["POSTGRES_USER"] = "postgres"
 os.environ["POSTGRES_PASSWORD"] = "root"
 
+from sqlalchemy.orm import Session
+
 import kwik
 from kwik.api.api import api_router
 from kwik.core.settings import reset_settings
 from kwik.database.base import Base
-from sqlalchemy.orm import Session
 
 
 @pytest.fixture(scope="session")
@@ -48,7 +49,7 @@ def test_engine() -> Engine:
 
     # Enable foreign key constraints for SQLite if needed
     @event.listens_for(Engine, "connect")
-    def set_sqlite_pragma(dbapi_connection, _connection_record: object) -> None:  # noqa: ARG001
+    def set_sqlite_pragma(dbapi_connection, _connection_record: object) -> None:
         if "sqlite" in str(dbapi_connection):
             cursor = dbapi_connection.cursor()
             cursor.execute("PRAGMA foreign_keys=ON")

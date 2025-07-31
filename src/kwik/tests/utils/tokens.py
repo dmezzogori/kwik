@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import kwik
+from kwik import get_settings
 
 if TYPE_CHECKING:
     from fastapi.testclient import TestClient
@@ -25,7 +25,7 @@ class TokensManager:
             "username": username,
             "password": password,
         }
-        r = self.client.post(f"{kwik.settings.API_V1_STR}/login/access-token", data=login_data)
+        r = self.client.post(f"{get_settings().API_V1_STR}/login/access-token", data=login_data)
         tokens = r.json()
         access_token = tokens["access_token"]
         return {"Authorization": f"Bearer {access_token}"}

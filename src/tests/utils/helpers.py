@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from kwik.database.base import Base
-from kwik.models.user import User, Role, Permission
 from kwik.core.security import get_password_hash
+from kwik.database.base import Base
+from kwik.models.user import Permission, Role, User
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session

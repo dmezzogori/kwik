@@ -11,7 +11,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 import kwik.exceptions.handler
 import kwik.logger
-from kwik import settings
+from kwik.core.settings import get_settings
 from kwik.api.endpoints.docs import get_swagger_ui_html
 from kwik.exceptions import KwikException
 from kwik.middlewares import DBSessionMiddleware, RequestContextMiddleware
@@ -35,9 +35,9 @@ class Kwik:
         self._app = self.init_fastapi_app(api_router=api_router)
 
         kwik.logger.info("Kwik App ready")
-        kwik.logger.info(f"Kwik App running on {settings.PROTOCOL}://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}")
+        kwik.logger.info(f"Kwik App running on {get_settings().PROTOCOL}://{get_settings().BACKEND_HOST}:{get_settings().BACKEND_PORT}")
         kwik.logger.info(
-            f"Swagger available at {settings.PROTOCOL}://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}/docs",
+            f"Swagger available at {get_settings().PROTOCOL}://{get_settings().BACKEND_HOST}:{get_settings().BACKEND_PORT}/docs",
         )
 
     def init_fastapi_app(self, *, api_router: APIRouter) -> FastAPI:
@@ -49,17 +49,17 @@ class Kwik:
         Customize the swagger UI.
         """
         app = FastAPI(
-            title=settings.PROJECT_NAME,
-            openapi_url=f"{settings.API_V1_STR}/openapi.json",
-            debug=settings.DEBUG,
-            on_startup=[broadcast.connect] if settings.WEBSOCKET_ENABLED else None,
-            on_shutdown=[broadcast.disconnect] if settings.WEBSOCKET_ENABLED else None,
+            title=get_settings().PROJECT_NAME,
+            openapi_url=f"{get_settings().API_V1_STR}/openapi.json",
+            debug=get_settings().DEBUG,
+            on_startup=[broadcast.connect] if get_settings().WEBSOCKET_ENABLED else None,
+            on_shutdown=[broadcast.disconnect] if get_settings().WEBSOCKET_ENABLED else None,
             redirect_slashes=False,
         )
 
         app = self.set_middlewares(app=app)
 
-        app.include_router(api_router, prefix=settings.API_V1_STR)
+        app.include_router(api_router, prefix=get_settings().API_V1_STR)
 
         app.exception_handler(KwikException)(kwik.exceptions.handler.kwik_exception_handler)
 
@@ -76,10 +76,10 @@ class Kwik:
         app.add_middleware(RequestContextMiddleware)
         app.add_middleware(DBSessionMiddleware)
 
-        if settings.BACKEND_CORS_ORIGINS:
+        if get_settings().BACKEND_CORS_ORIGINS:
             app.add_middleware(
                 CORSMiddleware,
-                allow_origins=tuple(str(origin) for origin in settings.BACKEND_CORS_ORIGINS),
+                allow_origins=tuple(str(origin) for origin in get_settings().BACKEND_CORS_ORIGINS),
                 allow_credentials=True,
                 allow_methods=["*"],
                 allow_headers=["*"],

@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -47,11 +46,11 @@ class TestSettingsSources:
         """Test EnvironmentSource loads from environment variables."""
         # Set up environment variable
         os.environ["TEST_SETTING"] = "test_value"
-        
+
         try:
             source = EnvironmentSource()
             config = source.load()
-            
+
             assert "TEST_SETTING" in config
             assert config["TEST_SETTING"] == "test_value"
             assert source.priority == 1
@@ -61,17 +60,17 @@ class TestSettingsSources:
 
     def test_environment_source_loads_from_env_file(self):
         """Test EnvironmentSource loads from .env file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.env', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".env", delete=False) as f:
             f.write("TEST_SETTING=from_file\n")
             f.write("ANOTHER_SETTING=another_value\n")
             f.write("# Comment line\n")
-            f.write("QUOTED_SETTING=\"quoted value\"\n")
+            f.write('QUOTED_SETTING="quoted value"\n')
             env_file = f.name
 
         try:
             source = EnvironmentSource(env_file=env_file)
             config = source.load()
-            
+
             assert config["TEST_SETTING"] == "from_file"
             assert config["ANOTHER_SETTING"] == "another_value"
             assert config["QUOTED_SETTING"] == "quoted value"
@@ -84,10 +83,10 @@ class TestSettingsSources:
             "TEST_SETTING": "dict_value",
             "INT_SETTING": 123,
         }
-        
+
         source = DictSource(test_dict)
         config = source.load()
-        
+
         assert config == test_dict
         assert source.priority == 2
 
@@ -98,15 +97,15 @@ class TestSettingsSources:
             "DEBUG": True,
             "PROJECT_NAME": "test_project",
         }
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(test_config, f)
             json_file = f.name
 
         try:
             source = FileSource(json_file)
             config = source.load()
-            
+
             assert config == test_config
             assert source.priority == 3
         finally:
@@ -116,12 +115,12 @@ class TestSettingsSources:
         """Test FileSource handles missing files gracefully."""
         source = FileSource("nonexistent.json")
         config = source.load()
-        
+
         assert config == {}
 
     def test_file_source_raises_for_unsupported_format(self):
-        """Test FileSource raises error for unsupported file formats."""        
-        with tempfile.NamedTemporaryFile(suffix='.txt', delete=False) as f:
+        """Test FileSource raises error for unsupported file formats."""
+        with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
             f.write("test content")
             txt_file = f.name
 
@@ -145,12 +144,12 @@ class TestSettingsRegistry:
         env_source = EnvironmentSource()
         dict_source = DictSource({"TEST": "dict"})
         file_source = FileSource("test.json")
-        
+
         # Add in random order
         self.registry.add_source(file_source)
         self.registry.add_source(env_source)
         self.registry.add_source(dict_source)
-        
+
         # Should be sorted by priority (env=1, dict=2, file=3)
         assert self.registry._sources[0] == env_source
         assert self.registry._sources[1] == dict_source
@@ -166,16 +165,16 @@ class TestSettingsRegistry:
         # Add sources with conflicting values
         dict_source1 = DictSource({"SETTING": "low_priority", "UNIQUE1": "value1"})
         dict_source2 = DictSource({"SETTING": "high_priority", "UNIQUE2": "value2"})
-        
+
         # Manually set priorities to test merging
         dict_source1.priority = 3  # Lower priority
         dict_source2.priority = 1  # Higher priority
-        
+
         self.registry.add_source(dict_source1)
         self.registry.add_source(dict_source2)
-        
+
         config = self.registry.get_merged_config()
-        
+
         # High priority should win
         assert config["SETTING"] == "high_priority"
         # Both unique values should be present
@@ -185,10 +184,10 @@ class TestSettingsRegistry:
     def test_get_settings_instance_caching(self):
         """Test settings instance caching."""
         self.registry.add_source(DictSource({"PROJECT_NAME": "test"}))
-        
+
         instance1 = self.registry.get_settings_instance()
         instance2 = self.registry.get_settings_instance()
-        
+
         assert instance1 is instance2  # Same instance
         assert instance1.PROJECT_NAME == "test"
 
@@ -196,14 +195,14 @@ class TestSettingsRegistry:
         """Test reset clears registry state."""
         self.registry.add_source(DictSource({"TEST": "value"}))
         self.registry.set_settings_class(TestCustomSettings)
-        
+
         # Get instance to cache it
         instance = self.registry.get_settings_instance()
         assert instance is not None
-        
+
         # Reset should clear everything
         self.registry.reset()
-        
+
         assert len(self.registry._sources) == 0
         assert self.registry._settings_instance is None
         assert self.registry._settings_class == BaseKwikSettings
@@ -223,7 +222,7 @@ class TestSettingsFactory:
     def test_default_configuration(self):
         """Test factory with default configuration."""
         settings = self.factory.get_settings()
-        
+
         assert isinstance(settings, BaseKwikSettings)
         assert settings.PROJECT_NAME == "kwik"  # Default value
 
@@ -231,7 +230,7 @@ class TestSettingsFactory:
         """Test configuring with custom settings class."""
         self.factory.configure(settings_class=TestCustomSettings)
         settings = self.factory.get_settings()
-        
+
         assert isinstance(settings, TestCustomSettings)
         assert settings.CUSTOM_SETTING == "DEFAULT_VALUE"  # Validator uppercases
         assert settings.CUSTOM_INT_SETTING == 42
@@ -243,10 +242,10 @@ class TestSettingsFactory:
             "BACKEND_PORT": 9000,
             "DEBUG": True,
         }
-        
+
         self.factory.configure(config_dict=config)
         settings = self.factory.get_settings()
-        
+
         assert settings.PROJECT_NAME == "test_project"
         assert settings.BACKEND_PORT == 9000
         assert settings.DEBUG is True
@@ -254,15 +253,15 @@ class TestSettingsFactory:
     def test_configure_with_file(self):
         """Test configuring with file."""
         config = {"PROJECT_NAME": "file_project", "BACKEND_PORT": 8888}
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(config, f)
             config_file = f.name
 
         try:
             self.factory.configure(config_file=config_file)
             settings = self.factory.get_settings()
-            
+
             assert settings.PROJECT_NAME == "file_project"
             assert settings.BACKEND_PORT == 8888
         finally:
@@ -272,29 +271,29 @@ class TestSettingsFactory:
         """Test configuration source priority ordering."""
         # Set up environment variable (highest priority)
         os.environ["TEST_PRIORITY"] = "from_env"
-        
+
         try:
             config_dict = {"TEST_PRIORITY": "from_dict"}
             config_file_data = {"TEST_PRIORITY": "from_file"}
-            
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
                 json.dump(config_file_data, f)
                 config_file = f.name
-            
+
             try:
                 # Configure with all sources
                 self.factory.configure(
                     config_dict=config_dict,
                     config_file=config_file,
                 )
-                
+
                 # Create a custom settings class to capture the TEST_PRIORITY value
                 class TestPrioritySettings(BaseKwikSettings):
                     TEST_PRIORITY: str = "default"
-                
+
                 self.factory._registry.set_settings_class(TestPrioritySettings)
                 settings = self.factory.get_settings()
-                
+
                 # Environment should win (highest priority)
                 assert settings.TEST_PRIORITY == "from_env"
             finally:
@@ -314,7 +313,7 @@ class TestConfigureKwikFunction:
         """Test configure_kwik with custom settings class."""
         configure_kwik(settings_class=TestCustomSettings)
         settings = get_settings()
-        
+
         assert isinstance(settings, TestCustomSettings)
         assert settings.CUSTOM_SETTING == "DEFAULT_VALUE"
 
@@ -322,17 +321,17 @@ class TestConfigureKwikFunction:
         """Test configure_kwik with dictionary."""
         configure_kwik(config_dict={"PROJECT_NAME": "configured_project"})
         settings = get_settings()
-        
+
         assert settings.PROJECT_NAME == "configured_project"
 
     def test_configure_with_env_override(self):
         """Test configure_kwik respects environment variable override."""
         os.environ["PROJECT_NAME"] = "env_project"
-        
+
         try:
             configure_kwik(config_dict={"PROJECT_NAME": "dict_project"})
             settings = get_settings()
-            
+
             # Environment should override dictionary
             assert settings.PROJECT_NAME == "env_project"
         finally:
@@ -344,7 +343,7 @@ class TestConfigureKwikFunction:
         configure_kwik(config_dict={"PROJECT_NAME": "first"})
         settings1 = get_settings()
         assert settings1.PROJECT_NAME == "first"
-        
+
         # Second configuration should replace the first
         configure_kwik(config_dict={"PROJECT_NAME": "second"})
         settings2 = get_settings()
@@ -358,53 +357,6 @@ class TestBackwardCompatibility:
         """Clean up after each test."""
         reset_settings()
 
-    def test_settings_proxy_attribute_access(self):
-        """Test that the settings proxy works like the original settings object."""
-        from kwik import settings
-        
-        # Should be able to access attributes
-        assert hasattr(settings, "PROJECT_NAME")
-        assert settings.PROJECT_NAME == "kwik"  # Default value
-        
-        # Should be able to access nested attributes
-        assert hasattr(settings, "BACKEND_PORT")
-        assert settings.BACKEND_PORT == 8080
-
-    def test_settings_proxy_with_custom_config(self):
-        """Test settings proxy with custom configuration."""
-        configure_kwik(config_dict={"PROJECT_NAME": "proxy_test"})
-        
-        from kwik import settings
-        
-        assert settings.PROJECT_NAME == "proxy_test"
-
-    def test_lazy_loading(self):
-        """Test that settings are loaded lazily."""
-        # Configure before accessing
-        configure_kwik(config_dict={"PROJECT_NAME": "lazy_test"})
-        
-        # Import should work without triggering settings loading
-        from kwik import settings
-        
-        # First access should load the configured settings
-        assert settings.PROJECT_NAME == "lazy_test"
-
-    def test_original_settings_class_still_works(self):
-        """Test that the original Settings class still works."""
-        from kwik import Settings
-        
-        # Should be able to instantiate directly
-        settings = Settings()
-        assert settings.PROJECT_NAME == "kwik"
-
-    def test_settings_proxy_dir(self):
-        """Test that dir() works on the settings proxy."""
-        from kwik import settings
-        
-        attrs = dir(settings)
-        assert "PROJECT_NAME" in attrs
-        assert "BACKEND_PORT" in attrs
-        assert "DEBUG" in attrs
 
 
 class TestExtensibilityUseCases:
@@ -426,7 +378,7 @@ class TestExtensibilityUseCases:
             config_dict={
                 "FEATURE_X_ENABLED": True,
                 "FEATURE_Z_ROLLOUT_PERCENTAGE": 50,
-            }
+            },
         )
 
         settings = get_settings()
@@ -451,7 +403,7 @@ class TestExtensibilityUseCases:
 
         configure_kwik(
             settings_class=APISettings,
-            config_dict={"API_RATE_LIMIT": 5000}
+            config_dict={"API_RATE_LIMIT": 5000},
         )
 
         settings = get_settings()
@@ -476,7 +428,7 @@ class TestExtensibilityUseCases:
         # Test development environment
         configure_kwik(
             settings_class=EnvironmentSettings,
-            config_dict={"ENVIRONMENT": "development", "CACHE_TTL": 60}
+            config_dict={"ENVIRONMENT": "development", "CACHE_TTL": 60},
         )
         dev_settings = get_settings()
         assert dev_settings.CACHE_TTL == 60
@@ -485,7 +437,7 @@ class TestExtensibilityUseCases:
         reset_settings()
         configure_kwik(
             settings_class=EnvironmentSettings,
-            config_dict={"ENVIRONMENT": "production", "CACHE_TTL": 60}
+            config_dict={"ENVIRONMENT": "production", "CACHE_TTL": 60},
         )
         prod_settings = get_settings()
         assert prod_settings.CACHE_TTL == 3600  # Adjusted by validator

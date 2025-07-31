@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import uvicorn
 
-from kwik import settings
+from kwik.core.settings import get_settings
 from kwik.applications.gunicorn import KwikGunicornApplication
 
 if TYPE_CHECKING:
@@ -15,20 +15,20 @@ if TYPE_CHECKING:
 
 def run(kwik_app: str | Kwik) -> None:
     """Run Kwik application with appropriate server based on environment."""
-    reload = settings.HOTRELOAD
-    workers = settings.BACKEND_WORKERS
+    reload = get_settings().HOTRELOAD
+    workers = get_settings().BACKEND_WORKERS
     if isinstance(kwik_app, str):
         kwik_app = f"{kwik_app}._app"
     else:
         kwik_app = kwik_app._app
         reload = False
 
-    if settings.APP_ENV == "development":
+    if get_settings().APP_ENV == "development":
         uvicorn.run(
             kwik_app,
-            host=settings.BACKEND_HOST,
-            port=settings.BACKEND_PORT,
-            log_level=settings.LOG_LEVEL.lower(),
+            host=get_settings().BACKEND_HOST,
+            port=get_settings().BACKEND_PORT,
+            log_level=get_settings().LOG_LEVEL.lower(),
             reload=reload,
             http="httptools",
             ws="websockets",
@@ -37,7 +37,7 @@ def run(kwik_app: str | Kwik) -> None:
         )
     else:
         options = {
-            "bind": f"{settings.BACKEND_HOST}:{settings.BACKEND_PORT}",
+            "bind": f"{get_settings().BACKEND_HOST}:{get_settings().BACKEND_PORT}",
             "workers": workers,
             "worker_class": "kwik.applications.uvicorn.KwikUvicornWorker",
         }

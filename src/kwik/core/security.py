@@ -9,9 +9,9 @@ from jose import jwt
 from passlib.context import CryptContext
 from pydantic import ValidationError
 
-import kwik
 import kwik.typings
 from kwik import schemas
+from kwik.core.settings import get_settings
 from kwik.exceptions.base import InvalidToken
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -29,17 +29,17 @@ def create_access_token(
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=kwik.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.utcnow() + timedelta(minutes=get_settings().ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode = {"exp": expire, "sub": str(subject), "kwik_impersonate": ""}
     if impersonator_user_id is not None:
         to_encode["kwik_impersonate"] = str(impersonator_user_id)
 
-    return jwt.encode(to_encode, kwik.settings.SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, get_settings().SECRET_KEY, algorithm=ALGORITHM)
 
 
 def create_token(user_id: int, impersonator_user_id: int | None = None) -> kwik.typings.Token:
     """Create OAuth2 bearer token response for user authentication."""
-    access_token_expires = timedelta(minutes=kwik.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=get_settings().ACCESS_TOKEN_EXPIRE_MINUTES)
     return {
         "access_token": create_access_token(
             user_id,
@@ -53,7 +53,7 @@ def create_token(user_id: int, impersonator_user_id: int | None = None) -> kwik.
 def decode_token(token: str) -> schemas.TokenPayload:
     """Decode and validate JWT token, returning payload data."""
     try:
-        payload = jwt.decode(token, kwik.settings.SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, get_settings().SECRET_KEY, algorithms=[ALGORITHM])
         return schemas.TokenPayload(**payload)
     except (jwt.JWTError, ValidationError):
         raise InvalidToken

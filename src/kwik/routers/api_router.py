@@ -4,7 +4,7 @@ from inspect import getmembers, ismodule
 
 from fastapi import APIRouter as _APIRouter
 
-import kwik
+from kwik.core.settings import get_settings
 
 from .auditor import AuditorRouter
 from .autorouter import AutoRouter
@@ -16,7 +16,7 @@ class APIRouter(_APIRouter):
     def include_many(self, package) -> None:
         """Include all router modules from a package with auto-generated prefixes and tags."""
         for module_name, module in getmembers(package, ismodule):
-            if module_name == "tests" and not kwik.settings.TEST_ENV:
+            if module_name == "tests" and not get_settings().TEST_ENV:
                 continue
 
             router = getmembers(
