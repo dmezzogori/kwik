@@ -7,7 +7,6 @@ from fastapi import APIRouter as _APIRouter
 from kwik.core.settings import get_settings
 
 from .auditor import AuditorRouter
-from .autorouter import AutoRouter
 
 
 class APIRouter(_APIRouter):
@@ -21,11 +20,8 @@ class APIRouter(_APIRouter):
 
             router = getmembers(
                 module,
-                lambda x: isinstance(x, (_APIRouter, AuditorRouter, AutoRouter)),
+                lambda x: isinstance(x, (_APIRouter, AuditorRouter)),
             )[0][1]
-
-            if isinstance(router, AutoRouter):
-                router = router.router
 
             self.include_router(
                 router,

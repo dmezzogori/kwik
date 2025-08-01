@@ -13,11 +13,9 @@ from .api.deps import (
 from .applications import Kwik, run
 from .core.settings import BaseKwikSettings, configure_kwik, get_settings
 from .logger import logger
-from .routers.autorouter import AutoRouter
 from .websocket.deps import broadcast
 
 __all__ = [
-    "AutoRouter",
     "BaseKwikSettings",
     "FilterQuery",
     "Kwik",
