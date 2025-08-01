@@ -12,15 +12,12 @@ if TYPE_CHECKING:
 
     from kwik.schemas._base import CreateSchemaType, ModelType, UpdateSchemaType
     from kwik.typings import PaginatedCRUDResult, ParsedSortingQuery
-
-    T = Generic[ModelType, CreateSchemaType, UpdateSchemaType]
 else:
     from typing import TypeVar
 
     ModelType = TypeVar("ModelType")
     CreateSchemaType = TypeVar("CreateSchemaType")
     UpdateSchemaType = TypeVar("UpdateSchemaType")
-    T = Generic[ModelType, CreateSchemaType, UpdateSchemaType]
 
 
 class NoDatabaseConnectionError(Exception):
@@ -30,7 +27,7 @@ class NoDatabaseConnectionError(Exception):
 class DBSession:
     """Descriptor for accessing database session from context variables."""
 
-    def __get__(self, obj, objtype=None) -> Session:
+    def __get__(self, obj: object, objtype: type | None = None) -> Session:
         """Get the database session from context variables."""
         if (db := db_conn_ctx_var.get()) is not None:
             return db
@@ -41,7 +38,7 @@ class DBSession:
 class CurrentUser:
     """Descriptor for accessing current user from context variables."""
 
-    def __get__(self, obj, objtype=None):
+    def __get__(self, obj: object, objtype: type | None = None) -> object:
         """Get the current user from context variables."""
         return current_user_ctx_var.get()
 
@@ -49,11 +46,9 @@ class CurrentUser:
 class CRUDBase(abc.ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     """Base class for all CRUD operations with model type safety and context access."""
 
-    db: Session = DBSession()
+    db = DBSession()
     user = CurrentUser()
     model: type[ModelType]
-
-    _instances: dict[str, T] = {}
 
     def __init__(self, model: type[ModelType] | None = None) -> None:
         """
@@ -63,14 +58,16 @@ class CRUDBase(abc.ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         * `model`: A SQLAlchemy model class
         """
-        _model = model if model is not None else get_args(self.__orig_bases__[0])[0]
-        self.model = _model
-        CRUDBase._instances[_model] = self
-
-    @classmethod
-    def get_instance(cls: T, model: type[ModelType]) -> T:
-        """Get existing CRUD instance for the given model."""
-        return CRUDBase._instances[model]
+        if model is not None:
+            self.model = model
+        else:
+            # Extract model type from generic parameters
+            bases = getattr(self, "__orig_bases__", None)
+            if bases is not None:
+                self.model = get_args(bases[0])[0]
+            else:
+                msg = "Model must be provided either as parameter or via generic type parameters"
+                raise ValueError(msg)
 
     @abc.abstractmethod
     def get(self, *, id: int) -> ModelType | None:  # noqa: A002
