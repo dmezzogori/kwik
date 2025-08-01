@@ -7,10 +7,9 @@ from typing import TYPE_CHECKING, Any, Generic, get_args
 
 from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
 from kwik.exceptions import DuplicatedEntity, NotFound
-from kwik.utils import sort_query
 
 if TYPE_CHECKING:
-    from sqlalchemy.orm import Session
+    from sqlalchemy.orm import Query, Session
 
     from kwik.schemas._base import CreateSchemaType, ModelType, UpdateSchemaType
     from kwik.typings import PaginatedCRUDResult, ParsedSortingQuery
@@ -22,6 +21,19 @@ else:
     UpdateSchemaType = TypeVar("UpdateSchemaType")
     PaginatedCRUDResult = TypeVar("PaginatedCRUDResult")
     ParsedSortingQuery = TypeVar("ParsedSortingQuery")
+    Query = TypeVar("Query")
+
+
+def _sort_query(*, model: type[ModelType], query: Query, sort: ParsedSortingQuery) -> Query:
+    """Apply sorting parameters to SQLAlchemy query."""
+    order_by = []
+    for attr, order in sort:
+        model_attr = getattr(model, attr)
+        if order == "asc":
+            order_by.append(model_attr.asc())
+        else:
+            order_by.append(model_attr.desc())
+    return query.order_by(*order_by)
 
 
 class NoDatabaseConnectionError(Exception):
@@ -97,7 +109,7 @@ class AutoCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         count: int = q.count()
 
         if sort is not None:
-            q = sort_query(model=self.model, query=q, sort=sort)
+            q = _sort_query(model=self.model, query=q, sort=sort)
 
         r = q.offset(skip).limit(limit).all()
         return count, r
