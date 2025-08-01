@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Generic
+from typing import Generic, TypeVar
 
+import pydantic
 from pydantic.generics import GenericModel
 
-from ._base import BaseSchemaType
+# TypeVar for any Pydantic model used in paginated responses
+T = TypeVar("T", bound=pydantic.BaseModel)
 
 
-class Paginated(GenericModel, Generic[BaseSchemaType]):
+class Paginated(GenericModel, Generic[T]):
     """Generic pagination container for API responses with total count and data."""
 
     total: int
-    data: Sequence[BaseSchemaType]
+    data: Sequence[T]

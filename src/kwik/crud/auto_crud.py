@@ -3,25 +3,20 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Generic, get_args
+from typing import Any, Generic, TypeVar, get_args
 
+import pydantic
+from sqlalchemy.orm import Query, Session
+
+from kwik.database.base import Base
 from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
 from kwik.exceptions import DuplicatedEntity, NotFound
+from kwik.typings import PaginatedCRUDResult, ParsedSortingQuery
 
-if TYPE_CHECKING:
-    from sqlalchemy.orm import Query, Session
-
-    from kwik.schemas._base import CreateSchemaType, ModelType, UpdateSchemaType
-    from kwik.typings import PaginatedCRUDResult, ParsedSortingQuery
-else:
-    from typing import TypeVar
-
-    ModelType = TypeVar("ModelType")
-    CreateSchemaType = TypeVar("CreateSchemaType")
-    UpdateSchemaType = TypeVar("UpdateSchemaType")
-    PaginatedCRUDResult = TypeVar("PaginatedCRUDResult")
-    ParsedSortingQuery = TypeVar("ParsedSortingQuery")
-    Query = TypeVar("Query")
+# Type variables for generic CRUD operations
+ModelType = TypeVar("ModelType", bound=Base)
+CreateSchemaType = TypeVar("CreateSchemaType", bound=pydantic.BaseModel)
+UpdateSchemaType = TypeVar("UpdateSchemaType", bound=pydantic.BaseModel)
 
 
 def _sort_query(*, model: type[ModelType], query: Query, sort: ParsedSortingQuery) -> Query:
