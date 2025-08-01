@@ -2,14 +2,14 @@
 
 ## Project Overview
 
-Kwik is a web framework for building modern, batteries-included, RESTful backends with Python 3.11+. It's based on FastAPI and delivers an opinionated, concise, business-oriented API.
+Kwik is a web framework for building modern, batteries-included, RESTful backends with Python 3.12+. It's based on FastAPI and delivers an opinionated, concise, business-oriented API.
 
 **Key Technologies:**
 - FastAPI for web framework
 - SQLAlchemy for ORM
 - AsyncPG for PostgreSQL async support
 - Pydantic for data validation
-- Python 3.11+
+- Python 3.12+
 
 ## Project Structure
 
@@ -120,7 +120,7 @@ uv run ruff check --fix .
 ## Code Style Guidelines
 
 - **Line length**: 120 characters
-- **Python version**: 3.11+
+- **Python version**: 3.12+
 - **Indentation**: 4 spaces
 - **Linting**: Ruff with "ALL" rules enabled
 - **Type hints**: Use type annotations throughout
@@ -389,3 +389,14 @@ uv run pytest --cov=src/kwik --cov-report=term-missing
 # Check for security issues
 uv run ruff check . | grep S[0-9]
 ```
+
+## Synthetized Memory: Recent Context & Accomplishments
+
+- Successfully redesigned Kwik's settings system with enhanced flexibility and configuration options
+- Removed backward compatibility, enforcing modern, explicit configuration patterns
+- Completed critical cleanup of legacy configuration code
+- Enhanced settings system to support multiple configuration sources with clear priority
+- Migrated away from global singleton settings to a more modular, testable approach
+- Identified and documented critical dependency update needs, especially for SQLAlchemy and Pydantic
+- Performed comprehensive test coverage analysis, revealing areas for future improvement
+- Highlighted framework's technical debt and potential enhancement opportunities across various domains

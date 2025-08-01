@@ -13,11 +13,10 @@ import secrets
 from abc import ABC, abstractmethod
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, ClassVar, TypeVar
+from typing import Any, ClassVar
 
 from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, validator
 
-SettingsType = TypeVar("SettingsType", bound="BaseKwikSettings")
 
 
 class ConfigurationSource(ABC):
@@ -170,7 +169,7 @@ class SettingsRegistry:
         # Sort by priority (lower numbers = higher priority)
         self._sources.sort(key=lambda s: s.priority)
 
-    def set_settings_class(self, settings_class: type[SettingsType]) -> None:
+    def set_settings_class[SettingsType: BaseKwikSettings](self, settings_class: type[SettingsType]) -> None:
         """
         Set the settings class to use.
 
@@ -350,7 +349,7 @@ class SettingsFactory:
         # Add default environment source
         self._registry.add_source(EnvironmentSource())
 
-    def configure(
+    def configure[SettingsType: BaseKwikSettings](
         self,
         settings_class: type[SettingsType] | None = None,
         config_dict: dict[str, Any] | None = None,
@@ -411,7 +410,7 @@ class SettingsFactory:
 _settings_factory = SettingsFactory()
 
 
-def configure_kwik(
+def configure_kwik[SettingsType: BaseKwikSettings](
     settings_class: type[SettingsType] | None = None,
     config_dict: dict[str, Any] | None = None,
     config_file: str | Path | None = None,

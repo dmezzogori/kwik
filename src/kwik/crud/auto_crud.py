@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, get_args
+from typing import TYPE_CHECKING, Any, get_args
 
 import pydantic
 
@@ -15,13 +15,9 @@ from kwik.typings import ParsedSortingQuery  # noqa: TC001
 if TYPE_CHECKING:
     from sqlalchemy.orm import Query, Session
 
-# Type variables for generic CRUD operations
-ModelType = TypeVar("ModelType", bound=Base)
-CreateSchemaType = TypeVar("CreateSchemaType", bound=pydantic.BaseModel)
-UpdateSchemaType = TypeVar("UpdateSchemaType", bound=pydantic.BaseModel)
 
 
-def _sort_query(*, model: type[ModelType], query: Query, sort: ParsedSortingQuery) -> Query:
+def _sort_query[ModelType: Base](*, model: type[ModelType], query: Query, sort: ParsedSortingQuery) -> Query:
     """Apply sorting parameters to SQLAlchemy query."""
     order_by = []
     for attr, order in sort:
@@ -56,7 +52,7 @@ class CurrentUser:
         return current_user_ctx_var.get()
 
 
-class AutoCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
+class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSchemaType: pydantic.BaseModel]:
     """Complete CRUD implementation combining create, read, update, and delete operations."""
 
     db = DBSession()

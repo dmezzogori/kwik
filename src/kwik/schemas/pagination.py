@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Generic, TypeVar
+from collections.abc import Sequence  # noqa: TC003
 
 import pydantic
 from pydantic.generics import GenericModel
 
-# TypeVar for any Pydantic model used in paginated responses
-T = TypeVar("T", bound=pydantic.BaseModel)
 
-
-class Paginated(GenericModel, Generic[T]):
+class Paginated[T: pydantic.BaseModel](GenericModel):
     """Generic pagination container for API responses with total count and data."""
 
     total: int

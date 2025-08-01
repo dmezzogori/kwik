@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import urllib.parse
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Literal, Never, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, Never
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
@@ -14,7 +14,6 @@ if TYPE_CHECKING:
     from httpx import Response
 
 
-ResponseSchema = TypeVar("ResponseSchema", bound=BaseModel)
 
 EndpointReturn = Mapping[str, Any] | list[Mapping[str, Any]]
 
