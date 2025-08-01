@@ -17,7 +17,7 @@ import kwik.typings
 import kwik.utils
 from kwik.exceptions.base import InvalidToken
 
-router = APIRouter()
+router = APIRouter(prefix="/login", tags=["login"])
 
 
 @router.post("/access-token", response_model=kwik.typings.Token)

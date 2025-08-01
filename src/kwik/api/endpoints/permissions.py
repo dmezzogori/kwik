@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from kwik import crud
-from kwik.api.deps import PaginatedQuery, has_permission
+from kwik.api.deps import Pagination, has_permission
 from kwik.core.enum import Permissions
 from kwik.exceptions import DuplicatedEntity
 from kwik.routers import AuditorRouter
@@ -15,7 +15,7 @@ from kwik.typings import PaginatedResponse
 if TYPE_CHECKING:
     from kwik.models import Permission
 
-router = AuditorRouter()
+router = AuditorRouter(prefix="/permissions")
 
 
 @router.get(
@@ -23,7 +23,7 @@ router = AuditorRouter()
     response_model=Paginated[PermissionORMSchema],
     dependencies=(has_permission(Permissions.permissions_management_read),),
 )
-def get_many_permissions(paginated: PaginatedQuery) -> PaginatedResponse[Permission]:
+def get_many_permissions(paginated: Pagination) -> PaginatedResponse[Permission]:
     """
     Get all permissions, paginated.
 

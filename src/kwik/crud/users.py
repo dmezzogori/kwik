@@ -152,4 +152,4 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         return r.count() == len(roles)
 
 
-user = AutoCRUDUser()
+users = AutoCRUDUser()

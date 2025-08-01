@@ -2,110 +2,106 @@
 
 from __future__ import annotations
 
-import kwik.api.deps
-import kwik.crud
-import kwik.models
-import kwik.schemas
+from typing import TYPE_CHECKING
+
 import kwik.typings
+from kwik.api.deps import Pagination, current_user, has_permission
 from kwik.core.enum import Permissions
+from kwik.crud import users
 from kwik.exceptions import DuplicatedEntity, Forbidden
 from kwik.routers import AuditorRouter
+from kwik.schemas import Paginated, UserChangePasswordSchema, UserCreateSchema, UserORMSchema, UserUpdateSchema
 
-router = AuditorRouter()
+if TYPE_CHECKING:
+    from kwik.models import User
+
+router = AuditorRouter(prefix="/users")
 
 
 @router.get(
     "/",
-    response_model=kwik.schemas.Paginated[kwik.schemas.UserORMSchema],
-    dependencies=[kwik.api.deps.has_permission(Permissions.users_management_read)],
+    response_model=Paginated[UserORMSchema],
+    dependencies=(has_permission(Permissions.users_management_read),),
 )
-def read_users(paginated: kwik.api.deps.PaginatedQuery) -> kwik.typings.PaginatedResponse[kwik.models.User]:
+def read_users(pagination: Pagination) -> kwik.typings.PaginatedResponse[User]:
     """Retrieve users."""
-    total, data = kwik.crud.user.get_multi(**paginated)
+    total, data = users.get_multi(**pagination)
     return kwik.typings.PaginatedResponse(data=data, total=total)
 
 
-@router.get("/me", response_model=kwik.schemas.UserORMExtendedSchema)
-def read_user_me(user: kwik.api.deps.current_user) -> kwik.models.User:
+@router.get("/me", response_model=UserORMSchema)
+def read_user_me(user: current_user) -> User:
     """Get current user."""
     return user
 
 
-@router.get(
-    "/{user_id}",
-    response_model=kwik.schemas.UserORMSchema,
-)
-def read_user_by_id(
-    user_id: int,
-    user: kwik.api.deps.current_user,
-) -> kwik.models.User:
+@router.get("/{user_id}", response_model=UserORMSchema)
+def read_user_by_id(user_id: int, user: current_user) -> User:
     """
     Get a specific user by id.
 
     If the user requested is not the same as the logged-in user, the user must have the user_management_read permission.
     """
-    if user_id != user.id:
-        if not kwik.crud.user.has_permissions(user_id=user.id, permissions=(Permissions.users_management_read,)):
-            raise Forbidden
+    if user_id != user.id and not users.has_permissions(
+        user_id=user.id,
+        permissions=(Permissions.users_management_read,),
+    ):
+        raise Forbidden
 
     return user
 
 
 @router.post(
-    "",
-    response_model=kwik.schemas.UserORMSchema,
-    dependencies=[kwik.api.deps.has_permission(Permissions.users_management_create)],
+    "/",
+    response_model=UserORMSchema,
+    dependencies=(has_permission(Permissions.users_management_create),),
 )
-def create_user(user_in: kwik.schemas.UserCreateSchema) -> kwik.models.User:
+def create_user(user_in: UserCreateSchema) -> User:
     """Create new user."""
-    user = kwik.crud.user.get_by_email(email=user_in.email)
+    user = users.get_by_email(email=user_in.email)
     if user:
         raise DuplicatedEntity
 
-    return kwik.crud.user.create(obj_in=user_in)
+    return users.create(obj_in=user_in)
 
 
-@router.put("/me", response_model=kwik.schemas.UserORMSchema)
-def update_myself(
-    user: kwik.api.deps.current_user,
-    user_in: kwik.schemas.UserUpdateSchema,
-) -> kwik.models.User:
+@router.put("/me", response_model=UserORMSchema)
+def update_myself(user: current_user, user_in: UserUpdateSchema) -> User:
     """Update details of the logged in user."""
-    return kwik.crud.user.update(db_obj=user, obj_in=user_in)
+    return users.update(db_obj=user, obj_in=user_in)
 
 
 @router.put(
     "/{user_id}",
-    response_model=kwik.schemas.UserORMSchema,
-    dependencies=[kwik.api.deps.has_permission(Permissions.users_management_update)],
+    response_model=UserORMSchema,
+    dependencies=(has_permission(Permissions.users_management_update),),
 )
-def update_user(
-    user_id: int,
-    user_in: kwik.schemas.UserUpdateSchema,
-) -> kwik.models.User:
+def update_user(user_id: int, user_in: UserUpdateSchema) -> User:
     """Update a user."""
-    user = kwik.crud.user.get_if_exist(id=user_id)
-    return kwik.crud.user.update(db_obj=user, obj_in=user_in)
+    user = users.get_if_exist(id=user_id)
+    return users.update(db_obj=user, obj_in=user_in)
 
 
 @router.put(
     "/{user_id}/update_password",
-    response_model=kwik.schemas.UserORMSchema,
-    dependencies=[kwik.api.deps.has_permission(Permissions.users_management_update)],
+    response_model=UserORMSchema,
+    dependencies=(has_permission(Permissions.users_management_update),),
 )
 def update_password(
     user_id: int,
-    user: kwik.api.deps.current_user,
-    obj_in: kwik.schemas.UserChangePasswordSchema,
-) -> kwik.models.User:
+    user: current_user,
+    obj_in: UserChangePasswordSchema,
+) -> User:
     """
     Update the provided user's password.
 
     If the user is not the same as the logged-in user, the logged-in user must have the
     user_management_update permission.
     """
-    if user_id != user.id:
-        if not kwik.crud.user.has_permissions(user_id=user.id, permissions=(Permissions.users_management_update,)):
-            raise Forbidden
+    if user_id != user.id and not users.has_permissions(
+        user_id=user.id,
+        permissions=(Permissions.users_management_update,),
+    ):
+        raise Forbidden
 
-    return kwik.crud.user.change_password(user_id=user_id, obj_in=obj_in)
+    return users.change_password(user_id=user_id, obj_in=obj_in)

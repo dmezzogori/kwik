@@ -13,7 +13,7 @@ from .permissions import permission
 from .roles import role
 from .roles_permissions import roles_permissions
 from .user_roles import user_roles
-from .users import user
+from .users import users
 
 __all__ = [
     "AutoCRUD",
@@ -22,6 +22,6 @@ __all__ = [
     "permission",
     "role",
     "roles_permissions",
-    "user",
     "user_roles",
+    "users",
 ]

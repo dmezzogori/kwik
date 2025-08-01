@@ -2,19 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Generic, TypedDict, TypeVar
-
-T = TypeVar("T")
+from typing import TypedDict
 
 
-class ParsedPaginatedQuery(TypedDict):
-    """Type definition for parsed pagination query parameters."""
-
-    skip: int
-    limit: int
-
-
-class PaginatedResponse(TypedDict, Generic[T]):
+class PaginatedResponse[T](TypedDict):
     """Type definition for paginated API responses with data and total count."""
 
     data: list[T]

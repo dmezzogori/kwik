@@ -132,7 +132,7 @@ class AuditorRouter(APIRouter):
     All audit records are stored using the crud.audit.create() method.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, prefix: str) -> None:
         """
         Initialize auditor router with token dependency and audited route class.
 
@@ -140,7 +140,9 @@ class AuditorRouter(APIRouter):
         - get_token dependency applied to all routes for JWT validation
         - _AuditedRoute as the route class for automatic audit logging
         """
-        super().__init__(dependencies=[Depends(get_token)], route_class=_AuditedRoute)
+        super().__init__(
+            prefix=prefix, tags=[prefix.strip("/")], dependencies=[Depends(get_token)], route_class=_AuditedRoute
+        )
 
 
 __all__ = ["AuditorRouter"]

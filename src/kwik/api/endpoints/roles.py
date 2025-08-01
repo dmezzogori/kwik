@@ -9,7 +9,7 @@ from kwik.core.enum import Permissions
 from kwik.exceptions import DuplicatedEntity
 from kwik.routers import AuditorRouter
 
-router = AuditorRouter()
+router = AuditorRouter(prefix="/roles")
 
 
 @router.get(
@@ -17,7 +17,7 @@ router = AuditorRouter()
     response_model=schemas.Paginated[schemas.Role],
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
 )
-def read_roles(paginated: kwik.api.deps.PaginatedQuery) -> kwik.typings.PaginatedResponse[models.Role]:
+def read_roles(paginated: kwik.api.deps.Pagination) -> kwik.typings.PaginatedResponse[models.Role]:
     """Retrieve roles."""
     count, roles = crud.role.get_multi(**paginated)
     return kwik.typings.PaginatedResponse(data=roles, total=count)

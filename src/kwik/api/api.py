@@ -6,8 +6,10 @@ This module sets up the main API router by including all endpoint routers from t
 
 from kwik.routers import APIRouter
 
-from . import endpoints
+from .endpoints.login import router as login_router
+from .endpoints.users import router as users_router
 
 api_router = APIRouter()
 
-api_router.include_many(package=endpoints)
+api_router.include_router(login_router)
+api_router.include_router(users_router)

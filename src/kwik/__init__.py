@@ -5,7 +5,7 @@ from . import utils
 from .api.api import api_router
 from .api.deps import (
     FilterQuery,
-    PaginatedQuery,
+    Pagination,
     SortingQuery,
     current_user,
     has_permission,
@@ -19,7 +19,7 @@ __all__ = [
     "BaseKwikSettings",
     "FilterQuery",
     "Kwik",
-    "PaginatedQuery",
+    "Pagination",
     "SortingQuery",
     "api_router",
     "broadcast",

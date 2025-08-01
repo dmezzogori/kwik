@@ -13,18 +13,15 @@ if TYPE_CHECKING:
     from .role import Role
 
 
-class _BaseSchema(BaseModel):
-    is_active: bool | None = True
-    is_superuser: bool | None = True
-
-
-class UserCreateSchema(_BaseSchema):
+class UserCreateSchema(BaseModel):
     """Schema for creating new users with required fields."""
 
     name: str
     surname: str
     email: EmailStr
     password: str
+    is_active = True
+    is_superuser = False
 
 
 class UserUpdateSchema(BaseModel):
