@@ -66,7 +66,7 @@ class EnvironmentSource(ConfigurationSource):
     def priority(self) -> int:
         """Environment variables have high priority."""
         return self._priority
-    
+
     @priority.setter
     def priority(self, value: int) -> None:
         """Set the priority for this source."""
@@ -94,7 +94,7 @@ class DictSource(ConfigurationSource):
     def priority(self) -> int:
         """Dictionary sources have medium priority."""
         return self._priority
-    
+
     @priority.setter
     def priority(self, value: int) -> None:
         """Set the priority for this source."""
@@ -138,7 +138,7 @@ class FileSource(ConfigurationSource):
     def priority(self) -> int:
         """File sources have low priority."""
         return self._priority
-    
+
     @priority.setter
     def priority(self, value: int) -> None:
         """Set the priority for this source."""

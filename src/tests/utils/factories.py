@@ -40,7 +40,7 @@ class RoleFactory(factory.Factory):
     is_active = True
     is_locked = False
     creator_user_id = factory.LazyAttribute(
-        lambda obj: current_user_ctx_var.get().id if current_user_ctx_var.get() else None
+        lambda obj: current_user_ctx_var.get().id if current_user_ctx_var.get() else None,
     )
 
 
@@ -52,5 +52,5 @@ class PermissionFactory(factory.Factory):
 
     name = Faker("word")
     creator_user_id = factory.LazyAttribute(
-        lambda obj: current_user_ctx_var.get().id if current_user_ctx_var.get() else None
+        lambda obj: current_user_ctx_var.get().id if current_user_ctx_var.get() else None,
     )

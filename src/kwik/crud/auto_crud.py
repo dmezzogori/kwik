@@ -30,15 +30,14 @@ else:
     PaginatedCRUDResult = TypeVar("PaginatedCRUDResult")
     ParsedSortingQuery = TypeVar("ParsedSortingQuery")
 
-from .base import CRUDCreateBase, CRUDDeleteBase, CRUDReadBase, CRUDUpdateBase
+from .base import CRUDBase
 from .logs import logs
 
 
-class AutoCRUDRead(CRUDReadBase[ModelType]):
-    """Read operations implementation for auto-generated CRUD with database querying."""
+class AutoCRUD(CRUDBase[ModelType, CreateSchemaType, UpdateSchemaType]):
+    """Complete CRUD implementation combining create, read, update, and delete operations."""
 
-    # noinspection PyShadowingBuiltins
-    def get(self, *, id: int) -> ModelType | None:
+    def get(self, *, id: int) -> ModelType | None:  # noqa: A002
         """Get single record by primary key ID."""
         return self.db.query(self.model).get(id)
 
@@ -67,17 +66,12 @@ class AutoCRUDRead(CRUDReadBase[ModelType]):
         r = q.offset(skip).limit(limit).all()
         return count, r
 
-    # noinspection PyShadowingBuiltins
-    def get_if_exist(self, *, id: int) -> ModelType:
+    def get_if_exist(self, *, id: int) -> ModelType:  # noqa: A002
         """Get record by ID or raise NotFound exception if it doesn't exist."""
         r = self.get(id=id)
         if r is None:
             raise NotFound(detail=f"Entity [{self.model.__tablename__}] with id={id} does not exist")
         return r
-
-
-class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
-    """Create operations implementation for auto-generated CRUD with logging support."""
 
     def create(self, *, obj_in: CreateSchemaType, **kwargs) -> ModelType:
         """Create new record from schema data."""
@@ -122,10 +116,6 @@ class AutoCRUDCreate(CRUDCreateBase[ModelType, CreateSchemaType]):
             raise DuplicatedEntity
         return obj_db
 
-
-class AutoCRUDUpdate(CRUDUpdateBase[ModelType, UpdateSchemaType]):
-    """Update operations implementation for auto-generated CRUD with change tracking."""
-
     def update(self, *, db_obj: ModelType, obj_in: UpdateSchemaType | dict[str, Any]) -> ModelType:
         """Update existing record with new data and track changes."""
         update_data = obj_in if isinstance(obj_in, dict) else obj_in.dict(exclude_unset=True)
@@ -155,11 +145,7 @@ class AutoCRUDUpdate(CRUDUpdateBase[ModelType, UpdateSchemaType]):
 
         return db_obj
 
-
-class AutoCRUDDelete(CRUDDeleteBase[ModelType]):
-    """Delete operations implementation for auto-generated CRUD with soft delete support."""
-
-    def delete(self, *, id: int) -> ModelType:
+    def delete(self, *, id: int) -> ModelType:  # noqa: A002
         """Delete record by ID and return the deleted object."""
         obj: ModelType = self.db.query(self.model).get(id)
 
@@ -175,12 +161,3 @@ class AutoCRUDDelete(CRUDDeleteBase[ModelType]):
         self.db.delete(obj)
         self.db.flush()
         return obj
-
-
-class AutoCRUD(
-    AutoCRUDCreate[ModelType, CreateSchemaType],
-    AutoCRUDRead[ModelType],
-    AutoCRUDUpdate[ModelType, UpdateSchemaType],
-    AutoCRUDDelete[ModelType],
-):
-    """Complete CRUD implementation combining create, read, update, and delete operations."""

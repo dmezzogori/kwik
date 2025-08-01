@@ -60,17 +60,17 @@ def create_test_role(
         current_user = current_user_ctx_var.get()
         if current_user is not None:
             creator_user_id = current_user.id
-    
+
     role_kwargs = {
         "name": name,
         "is_active": is_active,
         "is_locked": is_locked,
     }
-    
-    # Only add creator_user_id if we have one (avoids NULL constraint error)  
+
+    # Only add creator_user_id if we have one (avoids NULL constraint error)
     if creator_user_id is not None:
         role_kwargs["creator_user_id"] = creator_user_id
-    
+
     role = Role(**role_kwargs)
     db_session.add(role)
     db_session.commit()
@@ -90,15 +90,15 @@ def create_test_permission(
         current_user = current_user_ctx_var.get()
         if current_user is not None:
             creator_user_id = current_user.id
-    
+
     permission_kwargs = {
         "name": name,
     }
-    
+
     # Only add creator_user_id if we have one (avoids NULL constraint error)
     if creator_user_id is not None:
         permission_kwargs["creator_user_id"] = creator_user_id
-    
+
     permission = Permission(**permission_kwargs)
     db_session.add(permission)
     db_session.commit()

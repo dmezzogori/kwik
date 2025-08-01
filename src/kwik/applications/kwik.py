@@ -11,8 +11,8 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 import kwik.exceptions.handler
 import kwik.logger
-from kwik.core.settings import get_settings
 from kwik.api.endpoints.docs import get_swagger_ui_html
+from kwik.core.settings import get_settings
 from kwik.exceptions import KwikException
 from kwik.middlewares import DBSessionMiddleware, RequestContextMiddleware
 from kwik.websocket.deps import broadcast

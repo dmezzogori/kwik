@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 import uvicorn
 
-from kwik.core.settings import get_settings
 from kwik.applications.gunicorn import KwikGunicornApplication
+from kwik.core.settings import get_settings
 
 if TYPE_CHECKING:
     from .kwik import Kwik

@@ -10,13 +10,8 @@ from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
-    from kwik.typings import (
-        CreateSchemaType,
-        ModelType,
-        PaginatedCRUDResult,
-        ParsedSortingQuery,
-        UpdateSchemaType,
-    )
+    from kwik.schemas._base import CreateSchemaType, ModelType, UpdateSchemaType
+    from kwik.typings import PaginatedCRUDResult, ParsedSortingQuery
 
     T = Generic[ModelType, CreateSchemaType, UpdateSchemaType]
 else:
@@ -51,7 +46,7 @@ class CurrentUser:
         return current_user_ctx_var.get()
 
 
-class CRUDBase(abc.ABC, Generic[ModelType]):
+class CRUDBase(abc.ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     """Base class for all CRUD operations with model type safety and context access."""
 
     db: Session = DBSession()
@@ -76,12 +71,8 @@ class CRUDBase(abc.ABC, Generic[ModelType]):
         """Get existing CRUD instance for the given model."""
         return CRUDBase._instances[model]
 
-
-class CRUDReadBase(CRUDBase[ModelType]):
-    """Abstract base class defining read operation interface for CRUD implementations."""
-
     @abc.abstractmethod
-    def get(self, *, id: int) -> ModelType | None:
+    def get(self, *, id: int) -> ModelType | None:  # noqa: A002
         """Get single record by primary key ID."""
 
     @abc.abstractmethod
@@ -95,17 +86,13 @@ class CRUDReadBase(CRUDBase[ModelType]):
         skip: int = 0,
         limit: int = 100,
         sort: ParsedSortingQuery | None = None,
-        **filters,
+        **filters: Any,
     ) -> PaginatedCRUDResult[ModelType]:
         """Get multiple records with pagination, filtering, and sorting."""
 
     @abc.abstractmethod
-    def get_if_exist(self, *, id: int) -> ModelType:
+    def get_if_exist(self, *, id: int) -> ModelType:  # noqa: A002
         """Get record by ID or raise exception if it doesn't exist."""
-
-
-class CRUDCreateBase(CRUDBase, Generic[ModelType, CreateSchemaType]):
-    """Abstract base class defining create operation interface for CRUD implementations."""
 
     @abc.abstractmethod
     def create(
@@ -125,10 +112,6 @@ class CRUDCreateBase(CRUDBase, Generic[ModelType, CreateSchemaType]):
     ) -> ModelType:
         """Create record if it doesn't exist, or return existing record."""
 
-
-class CRUDUpdateBase(CRUDBase, Generic[ModelType, UpdateSchemaType]):
-    """Abstract base class defining update operation interface for CRUD implementations."""
-
     @abc.abstractmethod
     def update(
         self,
@@ -138,10 +121,6 @@ class CRUDUpdateBase(CRUDBase, Generic[ModelType, UpdateSchemaType]):
     ) -> ModelType:
         """Update existing record with new data."""
 
-
-class CRUDDeleteBase(CRUDBase[ModelType]):
-    """Abstract base class defining delete operation interface for CRUD implementations."""
-
     @abc.abstractmethod
-    def delete(self, *, id: int) -> ModelType:
+    def delete(self, *, id: int) -> ModelType:  # noqa: A002
         """Delete record by ID and return the deleted object."""

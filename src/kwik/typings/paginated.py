@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Generic, TypedDict
+from typing import Generic, TypedDict, TypeVar
 
-from .schemas import ModelType
+T = TypeVar("T")
 
 
 class ParsedPaginatedQuery(TypedDict):
@@ -14,11 +14,11 @@ class ParsedPaginatedQuery(TypedDict):
     limit: int
 
 
-class PaginatedResponse(TypedDict, Generic[ModelType]):
+class PaginatedResponse(TypedDict, Generic[T]):
     """Type definition for paginated API responses with data and total count."""
 
-    data: list[ModelType]
+    data: list[T]
     total: int
 
 
-PaginatedCRUDResult = tuple[int, list[ModelType]]
+PaginatedCRUDResult = tuple[int, list[T]]
