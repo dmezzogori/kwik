@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Query, Session
 
 
-
 def _sort_query[ModelType: Base](*, model: type[ModelType], query: Query, sort: ParsedSortingQuery) -> Query:
     """Apply sorting parameters to SQLAlchemy query."""
     order_by = []
@@ -170,3 +169,9 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
         self.db.delete(obj)
         self.db.flush()
         return obj
+
+
+__all__ = [
+    "AutoCRUD",
+    "NoDatabaseConnectionError",
+]
