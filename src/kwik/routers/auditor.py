@@ -10,10 +10,10 @@ from fastapi.routing import APIRoute
 from jose import jwt
 
 from kwik import crud, schemas
-from kwik.core.settings import get_settings
 from kwik.api.deps.token import get_token
 from kwik.api.deps.users import get_current_user
 from kwik.core import security
+from kwik.core.settings import get_settings
 from kwik.middlewares import get_request_id
 
 if TYPE_CHECKING:

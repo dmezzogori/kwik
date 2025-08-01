@@ -2,22 +2,28 @@
 
 from __future__ import annotations
 
-import kwik.api.deps
-import kwik.typings
-from kwik import crud, models, schemas
+from typing import TYPE_CHECKING
+
+from kwik import crud
+from kwik.api.deps import PaginatedQuery, has_permission
 from kwik.core.enum import Permissions
 from kwik.exceptions import DuplicatedEntity
 from kwik.routers import AuditorRouter
+from kwik.schemas import Paginated, PermissionCreate, PermissionORMSchema, PermissionUpdate
+from kwik.typings import PaginatedResponse
+
+if TYPE_CHECKING:
+    from kwik.models import Permission
 
 router = AuditorRouter()
 
 
 @router.get(
     "/",
-    response_model=kwik.schemas.Paginated[schemas.PermissionORMSchema],
-    dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_read),),
+    response_model=Paginated[PermissionORMSchema],
+    dependencies=(has_permission(Permissions.permissions_management_read),),
 )
-def get_many_permissions(paginated: kwik.api.deps.PaginatedQuery) -> kwik.typings.PaginatedResponse[models.Permission]:
+def get_many_permissions(paginated: PaginatedQuery) -> PaginatedResponse[Permission]:
     """Get all permissions, paginated.
 
     Permissions required:
@@ -25,15 +31,15 @@ def get_many_permissions(paginated: kwik.api.deps.PaginatedQuery) -> kwik.typing
      -  `permissions_management_read`
     """
     total, permissions = crud.permission.get_multi(**paginated)
-    return kwik.typings.PaginatedResponse(total=total, data=permissions)
+    return PaginatedResponse(total=total, data=permissions)
 
 
 @router.get(
     "/{permission_id}",
-    response_model=schemas.PermissionORMSchema,
-    dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_read),),
+    response_model=PermissionORMSchema,
+    dependencies=(has_permission(Permissions.permissions_management_read),),
 )
-def get_single_permission(permission_id: int) -> models.Permission:
+def get_single_permission(permission_id: int) -> Permission:
     """Get a single permission by id.
 
     Permissions required:
@@ -48,10 +54,10 @@ def get_single_permission(permission_id: int) -> models.Permission:
 
 @router.post(
     "",
-    response_model=schemas.PermissionORMSchema,
-    dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_create),),
+    response_model=PermissionORMSchema,
+    dependencies=(has_permission(Permissions.permissions_management_create),),
 )
-def create_permission(permission_in: schemas.PermissionCreate) -> models.Permission:
+def create_permission(permission_in: PermissionCreate) -> Permission:
     """Create new permission.
 
     Raises:
@@ -70,10 +76,10 @@ def create_permission(permission_in: schemas.PermissionCreate) -> models.Permiss
 
 @router.post(
     "/{permission_id}/{role_id}",
-    response_model=schemas.PermissionORMSchema,
-    dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_update),),
+    response_model=PermissionORMSchema,
+    dependencies=(has_permission(Permissions.permissions_management_update),),
 )
-def associate_permission_to_role(permission_id: int, role_id: int) -> models.Permission:
+def associate_permission_to_role(permission_id: int, role_id: int) -> Permission:
     """Associate a permission to a role.
 
     Raises:
@@ -88,10 +94,10 @@ def associate_permission_to_role(permission_id: int, role_id: int) -> models.Per
 
 @router.put(
     "/{permission_id}",
-    response_model=schemas.PermissionORMSchema,
-    dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_update),),
+    response_model=PermissionORMSchema,
+    dependencies=(has_permission(Permissions.permissions_management_update),),
 )
-def update_permission(permission_id: int, permission_in: schemas.PermissionUpdate) -> models.Permission:
+def update_permission(permission_id: int, permission_in: PermissionUpdate) -> Permission:
     """Update a permission.
 
     Raises:
@@ -107,10 +113,10 @@ def update_permission(permission_id: int, permission_in: schemas.PermissionUpdat
 
 @router.delete(
     "/{permission_id}/roles",
-    response_model=schemas.PermissionORMSchema,
-    dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_delete),),
+    response_model=PermissionORMSchema,
+    dependencies=(has_permission(Permissions.permissions_management_delete),),
 )
-def purge_all_roles(permission_id: int) -> models.Permission:
+def purge_all_roles(permission_id: int) -> Permission:
     """Remove all existing associations of a permission to any role.
 
     Does not delete the permission itself.
@@ -127,17 +133,14 @@ def purge_all_roles(permission_id: int) -> models.Permission:
 
 @router.delete(
     "/{permission_id}/{role_id}",
-    response_model=schemas.PermissionORMSchema,
-    dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_delete),),
+    response_model=PermissionORMSchema,
+    dependencies=(has_permission(Permissions.permissions_management_delete),),
 )
-def purge_role_from_permission(permission_id: int, role_id: int) -> models.Permission:
+def purge_role_from_permission(permission_id: int, role_id: int) -> Permission:
     """Remove permission from role.
 
-    Raises:
-        NotFound: If the provided permission or role does not exist
-
-    Permissions required:
-        * `permissions_management_delete`
+    NotFound: If the provided permission or role does not exist
+    * `permissions_management_delete`
 
     """
     return crud.permission.purge_role(permission_id=permission_id, role_id=role_id)
@@ -145,10 +148,10 @@ def purge_role_from_permission(permission_id: int, role_id: int) -> models.Permi
 
 @router.delete(
     "/{permission_id}",
-    response_model=schemas.PermissionORMSchema,
-    dependencies=(kwik.api.deps.has_permission(Permissions.permissions_management_delete),),
+    response_model=PermissionORMSchema,
+    dependencies=(has_permission(Permissions.permissions_management_delete),),
 )
-def delete_permission(permission_id: int) -> models.Permission:
+def delete_permission(permission_id: int) -> Permission:
     """Delete a permission and remove all existing associations of it to any role.
 
     Raises:
