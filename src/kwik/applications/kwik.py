@@ -11,7 +11,6 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 import kwik.exceptions.handler
 import kwik.logger
-from kwik.api.endpoints.docs import get_swagger_ui_html
 from kwik.core.settings import get_settings
 from kwik.exceptions import KwikException
 from kwik.middlewares import DBSessionMiddleware, RequestContextMiddleware
@@ -36,7 +35,9 @@ class Kwik:
         self._app = self.init_fastapi_app(api_router=api_router)
 
         kwik.logger.info("Kwik App ready")
-        kwik.logger.info(f"Kwik App running on {get_settings().PROTOCOL}://{get_settings().BACKEND_HOST}:{get_settings().BACKEND_PORT}")
+        kwik.logger.info(
+            f"Kwik App running on {get_settings().PROTOCOL}://{get_settings().BACKEND_HOST}:{get_settings().BACKEND_PORT}",
+        )
         kwik.logger.info(
             f"Swagger available at {get_settings().PROTOCOL}://{get_settings().BACKEND_HOST}:{get_settings().BACKEND_PORT}/docs",
         )
@@ -88,16 +89,4 @@ class Kwik:
                 allow_headers=["*"],
                 expose_headers=["content-disposition"],
             )
-        return app
-
-    def customize_swagger_ui(self, *, app: FastAPI) -> FastAPI:
-        """Customize the swagger UI to have collapsable sections."""
-
-        @app.get("/docs", include_in_schema=False)
-        async def custom_swagger_ui_html():
-            return get_swagger_ui_html(
-                openapi_url=app.openapi_url,
-                title=app.title + " - Swagger UI",
-            )
-
         return app
