@@ -10,7 +10,7 @@ from fastapi import Depends
 import kwik.typings
 
 
-def parse_sorting_query(sorting: str | None = None) -> kwik.typings.ParsedSortingQuery:
+def _parse_sorting_query(sorting: str | None = None) -> kwik.typings.ParsedSortingQuery:
     """
     Sorting query parameter parser, to be used as endpoint dependency.
 
@@ -19,8 +19,8 @@ def parse_sorting_query(sorting: str | None = None) -> kwik.typings.ParsedSortin
     If no direction is specified, "asc" is assumed.
 
     Example:
-    >>> tuple(parse_sorting_query("id:desc,created_at"))
-    (("id", "desc"), ("created_at", "asc"))
+    >>> _parse_sorting_query("id:desc,created_at")
+    [("id", "desc"), ("created_at", "asc")]
 
     """
     if sorting is not None:
@@ -35,4 +35,8 @@ def parse_sorting_query(sorting: str | None = None) -> kwik.typings.ParsedSortin
     return None
 
 
-SortingQuery = Annotated[kwik.typings.ParsedSortingQuery, Depends(parse_sorting_query)]
+SortingQuery = Annotated[kwik.typings.ParsedSortingQuery, Depends(_parse_sorting_query)]
+
+__all__ = [
+    "SortingQuery",
+]

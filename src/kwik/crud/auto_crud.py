@@ -10,7 +10,7 @@ import pydantic
 from kwik.database.base import Base
 from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
 from kwik.exceptions import DuplicatedEntity, NotFound
-from kwik.typings import ParsedSortingQuery
+from kwik.typings import ParsedSortingQuery  # noqa: TC001
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Query, Session
