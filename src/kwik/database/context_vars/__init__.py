@@ -1,4 +1,5 @@
-"""Database context variables package for kwik framework.
+"""
+Database context variables package for kwik framework.
 
 This package contains context variables for managing database connections
 and current user context throughout request lifecycles.

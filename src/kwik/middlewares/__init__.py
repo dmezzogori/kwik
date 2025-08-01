@@ -1,4 +1,5 @@
-"""Middleware package for kwik framework.
+"""
+Middleware package for kwik framework.
 
 This package contains FastAPI middleware components for database session management,
 request context handling, and other cross-cutting concerns.

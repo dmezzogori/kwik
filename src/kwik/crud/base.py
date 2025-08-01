@@ -56,7 +56,8 @@ class CRUDBase(abc.ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     _instances: dict[str, T] = {}
 
     def __init__(self, model: type[ModelType] | None = None) -> None:
-        """CRUD object with default methods to Create, Read, Update, Delete (CRUD).
+        """
+        CRUD object with default methods to Create, Read, Update, Delete (CRUD).
 
         **Parameters**
 

@@ -1,4 +1,5 @@
-"""Main API router configuration for the Kwik framework.
+"""
+Main API router configuration for the Kwik framework.
 
 This module sets up the main API router by including all endpoint routers from the endpoints package.
 """

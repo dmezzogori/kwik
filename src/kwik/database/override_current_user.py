@@ -16,7 +16,8 @@ if TYPE_CHECKING:
 
 @contextmanager
 def override_current_user(user: User) -> Generator[None, Any, None]:
-    """Context manager for setting and automatically cleaning up the current user context.
+    """
+    Context manager for setting and automatically cleaning up the current user context.
 
     This context manager sets the current user for CRUD operations and ensures
     proper cleanup even if exceptions occur. The try/finally block guarantees

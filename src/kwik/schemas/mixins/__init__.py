@@ -1,4 +1,5 @@
-"""Schema mixins package for kwik framework.
+"""
+Schema mixins package for kwik framework.
 
 This package contains reusable Pydantic schema mixins for common functionality
 like ORM mapping and record tracking.

@@ -1,4 +1,5 @@
-"""Logging package for kwik framework.
+"""
+Logging package for kwik framework.
 
 This package provides custom logging functionality including formatters
 and configuration for the kwik web framework.

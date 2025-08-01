@@ -1,4 +1,5 @@
-"""Type definitions package for kwik framework.
+"""
+Type definitions package for kwik framework.
 
 This package contains type hints, schemas, and utility types for improved type safety
 and better IDE support throughout the kwik web framework.

@@ -22,7 +22,8 @@ if TYPE_CHECKING:
 
 
 class Kwik:
-    """Kwik Application is a thin and opinionated wrapper around FastAPI.
+    """
+    Kwik Application is a thin and opinionated wrapper around FastAPI.
 
     It instantiates the FastAPI application and adds some middlewares (CORS,
     RequestContextMiddleware, DBSessionMiddleware).
@@ -41,7 +42,8 @@ class Kwik:
         )
 
     def init_fastapi_app(self, *, api_router: APIRouter) -> FastAPI:
-        """Initialize the FastAPI application.
+        """
+        Initialize the FastAPI application.
 
         Based on the settings, it will also add the websockets on_startup and on_shutdown events.
         Register the api_router.
@@ -66,7 +68,8 @@ class Kwik:
         return app
 
     def set_middlewares(self, *, app: FastAPI) -> FastAPI:
-        """Set the middlewares for the FastAPI application.
+        """
+        Set the middlewares for the FastAPI application.
 
         Add the GZipMiddleware, RequestContextMiddleware and DBSessionMiddleware.
         If CORS is enabled, add the CORSMiddleware.

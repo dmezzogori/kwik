@@ -94,7 +94,8 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         return user
 
     def authenticate(self, *, email: str, password: str) -> models.User:
-        """Authenticate a user with email and password.
+        """
+        Authenticate a user with email and password.
 
         Raises:
             IncorrectCredentials: If the user does not exist or the password is wrong

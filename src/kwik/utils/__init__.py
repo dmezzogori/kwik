@@ -1,4 +1,5 @@
-"""Utility functions package for kwik framework.
+"""
+Utility functions package for kwik framework.
 
 This package provides common utility functions for file operations,
 authentication token management, and database query utilities.

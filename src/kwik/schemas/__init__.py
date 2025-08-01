@@ -1,4 +1,5 @@
-"""Pydantic schemas package for kwik framework.
+"""
+Pydantic schemas package for kwik framework.
 
 This package contains Pydantic models for request/response validation, data serialization,
 and API schema definitions across the kwik web framework.

@@ -15,7 +15,8 @@ if TYPE_CHECKING:
 
 
 class DBContextManager:
-    """DB Session Context Manager.
+    """
+    DB Session Context Manager.
 
     Implemented as a context manager,
     automatically rollback a transaction if any exception is raised by the application.
@@ -27,7 +28,8 @@ class DBContextManager:
         self.token: Token[Session | None] | None = None
 
     def __enter__(self) -> Session:
-        """Enter the context manager, which returns a database session.
+        """
+        Enter the context manager, which returns a database session.
 
         Retrieves a database session from the context variable.
         If no session is found, a new session is created and stored in the context variable.
@@ -54,7 +56,8 @@ class DBContextManager:
         exception_value: BaseException | None,
         exception_traceback: TracebackType | None,
     ) -> None:
-        """Exit the context manager, handling any exceptions raised by the application.
+        """
+        Exit the context manager, handling any exceptions raised by the application.
 
         If an exception is raised by the application, rollback the transaction.
         Otherwise, commit the transaction.

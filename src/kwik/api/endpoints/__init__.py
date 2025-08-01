@@ -1,4 +1,5 @@
-"""API endpoints package for kwik framework.
+"""
+API endpoints package for kwik framework.
 
 This package contains FastAPI endpoint implementations for various
 API routes within the kwik web framework.

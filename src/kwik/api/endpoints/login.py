@@ -22,7 +22,8 @@ router = APIRouter()
 
 @router.post("/access-token", response_model=kwik.typings.Token)
 def login_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> kwik.typings.Token:
-    """OAuth2 compatible token login, get an access token for future requests.
+    """
+    OAuth2 compatible token login, get an access token for future requests.
 
     Raises:
         IncorrectCredentials: If the provided credentials are incorrect
@@ -44,7 +45,8 @@ def test_token(current_user: kwik.api.deps.current_user) -> kwik.models.User:
     dependencies=(kwik.api.deps.has_permission(kwik.core.enum.Permissions.impersonification),),
 )
 def impersonate(user_id: int, current_user: kwik.api.deps.current_user) -> kwik.typings.Token:
-    """Impersonate a user.
+    """
+    Impersonate a user.
 
     Permissions:
         * `impersonification`
@@ -61,7 +63,8 @@ def impersonate(user_id: int, current_user: kwik.api.deps.current_user) -> kwik.
 
 @router.post("/is_impersonating", response_model=bool)
 def is_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusable_oauth2)]) -> bool:
-    """Check if the current token is impersonating another user.
+    """
+    Check if the current token is impersonating another user.
 
     Raises:
         InvalidToken: If the token is invalid
@@ -73,7 +76,8 @@ def is_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusable_
 
 @router.post("/stop_impersonating", response_model=kwik.typings.Token)
 def stop_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusable_oauth2)]):
-    """Stop impersonating and return the original token.
+    """
+    Stop impersonating and return the original token.
 
     Raises:
         InvalidToken: If the token is invalid

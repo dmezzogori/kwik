@@ -14,7 +14,8 @@ from .token import current_token  # noqa: TC001
 
 
 def get_current_user(token: current_token) -> kwik.models.User:
-    """Get the user associated with the token.
+    """
+    Get the user associated with the token.
 
     Raises:
         Forbidden: if the user is not found

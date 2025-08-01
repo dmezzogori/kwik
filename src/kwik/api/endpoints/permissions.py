@@ -24,7 +24,8 @@ router = AuditorRouter()
     dependencies=(has_permission(Permissions.permissions_management_read),),
 )
 def get_many_permissions(paginated: PaginatedQuery) -> PaginatedResponse[Permission]:
-    """Get all permissions, paginated.
+    """
+    Get all permissions, paginated.
 
     Permissions required:
 
@@ -40,7 +41,8 @@ def get_many_permissions(paginated: PaginatedQuery) -> PaginatedResponse[Permiss
     dependencies=(has_permission(Permissions.permissions_management_read),),
 )
 def get_single_permission(permission_id: int) -> Permission:
-    """Get a single permission by id.
+    """
+    Get a single permission by id.
 
     Permissions required:
         * `permissions_management_read`
@@ -58,7 +60,8 @@ def get_single_permission(permission_id: int) -> Permission:
     dependencies=(has_permission(Permissions.permissions_management_create),),
 )
 def create_permission(permission_in: PermissionCreate) -> Permission:
-    """Create new permission.
+    """
+    Create new permission.
 
     Raises:
         DuplicatedEntity: If the provided permission name already exists
@@ -80,7 +83,8 @@ def create_permission(permission_in: PermissionCreate) -> Permission:
     dependencies=(has_permission(Permissions.permissions_management_update),),
 )
 def associate_permission_to_role(permission_id: int, role_id: int) -> Permission:
-    """Associate a permission to a role.
+    """
+    Associate a permission to a role.
 
     Raises:
         NotFound: If the provided permission or role does not exist
@@ -98,7 +102,8 @@ def associate_permission_to_role(permission_id: int, role_id: int) -> Permission
     dependencies=(has_permission(Permissions.permissions_management_update),),
 )
 def update_permission(permission_id: int, permission_in: PermissionUpdate) -> Permission:
-    """Update a permission.
+    """
+    Update a permission.
 
     Raises:
         NotFound: If the provided permission does not exist
@@ -117,7 +122,8 @@ def update_permission(permission_id: int, permission_in: PermissionUpdate) -> Pe
     dependencies=(has_permission(Permissions.permissions_management_delete),),
 )
 def purge_all_roles(permission_id: int) -> Permission:
-    """Remove all existing associations of a permission to any role.
+    """
+    Remove all existing associations of a permission to any role.
 
     Does not delete the permission itself.
 
@@ -137,7 +143,8 @@ def purge_all_roles(permission_id: int) -> Permission:
     dependencies=(has_permission(Permissions.permissions_management_delete),),
 )
 def purge_role_from_permission(permission_id: int, role_id: int) -> Permission:
-    """Remove permission from role.
+    """
+    Remove permission from role.
 
     NotFound: If the provided permission or role does not exist
     * `permissions_management_delete`
@@ -152,7 +159,8 @@ def purge_role_from_permission(permission_id: int, role_id: int) -> Permission:
     dependencies=(has_permission(Permissions.permissions_management_delete),),
 )
 def delete_permission(permission_id: int) -> Permission:
-    """Delete a permission and remove all existing associations of it to any role.
+    """
+    Delete a permission and remove all existing associations of it to any role.
 
     Raises:
         NotFound: If the provided permission does not exist

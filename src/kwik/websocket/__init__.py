@@ -1,4 +1,5 @@
-"""WebSocket utilities package for kwik framework.
+"""
+WebSocket utilities package for kwik framework.
 
 This package provides WebSocket functionality and utilities for real-time
 communication within the kwik web framework.

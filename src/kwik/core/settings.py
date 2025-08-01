@@ -1,4 +1,5 @@
-"""Enhanced configuration system for Kwik framework.
+"""
+Enhanced configuration system for Kwik framework.
 
 This module provides an extensible, multi-source configuration system that allows users
 to extend settings classes and configure applications through multiple methods.
@@ -36,7 +37,8 @@ class EnvironmentSource(ConfigurationSource):
     """Configuration source that loads from environment variables."""
 
     def __init__(self, env_file: str | Path | None = None) -> None:
-        """Initialize environment source.
+        """
+        Initialize environment source.
 
         Args:
             env_file: Optional path to .env file to load
@@ -77,7 +79,8 @@ class DictSource(ConfigurationSource):
     """Configuration source that loads from a dictionary."""
 
     def __init__(self, config_dict: dict[str, Any]) -> None:
-        """Initialize dictionary source.
+        """
+        Initialize dictionary source.
 
         Args:
             config_dict: Dictionary containing configuration values
@@ -105,7 +108,8 @@ class FileSource(ConfigurationSource):
     """Configuration source that loads from JSON/YAML files."""
 
     def __init__(self, file_path: str | Path) -> None:
-        """Initialize file source.
+        """
+        Initialize file source.
 
         Args:
             file_path: Path to configuration file
@@ -155,7 +159,8 @@ class SettingsRegistry:
         self._settings_class: type[BaseKwikSettings] = BaseKwikSettings
 
     def add_source(self, source: ConfigurationSource) -> None:
-        """Add a configuration source.
+        """
+        Add a configuration source.
 
         Args:
             source: Configuration source to add
@@ -166,7 +171,8 @@ class SettingsRegistry:
         self._sources.sort(key=lambda s: s.priority)
 
     def set_settings_class(self, settings_class: type[SettingsType]) -> None:
-        """Set the settings class to use.
+        """
+        Set the settings class to use.
 
         Args:
             settings_class: Settings class to use for creating instances
@@ -215,7 +221,8 @@ class AlternateDBSettings(BaseSettings):
 
 
 class BaseKwikSettings(BaseSettings):
-    """Base settings class that users can extend with custom settings.
+    """
+    Base settings class that users can extend with custom settings.
 
     This replaces the original Settings class and provides the same functionality
     while allowing users to extend it with their own settings.
@@ -351,7 +358,8 @@ class SettingsFactory:
         env_file: str | Path | None = None,
         sources: list[ConfigurationSource] | None = None,
     ) -> None:
-        """Configure the settings system.
+        """
+        Configure the settings system.
 
         Args:
             settings_class: Custom settings class to use
@@ -410,7 +418,8 @@ def configure_kwik(
     env_file: str | Path | None = None,
     sources: list[ConfigurationSource] | None = None,
 ) -> None:
-    """Configure Kwik settings system.
+    """
+    Configure Kwik settings system.
 
     This function allows users to customize the settings system before using Kwik.
 
@@ -448,7 +457,8 @@ def configure_kwik(
 
 
 def get_settings() -> BaseKwikSettings:
-    """Get the current settings instance.
+    """
+    Get the current settings instance.
 
     This function provides lazy loading of settings - they are only created
     when first accessed.
@@ -461,7 +471,8 @@ def get_settings() -> BaseKwikSettings:
 
 
 def reset_settings() -> None:
-    """Reset settings system (primarily for testing).
+    """
+    Reset settings system (primarily for testing).
 
     This clears any cached settings and configuration sources,
     returning to the default state.

@@ -15,7 +15,8 @@ reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{get_settings().API_V1_STR}/lo
 
 
 def get_token(token: str = Depends(reusable_oauth2)) -> kwik.schemas.TokenPayload:
-    """Get the decoded token payload.
+    """
+    Get the decoded token payload.
 
     Raises:
         Forbidden: if the token is invalid

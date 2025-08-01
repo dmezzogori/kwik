@@ -1,4 +1,5 @@
-"""CRUD operations package for kwik framework.
+"""
+CRUD operations package for kwik framework.
 
 This package provides Create, Read, Update, Delete operations for database models,
 including automatic CRUD generation and specialized operations for user management,

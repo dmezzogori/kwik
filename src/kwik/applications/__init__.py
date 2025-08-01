@@ -1,4 +1,5 @@
-"""Application runners package for kwik framework.
+"""
+Application runners package for kwik framework.
 
 This package contains application entry points and server runners
 (uvicorn, gunicorn) for the kwik web framework.

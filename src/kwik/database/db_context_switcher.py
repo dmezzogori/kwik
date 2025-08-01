@@ -17,7 +17,8 @@ if TYPE_CHECKING:
 
 @contextmanager
 def DBContextSwitcher() -> Generator[Session, None, None]:  # noqa: N802
-    """Context manager to switch to an alternate database.
+    """
+    Context manager to switch to an alternate database.
 
     Example:
     with db_context_switcher():

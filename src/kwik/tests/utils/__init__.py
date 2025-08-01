@@ -1,4 +1,5 @@
-"""Test utilities package for kwik framework.
+"""
+Test utilities package for kwik framework.
 
 This package contains utility functions and helpers for testing
 kwik web framework functionality.

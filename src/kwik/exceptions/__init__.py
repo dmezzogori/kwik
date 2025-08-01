@@ -1,4 +1,5 @@
-"""Exception handling package for kwik framework.
+"""
+Exception handling package for kwik framework.
 
 This package contains custom exception classes and exception handlers
 for proper error handling throughout the kwik web framework.

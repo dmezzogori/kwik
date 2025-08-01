@@ -16,7 +16,8 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionCreate, schem
         return self.db.query(models.Permission).filter(models.Permission.name == name).one_or_none()
 
     def associate_role(self, *, role_id: int, permission_id: int) -> models.Permission:
-        """Associate a permission to a role. Idempotent operation.
+        """
+        Associate a permission to a role. Idempotent operation.
 
         Raises:
             NotFound: If the provided permission or role does not exist
@@ -37,7 +38,8 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionCreate, schem
         return permission
 
     def purge_role(self, *, role_id: int, permission_id: int) -> models.Permission:
-        """Remove the association between a permission and a role. Idempotent operation.
+        """
+        Remove the association between a permission and a role. Idempotent operation.
 
         Raises:
             NotFound: If the provided permission or role does not exist
@@ -56,7 +58,8 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionCreate, schem
         return permission
 
     def purge_all_roles(self, *, permission_id: int) -> models.Permission:
-        """Deprecate a permission by name.
+        """
+        Deprecate a permission by name.
 
         Raises:
             NotFound: If the provided permission does not exist
@@ -73,7 +76,8 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionCreate, schem
         return permission
 
     def delete(self, *, id: int) -> models.Permission:
-        """Delete a permission by id.
+        """
+        Delete a permission by id.
 
         Remove all the associations between the permission and the roles associated with it.
 

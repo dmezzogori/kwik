@@ -1,4 +1,5 @@
-"""Data models package for kwik framework.
+"""
+Data models package for kwik framework.
 
 This package contains SQLAlchemy models for user management, auditing, and logging
 functionality within the kwik web framework.
