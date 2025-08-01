@@ -12,7 +12,6 @@ from .login import RecoverPassword
 from .logs import LogCreateSchema, LogORMSchema
 from .mixins.orm import ORMMixin
 from .mixins.record_info import RecordInfoMixin
-from .msg import Msg
 from .pagination import Paginated
 from .permission import PermissionCreate, PermissionORMSchema, PermissionUpdate
 from .role import Role, RoleCreate, RoleInDB, RoleUpdate, UserRoleCreate, UserRoleRemove
@@ -30,7 +29,6 @@ __all__ = [
     "AuditORMSchema",
     "LogCreateSchema",
     "LogORMSchema",
-    "Msg",
     "ORMMixin",
     "Paginated",
     "PermissionCreate",

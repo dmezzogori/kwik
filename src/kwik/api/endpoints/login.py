@@ -84,7 +84,7 @@ def stop_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusabl
     return kwik.core.security.create_token(user_id=original_user_id)
 
 
-@router.post("/reset-password", response_model=kwik.schemas.Msg)
+@router.post("/reset-password")
 def reset_password(token: Annotated[str, Body()], password: Annotated[str, Body()]) -> dict:
     """Reset password."""
     email = kwik.utils.verify_password_reset_token(token)
