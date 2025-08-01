@@ -8,13 +8,12 @@ and better IDE support throughout the kwik web framework.
 from __future__ import annotations
 
 from .filter_query import FilterQuery
-from .paginated import PaginatedCRUDResult, PaginatedResponse, ParsedPaginatedQuery
+from .paginated import PaginatedResponse, ParsedPaginatedQuery
 from .sorting_query import ParsedSortingQuery, SortingQuery
 from .token import Token
 
 __all__ = [
     "FilterQuery",
-    "PaginatedCRUDResult",
     "PaginatedResponse",
     "ParsedPaginatedQuery",
     "ParsedSortingQuery",

@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Generic, TypeVar, get_args
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, get_args
 
 import pydantic
-from sqlalchemy.orm import Query, Session
 
 from kwik.database.base import Base
 from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
 from kwik.exceptions import DuplicatedEntity, NotFound
-from kwik.typings import PaginatedCRUDResult, ParsedSortingQuery
+from kwik.typings import ParsedSortingQuery
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Query, Session
 
 # Type variables for generic CRUD operations
 ModelType = TypeVar("ModelType", bound=Base)
@@ -95,7 +97,7 @@ class AutoCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         limit: int = 100,
         sort: ParsedSortingQuery | None = None,
         **filters: object,
-    ) -> PaginatedCRUDResult[ModelType]:
+    ) -> tuple[int, list[ModelType]]:
         """Get multiple records with pagination, filtering, and sorting."""
         q = self.db.query(self.model)
         if filters:

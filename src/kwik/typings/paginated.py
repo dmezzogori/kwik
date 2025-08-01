@@ -19,6 +19,3 @@ class PaginatedResponse(TypedDict, Generic[T]):
 
     data: list[T]
     total: int
-
-
-PaginatedCRUDResult = tuple[int, list[T]]
