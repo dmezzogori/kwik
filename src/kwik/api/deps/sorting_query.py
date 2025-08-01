@@ -7,10 +7,10 @@ from typing import Annotated
 
 from fastapi import Depends
 
-import kwik.typings
+from kwik.typings import ParsedSortingQuery
 
 
-def _parse_sorting_query(sorting: str | None = None) -> kwik.typings.ParsedSortingQuery:
+def _parse_sorting_query(sorting: str | None = None) -> ParsedSortingQuery:
     """
     Sorting query parameter parser, to be used as endpoint dependency.
 
@@ -35,7 +35,7 @@ def _parse_sorting_query(sorting: str | None = None) -> kwik.typings.ParsedSorti
     return None
 
 
-SortingQuery = Annotated[kwik.typings.ParsedSortingQuery, Depends(_parse_sorting_query)]
+SortingQuery = Annotated[ParsedSortingQuery, Depends(_parse_sorting_query)]
 
 __all__ = [
     "SortingQuery",
