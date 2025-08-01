@@ -112,7 +112,7 @@ class TestUserEndpointsWithoutAuth:
             "password": "testpassword123",
         }
 
-        response = client_no_auth.post("/api/v1/users", json=user_data)
+        response = client_no_auth.post("/api/v1/users/", json=user_data)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_update_user_without_auth_returns_401(self, client_no_auth: TestClient) -> None:
@@ -137,7 +137,7 @@ class TestAPIErrorHandling:
         """Test that invalid JSON payloads return 422."""
         # Try to post invalid JSON to an endpoint that expects JSON
         response = client_no_auth.post(
-            "/api/v1/users",
+            "/api/v1/users/",
             data="invalid json",  # Send raw string instead of JSON
             headers={"content-type": "application/json"},
         )

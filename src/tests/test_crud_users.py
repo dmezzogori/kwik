@@ -28,7 +28,7 @@ class TestUserCRUD:
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
 
-        created_user = crud.user.create(obj_in=user_data)
+        created_user = crud.users.create(obj_in=user_data)
 
         assert created_user.name == "Test"
         assert created_user.surname == "User"
@@ -50,7 +50,7 @@ class TestUserCRUD:
             email="test@example.com",
             password="testpassword123",
         )
-        crud.user.create(obj_in=user_data)
+        crud.users.create(obj_in=user_data)
 
         # Try to create second user with same email
         user_data2 = schemas.UserCreateSchema(
@@ -61,7 +61,7 @@ class TestUserCRUD:
         )
 
         with pytest.raises(IntegrityError):
-            crud.user.create(obj_in=user_data2)
+            crud.users.create(obj_in=user_data2)
 
     def test_get_user_by_id(self, db_session, clean_db) -> None:
         """Test getting a user by ID."""
@@ -72,7 +72,7 @@ class TestUserCRUD:
         user = create_test_user(db_session, email="get_test@example.com")
 
         # Get the user by ID
-        retrieved_user = crud.user.get(id=user.id)
+        retrieved_user = crud.users.get(id=user.id)
 
         assert retrieved_user is not None
         assert retrieved_user.id == user.id
@@ -83,7 +83,7 @@ class TestUserCRUD:
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
 
-        retrieved_user = crud.user.get(id=99999)
+        retrieved_user = crud.users.get(id=99999)
         assert retrieved_user is None
 
     def test_get_user_by_email(self, db_session, clean_db) -> None:
@@ -95,7 +95,7 @@ class TestUserCRUD:
         user = create_test_user(db_session, email="email_test@example.com")
 
         # Get the user by email
-        retrieved_user = crud.user.get_by_email(email="email_test@example.com")
+        retrieved_user = crud.users.get_by_email(email="email_test@example.com")
 
         assert retrieved_user is not None
         assert retrieved_user.id == user.id
@@ -106,7 +106,7 @@ class TestUserCRUD:
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
 
-        retrieved_user = crud.user.get_by_email(email="nonexistent@example.com")
+        retrieved_user = crud.users.get_by_email(email="nonexistent@example.com")
         assert retrieved_user is None
 
     def test_get_user_by_name(self, db_session, clean_db) -> None:
@@ -118,7 +118,7 @@ class TestUserCRUD:
         user = create_test_user(db_session, name="uniquename")
 
         # Get the user by name
-        retrieved_user = crud.user.get_by_name(name="uniquename")
+        retrieved_user = crud.users.get_by_name(name="uniquename")
 
         assert retrieved_user is not None
         assert retrieved_user.id == user.id
@@ -134,7 +134,7 @@ class TestUserCRUD:
 
         # Update the user
         update_data = schemas.UserUpdateSchema(name="updated")
-        updated_user = crud.user.update(db_obj=user, obj_in=update_data)
+        updated_user = crud.users.update(db_obj=user, obj_in=update_data)
 
         assert updated_user.id == user.id
         assert updated_user.name == "updated"
@@ -149,7 +149,7 @@ class TestUserCRUD:
         user = create_test_user(db_session)
 
         # Get the user using get_if_exist
-        retrieved_user = crud.user.get_if_exist(id=user.id)
+        retrieved_user = crud.users.get_if_exist(id=user.id)
 
         assert retrieved_user.id == user.id
 
@@ -159,7 +159,7 @@ class TestUserCRUD:
         db_conn_ctx_var.set(db_session)
 
         with pytest.raises(NotFound):
-            crud.user.get_if_exist(id=99999)
+            crud.users.get_if_exist(id=99999)
 
     def test_get_multi_users(self, db_session, clean_db) -> None:
         """Test getting multiple users with pagination."""
@@ -173,13 +173,13 @@ class TestUserCRUD:
             users.append(user)
 
         # Get multiple users
-        count, retrieved_users = crud.user.get_multi(skip=0, limit=3)
+        count, retrieved_users = crud.users.get_multi(skip=0, limit=3)
 
         assert count == 5  # Total count
         assert len(retrieved_users) == 3  # Limited to 3
 
         # Test pagination
-        count, second_page = crud.user.get_multi(skip=3, limit=3)
+        count, second_page = crud.users.get_multi(skip=3, limit=3)
         assert count == 5
         assert len(second_page) == 2  # Remaining users
 
@@ -193,11 +193,11 @@ class TestUserCRUD:
         create_test_user(db_session, email="inactive@example.com", is_active=False)
 
         # Filter by is_active
-        count, active_users = crud.user.get_multi(is_active=True)
+        count, active_users = crud.users.get_multi(is_active=True)
         assert count == 1
         assert active_users[0].is_active is True
 
-        count, inactive_users = crud.user.get_multi(is_active=False)
+        count, inactive_users = crud.users.get_multi(is_active=False)
         assert count == 1
         assert inactive_users[0].is_active is False
 
@@ -211,10 +211,10 @@ class TestUserCRUD:
         user_id = user.id
 
         # Delete the user
-        deleted_user = crud.user.delete(id=user_id)
+        deleted_user = crud.users.delete(id=user_id)
 
         assert deleted_user.id == user_id
 
         # Verify user is deleted
-        retrieved_user = crud.user.get(id=user_id)
+        retrieved_user = crud.users.get(id=user_id)
         assert retrieved_user is None

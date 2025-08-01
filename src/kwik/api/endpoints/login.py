@@ -29,7 +29,7 @@ def login_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()
         IncorrectCredentials: If the provided credentials are incorrect
 
     """
-    user = kwik.crud.user.authenticate(email=form_data.username, password=form_data.password)
+    user = kwik.crud.users.authenticate(email=form_data.username, password=form_data.password)
     return kwik.core.security.create_token(user_id=user.id)
 
 
@@ -56,7 +56,7 @@ def impersonate(user_id: int, current_user: kwik.api.deps.current_user) -> kwik.
 
     """
     # Retrieve the user to impersonate
-    user = kwik.crud.user.get_if_exist(id=user_id)
+    user = kwik.crud.users.get_if_exist(id=user_id)
 
     return kwik.core.security.create_token(user_id=user.id, impersonator_user_id=current_user.id)
 
@@ -95,5 +95,5 @@ def reset_password(token: Annotated[str, Body()], password: Annotated[str, Body(
     if not email:
         raise InvalidToken
 
-    kwik.crud.user.reset_password(email=email, password=password)
+    kwik.crud.users.reset_password(email=email, password=password)
     return {"msg": "Password updated successfully"}

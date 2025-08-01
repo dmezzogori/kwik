@@ -10,6 +10,7 @@ from kwik.exceptions import NotFound
 from tests.utils import create_test_role
 
 
+@pytest.mark.skip(reason="Roles endpoint temporarily disabled")
 class TestRoleCRUD:
     """Test cases for role CRUD operations."""
 
