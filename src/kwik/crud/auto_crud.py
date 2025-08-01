@@ -86,10 +86,6 @@ class AutoCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """Get single record by primary key ID."""
         return self.db.query(self.model).get(id)
 
-    def get_all(self) -> list[ModelType]:
-        """Get all records from the table."""
-        return self.db.query(self.model).all()
-
     def get_multi(
         self,
         *,
