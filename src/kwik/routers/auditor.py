@@ -14,20 +14,20 @@ from kwik.api.deps.token import get_token
 from kwik.api.deps.users import get_current_user
 from kwik.core import security
 from kwik.core.settings import get_settings
+from kwik.database.context_vars import current_user_ctx_var
 from kwik.middlewares import get_request_id
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-class KwikRequest(Request):
+class _KwikRequest(Request):
     """Extended Request class with body caching and token extraction support."""
 
     async def body(self) -> bytes:
         """Cache request body for multiple reads."""
         if not hasattr(self, "_body"):
             body = await super().body()
-            # noinspection PyAttributeOutsideInit
             self._body = body
         return self._body
 
@@ -40,7 +40,7 @@ class KwikRequest(Request):
         return None
 
 
-class AuditedRoute(APIRoute):
+class _AuditedRoute(APIRoute):
     """API route with automatic audit logging and user context management."""
 
     def get_route_handler(self) -> Callable:
@@ -48,13 +48,11 @@ class AuditedRoute(APIRoute):
         original_route_handler = super().get_route_handler()
 
         async def custom_route_handler(request: Request) -> Response:
-            from kwik.database.context_vars import current_user_ctx_var
-
             # start the timer
             start = time.time()
 
             # override the request object
-            request = KwikRequest(request.scope, request.receive)
+            request = _KwikRequest(request.scope, request.receive)
             body = await request.body()
 
             # we set the current user in the context variable
@@ -140,6 +138,9 @@ class AuditorRouter(APIRouter):
 
         Sets up the router with:
         - get_token dependency applied to all routes for JWT validation
-        - AuditedRoute as the route class for automatic audit logging
+        - _AuditedRoute as the route class for automatic audit logging
         """
-        super().__init__(dependencies=[Depends(get_token)], route_class=AuditedRoute)
+        super().__init__(dependencies=[Depends(get_token)], route_class=_AuditedRoute)
+
+
+__all__ = ["AuditorRouter"]
