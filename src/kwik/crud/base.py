@@ -50,24 +50,24 @@ class CRUDBase(abc.ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     user = CurrentUser()
     model: type[ModelType]
 
-    def __init__(self, model: type[ModelType] | None = None) -> None:
+    def __init__(self) -> None:
         """
         CRUD object with default methods to Create, Read, Update, Delete (CRUD).
 
-        **Parameters**
-
-        * `model`: A SQLAlchemy model class
+        The model type is automatically extracted from the generic type parameters.
         """
-        if model is not None:
-            self.model = model
-        else:
-            # Extract model type from generic parameters
-            bases = getattr(self, "__orig_bases__", None)
-            if bases is not None:
-                self.model = get_args(bases[0])[0]
+        # Extract model type from generic parameters
+        bases = getattr(self, "__orig_bases__", None)
+        if bases is not None:
+            args = get_args(bases[0])
+            if args:
+                self.model = args[0]
             else:
-                msg = "Model must be provided either as parameter or via generic type parameters"
+                msg = "Model type must be specified via generic type parameters: CRUDBase[Model, Create, Update]"
                 raise ValueError(msg)
+        else:
+            msg = "Model type must be specified via generic type parameters: CRUDBase[Model, Create, Update]"
+            raise ValueError(msg)
 
     @abc.abstractmethod
     def get(self, *, id: int) -> ModelType | None:  # noqa: A002

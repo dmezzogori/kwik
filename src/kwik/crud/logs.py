@@ -7,11 +7,12 @@ from fastapi.encoders import jsonable_encoder
 from kwik import models
 from kwik.models import User
 from kwik.schemas import LogCreateSchema
+from kwik.schemas.logs import LogORMSchema
 
 from .base import CRUDBase
 
 
-class CRUDLogs(CRUDBase):
+class CRUDLogs(CRUDBase[models.Log, LogCreateSchema, LogORMSchema]):
     """CRUD operations for application log entries with user tracking."""
 
     def create(self, *, obj_in: LogCreateSchema, user: User | None = None) -> models.Log:
@@ -55,4 +56,4 @@ class CRUDLogs(CRUDBase):
         raise NotImplementedError
 
 
-logs = CRUDLogs(models.Log)
+logs = CRUDLogs()

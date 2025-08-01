@@ -1,12 +1,12 @@
 """CRUD operations for audit records."""
 
-from kwik import models
+from kwik import models, schemas
 
 from . import auto_crud
 
 
-class CRUDAudit(auto_crud.AutoCRUD):
+class CRUDAudit(auto_crud.AutoCRUD[models.Audit, schemas.AuditCreateSchema, schemas.AuditORMSchema]):
     """CRUD operations for audit log entries."""
 
 
-audit = CRUDAudit(models.Audit)
+audit = CRUDAudit()
