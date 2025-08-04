@@ -8,7 +8,6 @@ auditing, and permissions.
 
 from .audits import audit
 from .auto_crud import AutoCRUD
-from .logs import logs
 from .permissions import permissions
 from .roles import roles
 from .users import users
@@ -16,7 +15,6 @@ from .users import users
 __all__ = [
     "AutoCRUD",
     "audit",
-    "logs",
     "permissions",
     "roles",
     "users",
