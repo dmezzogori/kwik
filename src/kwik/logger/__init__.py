@@ -29,7 +29,7 @@ class CustomFormatter(logging.Formatter):
         logging.CRITICAL: bold_red + format + reset,
     }
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         """Format log record with color based on log level."""
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt)

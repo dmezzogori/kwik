@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
+from typing import TYPE_CHECKING
+
 import pytest
 from sqlalchemy.exc import IntegrityError
 
@@ -10,11 +13,14 @@ from kwik.database.context_vars import db_conn_ctx_var
 from kwik.exceptions import NotFound
 from tests.utils import create_test_user
 
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
+
 
 class TestUserCRUD:
     """Test cases for user CRUD operations."""
 
-    def test_create_user(self, db_session, clean_db) -> None:
+    def test_create_user(self, db_session: Session, clean_db: Generator[None, None, None]) -> None:
         """Test creating a new user."""
         user_data = schemas.UserRegistration(
             name="Test",
@@ -38,7 +44,7 @@ class TestUserCRUD:
         assert created_user.hashed_password != "testpassword123"  # Should be hashed
         assert created_user.id is not None
 
-    def test_create_user_duplicate_email_raises_error(self, db_session, clean_db) -> None:
+    def test_create_user_duplicate_email_raises_error(self, db_session: Session, clean_db: Generator[None, None, None]) -> None:
         """Test that creating a user with duplicate email raises an error."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -63,7 +69,7 @@ class TestUserCRUD:
         with pytest.raises(IntegrityError):
             crud.users.create(obj_in=user_data2)
 
-    def test_get_user_by_id(self, db_session, clean_db) -> None:
+    def test_get_user_by_id(self, db_session: Session, clean_db: Generator[None, None, None]) -> None:
         """Test getting a user by ID."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -78,7 +84,7 @@ class TestUserCRUD:
         assert retrieved_user.id == user.id
         assert retrieved_user.email == "get_test@example.com"
 
-    def test_get_user_by_nonexistent_id_returns_none(self, db_session, clean_db) -> None:
+    def test_get_user_by_nonexistent_id_returns_none(self, db_session: Session, clean_db: Generator[None, None, None]) -> None:
         """Test getting a user by non-existent ID returns None."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -86,7 +92,7 @@ class TestUserCRUD:
         retrieved_user = crud.users.get(id=99999)
         assert retrieved_user is None
 
-    def test_get_user_by_email(self, db_session, clean_db) -> None:
+    def test_get_user_by_email(self, db_session: Session, clean_db: Generator[None, None, None]) -> None:
         """Test getting a user by email."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -101,7 +107,7 @@ class TestUserCRUD:
         assert retrieved_user.id == user.id
         assert retrieved_user.email == "email_test@example.com"
 
-    def test_get_user_by_nonexistent_email_returns_none(self, db_session, clean_db) -> None:
+    def test_get_user_by_nonexistent_email_returns_none(self, db_session: Session, clean_db: Generator[None, None, None]) -> None:
         """Test getting a user by non-existent email returns None."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -109,7 +115,7 @@ class TestUserCRUD:
         retrieved_user = crud.users.get_by_email(email="nonexistent@example.com")
         assert retrieved_user is None
 
-    def test_get_user_by_name(self, db_session, clean_db) -> None:
+    def test_get_user_by_name(self, db_session: Session, clean_db: Generator[None, None, None]) -> None:
         """Test getting a user by name."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -124,7 +130,7 @@ class TestUserCRUD:
         assert retrieved_user.id == user.id
         assert retrieved_user.name == "uniquename"
 
-    def test_update_user(self, db_session, clean_db) -> None:
+    def test_update_user(self, db_session: Session, clean_db: Generator[None, None, None]) -> None:
         """Test updating a user."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -140,7 +146,7 @@ class TestUserCRUD:
         assert updated_user.name == "updated"
         assert updated_user.surname == user.surname  # Should remain unchanged
 
-    def test_get_if_exist_with_existing_user(self, db_session, clean_db) -> None:
+    def test_get_if_exist_with_existing_user(self, db_session: Session, clean_db: Generator[None, None, None]) -> None:
         """Test get_if_exist with an existing user."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -153,7 +159,7 @@ class TestUserCRUD:
 
         assert retrieved_user.id == user.id
 
-    def test_get_if_exist_with_nonexistent_user_raises_error(self, db_session, clean_db) -> None:
+    def test_get_if_exist_with_nonexistent_user_raises_error(self, db_session: Session, clean_db: Generator[None, None, None]) -> None:
         """Test get_if_exist with non-existent user raises NotFound."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -161,7 +167,7 @@ class TestUserCRUD:
         with pytest.raises(NotFound):
             crud.users.get_if_exist(id=99999)
 
-    def test_get_multi_users(self, db_session, clean_db) -> None:
+    def test_get_multi_users(self, db_session: Session, clean_db: Generator[None, None, None]) -> None:
         """Test getting multiple users with pagination."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -188,7 +194,7 @@ class TestUserCRUD:
         assert count == TOTAL_USERS
         assert len(second_page) == REMAINING_USERS  # Remaining users
 
-    def test_get_multi_with_filters(self, db_session, clean_db) -> None:
+    def test_get_multi_with_filters(self, db_session: Session, clean_db: Generator[None, None, None]) -> None:
         """Test getting multiple users with filters."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -206,7 +212,7 @@ class TestUserCRUD:
         assert count == 1
         assert inactive_users[0].is_active is False
 
-    def test_delete_user(self, db_session, clean_db) -> None:
+    def test_delete_user(self, db_session: Session, clean_db: Generator[None, None, None]) -> None:
         """Test deleting a user."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)

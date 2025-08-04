@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, EmailStr, root_validator
 
@@ -33,7 +33,7 @@ class UserProfileUpdate(BaseModel):
     is_active: bool | None = None
 
     @root_validator(pre=False)
-    def require_at_least_one_field(cls, values):
+    def require_at_least_one_field(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Ensure at least one field is provided for update."""
         provided_fields = [k for k, val in values.items() if val is not None]
         if not provided_fields:

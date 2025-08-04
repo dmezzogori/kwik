@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
+from typing import TYPE_CHECKING
+
 import pytest
 
 from kwik import crud, schemas
@@ -9,12 +12,15 @@ from kwik.database.context_vars import db_conn_ctx_var
 from kwik.exceptions import NotFound
 from tests.utils import create_test_role
 
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
+
 
 @pytest.mark.skip(reason="Roles endpoint temporarily disabled")
 class TestRoleCRUD:
     """Test cases for role CRUD operations."""
 
-    def test_create_role(self, db_session, clean_db, user_context) -> None:
+    def test_create_role(self, db_session: Session, clean_db: Generator[None, None, None], user_context: Generator[None, None, None]) -> None:
         """Test creating a new role."""
         role_data = schemas.RoleDefinition(
             name="Test Role",
@@ -32,7 +38,7 @@ class TestRoleCRUD:
         assert created_role.is_locked is False
         assert created_role.id is not None
 
-    def test_get_role_by_id(self, db_session, clean_db, user_context) -> None:
+    def test_get_role_by_id(self, db_session: Session, clean_db: Generator[None, None, None], user_context: Generator[None, None, None]) -> None:
         """Test getting a role by ID."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -47,7 +53,7 @@ class TestRoleCRUD:
         assert retrieved_role.id == role.id
         assert retrieved_role.name == "Get Test Role"
 
-    def test_get_role_by_nonexistent_id_returns_none(self, db_session, clean_db) -> None:
+    def test_get_role_by_nonexistent_id_returns_none(self, db_session: Session, clean_db: Generator[None, None, None]) -> None:
         """Test getting a role by non-existent ID returns None."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -55,7 +61,7 @@ class TestRoleCRUD:
         retrieved_role = crud.roles.get(id=99999)
         assert retrieved_role is None
 
-    def test_update_role(self, db_session, clean_db, user_context) -> None:
+    def test_update_role(self, db_session: Session, clean_db: Generator[None, None, None], user_context: Generator[None, None, None]) -> None:
         """Test updating a role."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -71,7 +77,7 @@ class TestRoleCRUD:
         assert updated_role.name == "Updated Role"
         assert updated_role.is_active == role.is_active  # Should remain unchanged
 
-    def test_get_if_exist_with_existing_role(self, db_session, clean_db, user_context) -> None:
+    def test_get_if_exist_with_existing_role(self, db_session: Session, clean_db: Generator[None, None, None], user_context: Generator[None, None, None]) -> None:
         """Test get_if_exist with an existing role."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -84,7 +90,7 @@ class TestRoleCRUD:
 
         assert retrieved_role.id == role.id
 
-    def test_get_if_exist_with_nonexistent_role_raises_error(self, db_session, clean_db) -> None:
+    def test_get_if_exist_with_nonexistent_role_raises_error(self, db_session: Session, clean_db: Generator[None, None, None]) -> None:
         """Test get_if_exist with non-existent role raises NotFound."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -92,7 +98,7 @@ class TestRoleCRUD:
         with pytest.raises(NotFound):
             crud.roles.get_if_exist(id=99999)
 
-    def test_get_multi_roles(self, db_session, clean_db, user_context) -> None:
+    def test_get_multi_roles(self, db_session: Session, clean_db: Generator[None, None, None], user_context: Generator[None, None, None]) -> None:
         """Test getting multiple roles with pagination."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -119,7 +125,7 @@ class TestRoleCRUD:
         assert count == TOTAL_ROLES
         assert len(second_page) == REMAINING_ROLES  # Remaining roles
 
-    def test_get_multi_with_filters(self, db_session, clean_db, user_context) -> None:
+    def test_get_multi_with_filters(self, db_session: Session, clean_db: Generator[None, None, None], user_context: Generator[None, None, None]) -> None:
         """Test getting multiple roles with filters."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -143,7 +149,7 @@ class TestRoleCRUD:
         assert count == 1
         assert locked_roles[0].name == "Locked Role"
 
-    def test_delete_role(self, db_session, clean_db, user_context) -> None:
+    def test_delete_role(self, db_session: Session, clean_db: Generator[None, None, None], user_context: Generator[None, None, None]) -> None:
         """Test deleting a role (hard delete)."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -161,7 +167,7 @@ class TestRoleCRUD:
         retrieved_role = crud.roles.get(id=role_id)
         assert retrieved_role is None  # Should not be found after deletion
 
-    def test_get_all_roles(self, db_session, clean_db, user_context) -> None:
+    def test_get_all_roles(self, db_session: Session, clean_db: Generator[None, None, None], user_context: Generator[None, None, None]) -> None:
         """Test getting all roles."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
