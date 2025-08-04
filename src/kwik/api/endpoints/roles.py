@@ -23,15 +23,6 @@ def read_roles(paginated: kwik.api.deps.Pagination) -> kwik.typings.PaginatedRes
     return kwik.typings.PaginatedResponse(data=roles, total=count)
 
 
-@router.get(
-    "/me",
-    response_model=list[schemas.RoleProfile],
-    dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
-)
-def read_role_of_logged_user(current_user: kwik.api.deps.current_user) -> list[models.Role]:
-    """Get roles of logged-in user."""
-    return crud.role.get_multi_by_user_id(user_id=current_user.id)
-
 
 @router.get(
     "/{role_id}/users",
@@ -97,29 +88,6 @@ def update_role(role_id: int, role_in: schemas.RoleUpdate) -> models.Role:
     role = crud.role.get_if_exist(id=role_id)
     return crud.role.update(db_obj=role, obj_in=role_in)
 
-
-@router.post(
-    "/associate",
-    response_model=schemas.RoleProfile,
-    dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_update),),
-)
-def associate_user_to_role(user_role_in: schemas.UserRoleAssignment) -> models.Role:
-    """Associate user with role."""
-    user = crud.users.get_if_exist(id=user_role_in.user_id)
-    role = crud.role.get_if_exist(id=user_role_in.role_id)
-    return crud.role.associate_user(user_db=user, role_db=role)
-
-
-@router.post(
-    "/purge",
-    response_model=schemas.RoleProfile,
-    dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_update),),
-)
-def purge_role_from_user(user_role_in: schemas.UserRoleRevocation) -> models.Role:
-    """Remove role from user."""
-    user = crud.users.get_if_exist(id=user_role_in.user_id)
-    role = crud.role.get_if_exist(id=user_role_in.role_id)
-    return crud.role.purge_user(user_db=user, role_db=role)
 
 
 @router.post(

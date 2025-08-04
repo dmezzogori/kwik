@@ -44,7 +44,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserRegistration, sch
         self.db.refresh(db_obj)
         return db_obj
 
-    def create_if_not_exist(self, *, filters: dict, obj_in: schemas.UserRegistration, **kwargs) -> models.User:
+    def create_if_not_exist(self, *, filters: dict, obj_in: schemas.UserRegistration) -> models.User:
         """Create user if it doesn't exist based on filters, otherwise return existing user."""
         obj_db = self.db.query(models.User).filter_by(**filters).one_or_none()
         if obj_db is None:
@@ -150,6 +150,17 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserRegistration, sch
         )
 
         return r.count() == len(roles)
+
+    def get_permissions(self, *, user_id: int) -> list[models.Permission]:
+        """Get all permissions for a user through their roles."""
+        return (
+            self.db.query(models.Permission)
+            .join(models.RolePermission, models.Role, models.UserRole)
+            .join(models.User, models.User.id == models.UserRole.user_id)
+            .filter(models.User.id == user_id)
+            .distinct()
+            .all()
+        )
 
 
 users = AutoCRUDUser()

@@ -9,7 +9,7 @@ from kwik.api.deps import Pagination, has_permission
 from kwik.core.enum import Permissions
 from kwik.exceptions import DuplicatedEntity
 from kwik.routers import AuditorRouter
-from kwik.schemas import Paginated, PermissionDefinition, PermissionProfile, PermissionUpdate
+from kwik.schemas import Paginated, PermissionDefinition, PermissionProfile, PermissionRoleAssignment, PermissionUpdate
 from kwik.typings import PaginatedResponse
 
 if TYPE_CHECKING:
@@ -78,11 +78,11 @@ def create_permission(permission_in: PermissionDefinition) -> Permission:
 
 
 @router.post(
-    "/{permission_id}/{role_id}",
+    "/{permission_id}/roles",
     response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_update),),
 )
-def associate_permission_to_role(permission_id: int, role_id: int) -> Permission:
+def associate_permission_to_role(permission_id: int, assignment: PermissionRoleAssignment) -> Permission:
     """
     Associate a permission to a role.
 
@@ -93,7 +93,7 @@ def associate_permission_to_role(permission_id: int, role_id: int) -> Permission
         * `permissions_management_update`
 
     """
-    return crud.permission.associate_role(permission_id=permission_id, role_id=role_id)
+    return crud.permission.associate_role(permission_id=permission_id, role_id=assignment.role_id)
 
 
 @router.put(
@@ -138,7 +138,7 @@ def purge_all_roles(permission_id: int) -> Permission:
 
 
 @router.delete(
-    "/{permission_id}/{role_id}",
+    "/{permission_id}/roles/{role_id}",
     response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_delete),),
 )
@@ -146,8 +146,11 @@ def purge_role_from_permission(permission_id: int, role_id: int) -> Permission:
     """
     Remove permission from role.
 
-    NotFound: If the provided permission or role does not exist
-    * `permissions_management_delete`
+    Raises:
+        NotFound: If the provided permission or role does not exist
+
+    Permissions required:
+        * `permissions_management_delete`
 
     """
     return crud.permission.purge_role(permission_id=permission_id, role_id=role_id)

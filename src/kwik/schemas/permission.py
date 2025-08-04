@@ -21,3 +21,9 @@ class PermissionDefinition(_BaseSchema):
 
 class PermissionUpdate(_BaseSchema):
     """Schema for updating existing permissions."""
+
+
+class PermissionRoleAssignment(BaseModel):
+    """Schema for assigning permissions to roles."""
+
+    role_id: int

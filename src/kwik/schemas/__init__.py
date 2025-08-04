@@ -14,7 +14,7 @@ from .logs import LogEntry, LogProfile
 from .mixins.orm import ORMMixin
 from .mixins.record_info import RecordInfoMixin
 from .pagination import Paginated
-from .permission import PermissionDefinition, PermissionProfile, PermissionUpdate
+from .permission import PermissionDefinition, PermissionProfile, PermissionRoleAssignment, PermissionUpdate
 from .role import RoleDefinition, RoleInDB, RoleProfile, RoleUpdate, UserRoleAssignment, UserRoleRevocation
 from .token import Token, TokenPayload
 from .user import (
@@ -35,6 +35,7 @@ __all__ = [
     "PasswordRecoveryRequest",
     "PermissionDefinition",
     "PermissionProfile",
+    "PermissionRoleAssignment",
     "PermissionUpdate",
     "RecordInfoMixin",
     "RoleDefinition",
