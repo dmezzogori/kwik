@@ -57,10 +57,10 @@ uv run pytest
 uv run pytest --cov=src/kwik --cov-report=term-missing
 
 # Run specific test file
-uv run pytest src/tests/test_crud_users.py
+uv run pytest tests/test_crud_users.py
 
 # Run specific test method
-uv run pytest src/tests/test_crud_users.py::TestUserCRUD::test_create_user
+uv run pytest tests/test_crud_users.py::TestUserCRUD::test_create_user
 
 # Run tests in parallel (faster)
 uv run pytest -n auto
@@ -80,7 +80,7 @@ docker compose -f docker-compose.test.yml down -v
 
 #### Test Structure
 ```
-src/tests/
+tests/
 ├── conftest.py              # Pytest configuration and fixtures
 ├── utils/                   # Test utilities and factories
 │   ├── __init__.py
@@ -89,8 +89,6 @@ src/tests/
 ├── test_crud_users.py       # CRUD operation tests
 ├── test_crud_roles.py       # Role CRUD tests
 ├── test_api_endpoints.py    # API endpoint tests
-└── endpoints/
-    └── test_docs.py         # Documentation endpoint tests
 ```
 
 #### Writing Tests

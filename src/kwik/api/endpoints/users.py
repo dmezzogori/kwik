@@ -140,9 +140,8 @@ def read_user_roles(user_id: int) -> list[Role]:
 )
 def assign_role_to_user(user_id: int, role_assignment: UserRoleAssignment) -> Role:
     """Assign a role to a user."""
-    user_db = users.get_if_exist(id=user_id)
-    role_db = roles.get_if_exist(id=role_assignment.role_id)
-    return roles.associate_user(user_db=user_db, role_db=role_db)
+    users.assign_role(user_id=user_id, role_id=role_assignment.role_id)
+    return roles.get_if_exist(id=role_assignment.role_id)
 
 
 @router.delete(
@@ -152,9 +151,8 @@ def assign_role_to_user(user_id: int, role_assignment: UserRoleAssignment) -> Ro
 )
 def remove_role_from_user(user_id: int, role_id: int) -> Role:
     """Remove a role from a user."""
-    user_db = users.get_if_exist(id=user_id)
-    role_db = roles.get_if_exist(id=role_id)
-    return roles.purge_user(user_db=user_db, role_db=role_db)
+    users.remove_role(user_id=user_id, role_id=role_id)
+    return roles.get_if_exist(id=role_id)
 
 
 @router.get("/me/permissions", response_model=list[PermissionProfile])

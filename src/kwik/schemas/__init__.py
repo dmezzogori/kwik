@@ -7,7 +7,6 @@ and API schema definitions across the kwik web framework.
 
 from __future__ import annotations
 
-from . import role_permissions
 from .audit import AuditEntry, AuditProfile
 from .login import PasswordRecoveryRequest
 from .logs import LogEntry, LogProfile
@@ -51,5 +50,4 @@ __all__ = [
     "UserRegistration",
     "UserRoleAssignment",
     "UserRoleRevocation",
-    "role_permissions",
 ]

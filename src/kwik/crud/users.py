@@ -162,5 +162,67 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserRegistration, sch
             .all()
         )
 
+    def _get_user_role_association(self, *, user_id: int, role_id: int) -> models.UserRole | None:
+        """Get user-role association by user ID and role ID."""
+        return (
+            self.db.query(models.UserRole)
+            .filter(
+                models.UserRole.user_id == user_id,
+                models.UserRole.role_id == role_id,
+            )
+            .one_or_none()
+        )
+
+    def assign_role(self, *, user_id: int, role_id: int) -> models.User:
+        """Assign a role to a user. Idempotent operation."""
+        # Verify user and role exist
+        user_db = self.get_if_exist(id=user_id)
+        from kwik import crud
+        role_db = crud.roles.get_if_exist(id=role_id)
+
+        # Check if association already exists
+        user_role_db = self._get_user_role_association(user_id=user_id, role_id=role_id)
+        if user_role_db is None:
+            # Create new user-role association
+            user_role_db = models.UserRole(user_id=user_id, role_id=role_id)
+            self.db.add(user_role_db)
+            self.db.flush()
+
+        return user_db
+
+    def remove_role(self, *, user_id: int, role_id: int) -> models.User:
+        """Remove a role from a user. Idempotent operation."""
+        # Verify user and role exist
+        user_db = self.get_if_exist(id=user_id)
+        from kwik import crud
+        crud.roles.get_if_exist(id=role_id)
+
+        # Find and delete association if it exists
+        user_role_db = self._get_user_role_association(user_id=user_id, role_id=role_id)
+        if user_role_db is not None:
+            self.db.delete(user_role_db)
+            self.db.flush()
+
+        return user_db
+
+    def get_multi_by_role_name(self, *, role_name: str) -> list[models.User]:
+        """Get all users assigned to a role by role name."""
+        return (
+            self.db.query(models.User)
+            .join(models.UserRole, models.User.id == models.UserRole.user_id)
+            .join(models.Role)
+            .filter(models.Role.name == role_name)
+            .all()
+        )
+
+    def get_multi_by_role_id(self, *, role_id: int) -> list[models.User]:
+        """Get all users assigned to a specific role."""
+        return (
+            self.db.query(models.User)
+            .join(models.UserRole, models.User.id == models.UserRole.user_id)
+            .filter(models.UserRole.role_id == role_id)
+            .all()
+        )
+
 
 users = AutoCRUDUser()
