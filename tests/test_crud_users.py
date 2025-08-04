@@ -166,22 +166,27 @@ class TestUserCRUD:
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
 
+        # Test constants
+        TOTAL_USERS = 5
+        PAGE_LIMIT = 3
+        REMAINING_USERS = 2
+
         # Create multiple test users
         users = []
-        for i in range(5):
+        for i in range(TOTAL_USERS):
             user = create_test_user(db_session, email=f"user{i}@example.com", name=f"User{i}")
             users.append(user)
 
         # Get multiple users
-        count, retrieved_users = crud.users.get_multi(skip=0, limit=3)
+        count, retrieved_users = crud.users.get_multi(skip=0, limit=PAGE_LIMIT)
 
-        assert count == 5  # Total count
-        assert len(retrieved_users) == 3  # Limited to 3
+        assert count == TOTAL_USERS  # Total count
+        assert len(retrieved_users) == PAGE_LIMIT  # Limited to 3
 
         # Test pagination
-        count, second_page = crud.users.get_multi(skip=3, limit=3)
-        assert count == 5
-        assert len(second_page) == 2  # Remaining users
+        count, second_page = crud.users.get_multi(skip=PAGE_LIMIT, limit=PAGE_LIMIT)
+        assert count == TOTAL_USERS
+        assert len(second_page) == REMAINING_USERS  # Remaining users
 
     def test_get_multi_with_filters(self, db_session, clean_db) -> None:
         """Test getting multiple users with filters."""

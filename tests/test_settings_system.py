@@ -87,8 +87,9 @@ class TestSettingsSources:
         source = DictSource(test_dict)
         config = source.load()
 
+        DICT_SOURCE_PRIORITY = 2
         assert config == test_dict
-        assert source.priority == 2
+        assert source.priority == DICT_SOURCE_PRIORITY
 
     def test_file_source_loads_json(self):
         """Test FileSource loads from JSON file."""
@@ -106,8 +107,9 @@ class TestSettingsSources:
             source = FileSource(json_file)
             config = source.load()
 
+            FILE_SOURCE_PRIORITY = 3
             assert config == test_config
-            assert source.priority == 3
+            assert source.priority == FILE_SOURCE_PRIORITY
         finally:
             os.unlink(json_file)
 
@@ -233,7 +235,8 @@ class TestSettingsFactory:
 
         assert isinstance(settings, TestCustomSettings)
         assert settings.CUSTOM_SETTING == "DEFAULT_VALUE"  # Validator uppercases
-        assert settings.CUSTOM_INT_SETTING == 42
+        EXPECTED_INT_VALUE = 42
+        assert settings.CUSTOM_INT_SETTING == EXPECTED_INT_VALUE
 
     def test_configure_with_dict(self):
         """Test configuring with dictionary."""
@@ -247,7 +250,8 @@ class TestSettingsFactory:
         settings = self.factory.get_settings()
 
         assert settings.PROJECT_NAME == "test_project"
-        assert settings.BACKEND_PORT == 9000
+        EXPECTED_PORT = 9000
+        assert settings.BACKEND_PORT == EXPECTED_PORT
         assert settings.DEBUG is True
 
     def test_configure_with_file(self):
@@ -263,7 +267,8 @@ class TestSettingsFactory:
             settings = self.factory.get_settings()
 
             assert settings.PROJECT_NAME == "file_project"
-            assert settings.BACKEND_PORT == 8888
+            EXPECTED_FILE_PORT = 8888
+            assert settings.BACKEND_PORT == EXPECTED_FILE_PORT
         finally:
             os.unlink(config_file)
 
@@ -384,7 +389,8 @@ class TestExtensibilityUseCases:
         settings = get_settings()
         assert settings.FEATURE_X_ENABLED is True
         assert settings.FEATURE_Y_ENABLED is True  # Default
-        assert settings.FEATURE_Z_ROLLOUT_PERCENTAGE == 50
+        EXPECTED_ROLLOUT_PERCENTAGE = 50
+        assert settings.FEATURE_Z_ROLLOUT_PERCENTAGE == EXPECTED_ROLLOUT_PERCENTAGE
 
     def test_custom_api_settings(self):
         """Test adding custom API-related settings."""
@@ -407,8 +413,10 @@ class TestExtensibilityUseCases:
         )
 
         settings = get_settings()
-        assert settings.API_RATE_LIMIT == 5000
-        assert settings.API_TIMEOUT == 30
+        EXPECTED_RATE_LIMIT = 5000
+        EXPECTED_TIMEOUT = 30
+        assert settings.API_RATE_LIMIT == EXPECTED_RATE_LIMIT
+        assert settings.API_TIMEOUT == EXPECTED_TIMEOUT
         assert settings.CUSTOM_API_ENDPOINT == "https://api.example.com"
 
     def test_environment_specific_settings(self):
@@ -431,7 +439,8 @@ class TestExtensibilityUseCases:
             config_dict={"ENVIRONMENT": "development", "CACHE_TTL": 60},
         )
         dev_settings = get_settings()
-        assert dev_settings.CACHE_TTL == 60
+        EXPECTED_DEV_CACHE_TTL = 60
+        assert dev_settings.CACHE_TTL == EXPECTED_DEV_CACHE_TTL
 
         # Reset and test production environment
         reset_settings()
@@ -440,4 +449,5 @@ class TestExtensibilityUseCases:
             config_dict={"ENVIRONMENT": "production", "CACHE_TTL": 60},
         )
         prod_settings = get_settings()
-        assert prod_settings.CACHE_TTL == 3600  # Adjusted by validator
+        EXPECTED_PROD_CACHE_TTL = 3600  # Adjusted by validator
+        assert prod_settings.CACHE_TTL == EXPECTED_PROD_CACHE_TTL

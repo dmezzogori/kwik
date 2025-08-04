@@ -97,22 +97,27 @@ class TestRoleCRUD:
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
 
+        # Test constants
+        TOTAL_ROLES = 5
+        PAGE_LIMIT = 3
+        REMAINING_ROLES = 2
+
         # Create multiple test roles
         roles = []
-        for i in range(5):
+        for i in range(TOTAL_ROLES):
             role = create_test_role(db_session, name=f"Role {i}")
             roles.append(role)
 
         # Get multiple roles
-        count, retrieved_roles = crud.roles.get_multi(skip=0, limit=3)
+        count, retrieved_roles = crud.roles.get_multi(skip=0, limit=PAGE_LIMIT)
 
-        assert count == 5  # Total count
-        assert len(retrieved_roles) == 3  # Limited to 3
+        assert count == TOTAL_ROLES  # Total count
+        assert len(retrieved_roles) == PAGE_LIMIT  # Limited to 3
 
         # Test pagination
-        count, second_page = crud.roles.get_multi(skip=3, limit=3)
-        assert count == 5
-        assert len(second_page) == 2  # Remaining roles
+        count, second_page = crud.roles.get_multi(skip=PAGE_LIMIT, limit=PAGE_LIMIT)
+        assert count == TOTAL_ROLES
+        assert len(second_page) == REMAINING_ROLES  # Remaining roles
 
     def test_get_multi_with_filters(self, db_session, clean_db, user_context) -> None:
         """Test getting multiple roles with filters."""
@@ -126,7 +131,8 @@ class TestRoleCRUD:
 
         # Filter by is_active
         count, active_roles = crud.roles.get_multi(is_active=True)
-        assert count == 2  # Active Role and Locked Role
+        EXPECTED_ACTIVE_ROLES = 2  # Active Role and Locked Role
+        assert count == EXPECTED_ACTIVE_ROLES
 
         count, inactive_roles = crud.roles.get_multi(is_active=False)
         assert count == 1
@@ -168,7 +174,8 @@ class TestRoleCRUD:
         # Get all roles
         all_roles = crud.roles.get_all()
 
-        assert len(all_roles) == 3
+        EXPECTED_TOTAL_ROLES = 3
+        assert len(all_roles) == EXPECTED_TOTAL_ROLES
         role_names = [role.name for role in all_roles]
         assert "Role 1" in role_names
         assert "Role 2" in role_names

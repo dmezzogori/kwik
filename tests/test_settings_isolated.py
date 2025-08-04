@@ -63,8 +63,9 @@ def test_dict_source_loads_from_dict():
     source = DictSource(test_dict)
     config = source.load()
 
+    DICT_SOURCE_PRIORITY = 2
     assert config == test_dict
-    assert source.priority == 2
+    assert source.priority == DICT_SOURCE_PRIORITY
 
 
 def test_file_source_loads_json():
@@ -83,8 +84,9 @@ def test_file_source_loads_json():
         source = FileSource(json_file)
         config = source.load()
 
+        FILE_SOURCE_PRIORITY = 3
         assert config == test_config
-        assert source.priority == 3
+        assert source.priority == FILE_SOURCE_PRIORITY
     finally:
         os.unlink(json_file)
 
@@ -141,7 +143,8 @@ def test_configure_kwik_with_custom_settings():
 
         assert isinstance(settings, TestCustomSettings)
         assert settings.CUSTOM_SETTING == "DEFAULT_VALUE"  # Validator uppercases
-        assert settings.CUSTOM_INT_SETTING == 42
+        EXPECTED_INT_VALUE = 42
+        assert settings.CUSTOM_INT_SETTING == EXPECTED_INT_VALUE
     finally:
         reset_settings()
 
@@ -178,7 +181,8 @@ def test_extensibility_custom_feature_flags():
         settings = get_settings()
         assert settings.FEATURE_X_ENABLED is True
         assert settings.FEATURE_Y_ENABLED is True  # Default
-        assert settings.FEATURE_Z_ROLLOUT_PERCENTAGE == 50
+        EXPECTED_ROLLOUT_PERCENTAGE = 50
+        assert settings.FEATURE_Z_ROLLOUT_PERCENTAGE == EXPECTED_ROLLOUT_PERCENTAGE
     finally:
         reset_settings()
 
