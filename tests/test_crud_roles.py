@@ -25,7 +25,7 @@ class TestRoleCRUD:
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
 
-        created_role = crud.role.create(obj_in=role_data)
+        created_role = crud.roles.create(obj_in=role_data)
 
         assert created_role.name == "Test Role"
         assert created_role.is_active is True
@@ -41,7 +41,7 @@ class TestRoleCRUD:
         role = create_test_role(db_session, name="Get Test Role")
 
         # Get the role by ID
-        retrieved_role = crud.role.get(id=role.id)
+        retrieved_role = crud.roles.get(id=role.id)
 
         assert retrieved_role is not None
         assert retrieved_role.id == role.id
@@ -52,7 +52,7 @@ class TestRoleCRUD:
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
 
-        retrieved_role = crud.role.get(id=99999)
+        retrieved_role = crud.roles.get(id=99999)
         assert retrieved_role is None
 
     def test_update_role(self, db_session, clean_db, user_context) -> None:
@@ -65,7 +65,7 @@ class TestRoleCRUD:
 
         # Update the role
         update_data = schemas.RoleUpdate(name="Updated Role")
-        updated_role = crud.role.update(db_obj=role, obj_in=update_data)
+        updated_role = crud.roles.update(db_obj=role, obj_in=update_data)
 
         assert updated_role.id == role.id
         assert updated_role.name == "Updated Role"
@@ -80,7 +80,7 @@ class TestRoleCRUD:
         role = create_test_role(db_session)
 
         # Get the role using get_if_exist
-        retrieved_role = crud.role.get_if_exist(id=role.id)
+        retrieved_role = crud.roles.get_if_exist(id=role.id)
 
         assert retrieved_role.id == role.id
 
@@ -90,7 +90,7 @@ class TestRoleCRUD:
         db_conn_ctx_var.set(db_session)
 
         with pytest.raises(NotFound):
-            crud.role.get_if_exist(id=99999)
+            crud.roles.get_if_exist(id=99999)
 
     def test_get_multi_roles(self, db_session, clean_db, user_context) -> None:
         """Test getting multiple roles with pagination."""
@@ -104,13 +104,13 @@ class TestRoleCRUD:
             roles.append(role)
 
         # Get multiple roles
-        count, retrieved_roles = crud.role.get_multi(skip=0, limit=3)
+        count, retrieved_roles = crud.roles.get_multi(skip=0, limit=3)
 
         assert count == 5  # Total count
         assert len(retrieved_roles) == 3  # Limited to 3
 
         # Test pagination
-        count, second_page = crud.role.get_multi(skip=3, limit=3)
+        count, second_page = crud.roles.get_multi(skip=3, limit=3)
         assert count == 5
         assert len(second_page) == 2  # Remaining roles
 
@@ -125,15 +125,15 @@ class TestRoleCRUD:
         create_test_role(db_session, name="Locked Role", is_locked=True)
 
         # Filter by is_active
-        count, active_roles = crud.role.get_multi(is_active=True)
+        count, active_roles = crud.roles.get_multi(is_active=True)
         assert count == 2  # Active Role and Locked Role
 
-        count, inactive_roles = crud.role.get_multi(is_active=False)
+        count, inactive_roles = crud.roles.get_multi(is_active=False)
         assert count == 1
         assert inactive_roles[0].name == "Inactive Role"
 
         # Filter by is_locked
-        count, locked_roles = crud.role.get_multi(is_locked=True)
+        count, locked_roles = crud.roles.get_multi(is_locked=True)
         assert count == 1
         assert locked_roles[0].name == "Locked Role"
 
@@ -147,12 +147,12 @@ class TestRoleCRUD:
         role_id = role.id
 
         # Delete the role (hard delete)
-        deleted_role = crud.role.delete(id=role_id)
+        deleted_role = crud.roles.delete(id=role_id)
 
         assert deleted_role.id == role_id
 
         # Verify role is completely removed
-        retrieved_role = crud.role.get(id=role_id)
+        retrieved_role = crud.roles.get(id=role_id)
         assert retrieved_role is None  # Should not be found after deletion
 
     def test_get_all_roles(self, db_session, clean_db, user_context) -> None:
@@ -166,7 +166,7 @@ class TestRoleCRUD:
         create_test_role(db_session, name="Role 3")
 
         # Get all roles
-        all_roles = crud.role.get_all()
+        all_roles = crud.roles.get_all()
 
         assert len(all_roles) == 3
         role_names = [role.name for role in all_roles]

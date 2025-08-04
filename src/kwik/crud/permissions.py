@@ -24,7 +24,7 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionDefinition, s
 
         """
         permission = self.get_if_exist(id=permission_id)
-        role = crud.role.get_if_exist(id=role_id)
+        role = crud.roles.get_if_exist(id=role_id)
 
         role_permission_db = roles_permissions.get_by_permission_id_and_role_id(
             role_id=role.id,
@@ -46,7 +46,7 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionDefinition, s
 
         """
         permission = self.get_if_exist(id=permission_id)
-        role = crud.role.get_if_exist(id=role_id)
+        role = crud.roles.get_if_exist(id=role_id)
 
         role_permission_db = roles_permissions.get_by_permission_id_and_role_id(
             role_id=role.id,

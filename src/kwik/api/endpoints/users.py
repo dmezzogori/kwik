@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import kwik.typings
 from kwik.api.deps import Pagination, current_user, has_permission
 from kwik.core.enum import Permissions
-from kwik.crud import role, users
+from kwik.crud import roles, users
 from kwik.exceptions import DuplicatedEntity, Forbidden
 from kwik.routers import AuditorRouter
 from kwik.schemas import (
@@ -119,7 +119,7 @@ def update_password(
 @router.get("/me/roles", response_model=list[RoleProfile])
 def read_roles_of_current_user(user: current_user) -> list[Role]:
     """Get roles of the current logged-in user."""
-    return role.get_multi_by_user_id(user_id=user.id)
+    return roles.get_multi_by_user_id(user_id=user.id)
 
 
 @router.get(
@@ -130,7 +130,7 @@ def read_roles_of_current_user(user: current_user) -> list[Role]:
 def read_user_roles(user_id: int) -> list[Role]:
     """Get all roles assigned to a specific user."""
     users.get_if_exist(id=user_id)  # Ensure user exists
-    return role.get_multi_by_user_id(user_id=user_id)
+    return roles.get_multi_by_user_id(user_id=user_id)
 
 
 @router.post(
@@ -141,8 +141,8 @@ def read_user_roles(user_id: int) -> list[Role]:
 def assign_role_to_user(user_id: int, role_assignment: UserRoleAssignment) -> Role:
     """Assign a role to a user."""
     user_db = users.get_if_exist(id=user_id)
-    role_db = role.get_if_exist(id=role_assignment.role_id)
-    return role.associate_user(user_db=user_db, role_db=role_db)
+    role_db = roles.get_if_exist(id=role_assignment.role_id)
+    return roles.associate_user(user_db=user_db, role_db=role_db)
 
 
 @router.delete(
@@ -153,8 +153,8 @@ def assign_role_to_user(user_id: int, role_assignment: UserRoleAssignment) -> Ro
 def remove_role_from_user(user_id: int, role_id: int) -> Role:
     """Remove a role from a user."""
     user_db = users.get_if_exist(id=user_id)
-    role_db = role.get_if_exist(id=role_id)
-    return role.purge_user(user_db=user_db, role_db=role_db)
+    role_db = roles.get_if_exist(id=role_id)
+    return roles.purge_user(user_db=user_db, role_db=role_db)
 
 
 @router.get("/me/permissions", response_model=list[PermissionProfile])

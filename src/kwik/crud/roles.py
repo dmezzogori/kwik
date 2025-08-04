@@ -99,4 +99,4 @@ class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleDefinition, schemas.RoleUpd
         return role_db
 
 
-role = AutoCRUDRole()
+roles = AutoCRUDRole()

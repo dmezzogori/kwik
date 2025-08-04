@@ -19,9 +19,8 @@ router = AuditorRouter(prefix="/roles")
 )
 def read_roles(paginated: kwik.api.deps.Pagination) -> kwik.typings.PaginatedResponse[models.Role]:
     """Retrieve roles."""
-    count, roles = crud.role.get_multi(**paginated)
+    count, roles = crud.roles.get_multi(**paginated)
     return kwik.typings.PaginatedResponse(data=roles, total=count)
-
 
 
 @router.get(
@@ -31,7 +30,7 @@ def read_roles(paginated: kwik.api.deps.Pagination) -> kwik.typings.PaginatedRes
 )
 def read_users_by_role(role_id: int) -> kwik.typings.PaginatedResponse[models.User]:
     """Get users by role."""
-    users = crud.role.get_users_by_role_id(role_id=role_id)
+    users = crud.roles.get_users_by_role_id(role_id=role_id)
     return kwik.typings.PaginatedResponse(data=users, total=len(users))
 
 
@@ -42,7 +41,7 @@ def read_users_by_role(role_id: int) -> kwik.typings.PaginatedResponse[models.Us
 )
 def read_users_not_in_role(role_id: int) -> kwik.typings.PaginatedResponse[models.User]:
     """Get all users not involved in the given role."""
-    users = crud.role.get_users_not_in_role(role_id=role_id)
+    users = crud.roles.get_users_not_in_role(role_id=role_id)
     return kwik.typings.PaginatedResponse(data=users, total=len(users))
 
 
@@ -53,7 +52,7 @@ def read_users_not_in_role(role_id: int) -> kwik.typings.PaginatedResponse[model
 )
 def read_permissions_by_role(role_id: int) -> kwik.typings.PaginatedResponse[models.Permission]:
     """Get permissions by role."""
-    permissions = crud.role.get_permissions_by_role_id(role_id=role_id)
+    permissions = crud.roles.get_permissions_by_role_id(role_id=role_id)
     return kwik.typings.PaginatedResponse(data=permissions, total=len(permissions))
 
 
@@ -64,7 +63,7 @@ def read_permissions_by_role(role_id: int) -> kwik.typings.PaginatedResponse[mod
 )
 def read_permissions_not_assigned_to_role(role_id: int) -> kwik.typings.PaginatedResponse[models.Permission]:
     """Get all permissions not assigned to the given role."""
-    permissions = crud.role.get_permissions_not_assigned_to_role(role_id=role_id)
+    permissions = crud.roles.get_permissions_not_assigned_to_role(role_id=role_id)
     return kwik.typings.PaginatedResponse(data=permissions, total=len(permissions))
 
 
@@ -75,7 +74,7 @@ def read_permissions_not_assigned_to_role(role_id: int) -> kwik.typings.Paginate
 )
 def read_role_by_id(role_id: int) -> models.Role:
     """Get a specific role by id."""
-    return crud.role.get(id=role_id)
+    return crud.roles.get(id=role_id)
 
 
 @router.put(
@@ -85,9 +84,8 @@ def read_role_by_id(role_id: int) -> models.Role:
 )
 def update_role(role_id: int, role_in: schemas.RoleUpdate) -> models.Role:
     """Update a role."""
-    role = crud.role.get_if_exist(id=role_id)
-    return crud.role.update(db_obj=role, obj_in=role_in)
-
+    role = crud.roles.get_if_exist(id=role_id)
+    return crud.roles.update(db_obj=role, obj_in=role_in)
 
 
 @router.post(
@@ -97,11 +95,11 @@ def update_role(role_id: int, role_in: schemas.RoleUpdate) -> models.Role:
 )
 def create_role(role_in: schemas.RoleDefinition) -> models.Role:
     """Create new role."""
-    role = crud.role.get_by_name(name=role_in.name)
+    role = crud.roles.get_by_name(name=role_in.name)
     if role is not None:
         raise DuplicatedEntity
 
-    return crud.role.create(obj_in=role_in)
+    return crud.roles.create(obj_in=role_in)
 
 
 @router.delete(
@@ -111,8 +109,8 @@ def create_role(role_in: schemas.RoleDefinition) -> models.Role:
 )
 def delete_role(role_id: int) -> models.Role:
     """Delete a role."""
-    crud.role.get_if_exist(id=role_id)
-    return crud.role.remove(id=role_id)
+    crud.roles.get_if_exist(id=role_id)
+    return crud.roles.remove(id=role_id)
 
 
 @router.delete(
@@ -122,4 +120,4 @@ def delete_role(role_id: int) -> models.Role:
 )
 def deprecate_role_by_name(name: str) -> models.Role:
     """Deprecate role. Remove all associated users."""
-    return crud.role.deprecate(name=name)
+    return crud.roles.deprecate(name=name)
