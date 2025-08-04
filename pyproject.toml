@@ -46,7 +46,7 @@ dev = [
 [tool.pytest.ini_options]
 addopts = "--cov=src/kwik --cov-report=term-missing --cov-report=xml -v"
 asyncio_mode = "auto"
-testpaths = ["src/tests"]
+testpaths = ["tests"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
@@ -101,5 +101,4 @@ unfixable = []
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*.py" = ["S101", "SLF001"]
-"src/tests/*.py" = ["S101", "SLF001"]
 "*/tests/*.py" = ["S101", "S311", "SLF001"]
