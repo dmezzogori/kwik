@@ -141,7 +141,7 @@ def client_no_auth(app: FastAPI, db_session: Session) -> Generator[TestClient, N
     db_conn_ctx_var.set(None)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def clean_db(db_session: Session) -> Generator[None, None, None]:
     """Clean database tables between tests."""
     # Delete all data from tables (in reverse order to handle foreign keys)

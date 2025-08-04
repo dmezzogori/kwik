@@ -50,7 +50,7 @@ class TestHealthEndpoints:
 class TestLoginEndpoints:
     """Test cases for authentication endpoints."""
 
-    def test_access_token_endpoint_with_invalid_credentials(self, client_no_auth: TestClient, db_session: Session, clean_db: Generator[None, None, None]) -> None:
+    def test_access_token_endpoint_with_invalid_credentials(self, client_no_auth: TestClient, db_session: Session) -> None:
         """Test login with invalid credentials returns 401."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -63,7 +63,7 @@ class TestLoginEndpoints:
         response = client_no_auth.post("/api/v1/login/access-token", data=login_data)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_access_token_endpoint_with_valid_credentials(self, client_no_auth: TestClient, db_session: Session, clean_db: Generator[None, None, None]) -> None:
+    def test_access_token_endpoint_with_valid_credentials(self, client_no_auth: TestClient, db_session: Session) -> None:
         """Test login with valid credentials returns token."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -90,7 +90,7 @@ class TestLoginEndpoints:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     @pytest.mark.skip(reason="Authentication mocking needs to be implemented")
-    def test_test_token_endpoint_with_valid_token(self, client_no_auth: TestClient, db_session: Session, clean_db: Generator[None, None, None]) -> None:
+    def test_test_token_endpoint_with_valid_token(self, client_no_auth: TestClient, db_session: Session) -> None:
         """Test test-token endpoint with valid authentication."""
         # TODO: Implement authentication mocking for this test
         # This would require creating a valid JWT token and setting it in headers
@@ -156,6 +156,6 @@ class TestAPIIntegration:
     """Integration tests for API endpoints."""
 
     @pytest.mark.skip(reason="Full integration tests require authentication setup")
-    def test_full_user_lifecycle(self, client: TestClient, db_session: Session, clean_db: Generator[None, None, None]) -> None:
+    def test_full_user_lifecycle(self, client: TestClient, db_session: Session) -> None:
         """Test full user lifecycle: create, read, update, delete."""
         # TODO: Implement full integration test once authentication is properly mocked
