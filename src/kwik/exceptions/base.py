@@ -15,7 +15,7 @@ class KwikException(Exception):
         super().__init__()
 
     @property
-    def http_exc(self):
+    def http_exc(self) -> HTTPException:
         """Convert Kwik exception to FastAPI HTTPException."""
         return HTTPException(status_code=self.status_code, detail=self.detail)
 

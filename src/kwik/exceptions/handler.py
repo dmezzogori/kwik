@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from kwik.exceptions import KwikException
 
 
-async def kwik_exception_handler(request: Request, exc: KwikException):
+async def kwik_exception_handler(request: Request, exc: KwikException) -> JSONResponse:
     """Handle KwikException by returning JSON response with error details."""
     return JSONResponse(
         status_code=exc.status_code,

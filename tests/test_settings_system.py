@@ -42,7 +42,7 @@ class TestCustomSettings(BaseKwikSettings):
 class TestSettingsSources:
     """Test configuration sources."""
 
-    def test_environment_source_loads_from_env(self):
+    def test_environment_source_loads_from_env(self) -> None:
         """Test EnvironmentSource loads from environment variables."""
         # Set up environment variable
         os.environ["TEST_SETTING"] = "test_value"
@@ -58,7 +58,7 @@ class TestSettingsSources:
             # Clean up
             os.environ.pop("TEST_SETTING", None)
 
-    def test_environment_source_loads_from_env_file(self):
+    def test_environment_source_loads_from_env_file(self) -> None:
         """Test EnvironmentSource loads from .env file."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".env", delete=False) as f:
             f.write("TEST_SETTING=from_file\n")
@@ -77,7 +77,7 @@ class TestSettingsSources:
         finally:
             os.unlink(env_file)
 
-    def test_dict_source_loads_from_dict(self):
+    def test_dict_source_loads_from_dict(self) -> None:
         """Test DictSource loads from dictionary."""
         test_dict = {
             "TEST_SETTING": "dict_value",
@@ -91,7 +91,7 @@ class TestSettingsSources:
         assert config == test_dict
         assert source.priority == DICT_SOURCE_PRIORITY
 
-    def test_file_source_loads_json(self):
+    def test_file_source_loads_json(self) -> None:
         """Test FileSource loads from JSON file."""
         test_config = {
             "BACKEND_PORT": 9000,
@@ -113,14 +113,14 @@ class TestSettingsSources:
         finally:
             os.unlink(json_file)
 
-    def test_file_source_handles_missing_file(self):
+    def test_file_source_handles_missing_file(self) -> None:
         """Test FileSource handles missing files gracefully."""
         source = FileSource("nonexistent.json")
         config = source.load()
 
         assert config == {}
 
-    def test_file_source_raises_for_unsupported_format(self):
+    def test_file_source_raises_for_unsupported_format(self) -> None:
         """Test FileSource raises error for unsupported file formats."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write("test content")
@@ -137,11 +137,11 @@ class TestSettingsSources:
 class TestSettingsRegistry:
     """Test settings registry functionality."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up test registry."""
         self.registry = SettingsRegistry()
 
-    def test_add_source_and_priority_ordering(self):
+    def test_add_source_and_priority_ordering(self) -> None:
         """Test adding sources and priority ordering."""
         env_source = EnvironmentSource()
         dict_source = DictSource({"TEST": "dict"})
@@ -157,12 +157,12 @@ class TestSettingsRegistry:
         assert self.registry._sources[1] == dict_source
         assert self.registry._sources[2] == file_source
 
-    def test_set_settings_class(self):
+    def test_set_settings_class(self) -> None:
         """Test setting custom settings class."""
         self.registry.set_settings_class(TestCustomSettings)
         assert self.registry._settings_class == TestCustomSettings
 
-    def test_get_merged_config(self):
+    def test_get_merged_config(self) -> None:
         """Test configuration merging with priority."""
         # Add sources with conflicting values
         dict_source1 = DictSource({"SETTING": "low_priority", "UNIQUE1": "value1"})
@@ -183,7 +183,7 @@ class TestSettingsRegistry:
         assert config["UNIQUE1"] == "value1"
         assert config["UNIQUE2"] == "value2"
 
-    def test_get_settings_instance_caching(self):
+    def test_get_settings_instance_caching(self) -> None:
         """Test settings instance caching."""
         self.registry.add_source(DictSource({"PROJECT_NAME": "test"}))
 
@@ -193,7 +193,7 @@ class TestSettingsRegistry:
         assert instance1 is instance2  # Same instance
         assert instance1.PROJECT_NAME == "test"
 
-    def test_reset_clears_state(self):
+    def test_reset_clears_state(self) -> None:
         """Test reset clears registry state."""
         self.registry.add_source(DictSource({"TEST": "value"}))
         self.registry.set_settings_class(TestCustomSettings)
@@ -213,22 +213,22 @@ class TestSettingsRegistry:
 class TestSettingsFactory:
     """Test settings factory functionality."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up test factory."""
         self.factory = SettingsFactory()
 
-    def teardown_method(self):
+    def teardown_method(self) -> None:
         """Clean up after each test."""
         self.factory.reset()
 
-    def test_default_configuration(self):
+    def test_default_configuration(self) -> None:
         """Test factory with default configuration."""
         settings = self.factory.get_settings()
 
         assert isinstance(settings, BaseKwikSettings)
         assert settings.PROJECT_NAME == "kwik"  # Default value
 
-    def test_configure_with_custom_class(self):
+    def test_configure_with_custom_class(self) -> None:
         """Test configuring with custom settings class."""
         self.factory.configure(settings_class=TestCustomSettings)
         settings = self.factory.get_settings()
@@ -238,7 +238,7 @@ class TestSettingsFactory:
         EXPECTED_INT_VALUE = 42
         assert settings.CUSTOM_INT_SETTING == EXPECTED_INT_VALUE
 
-    def test_configure_with_dict(self):
+    def test_configure_with_dict(self) -> None:
         """Test configuring with dictionary."""
         config = {
             "PROJECT_NAME": "test_project",
@@ -254,7 +254,7 @@ class TestSettingsFactory:
         assert settings.BACKEND_PORT == EXPECTED_PORT
         assert settings.DEBUG is True
 
-    def test_configure_with_file(self):
+    def test_configure_with_file(self) -> None:
         """Test configuring with file."""
         config = {"PROJECT_NAME": "file_project", "BACKEND_PORT": 8888}
 
@@ -272,7 +272,7 @@ class TestSettingsFactory:
         finally:
             os.unlink(config_file)
 
-    def test_priority_ordering(self):
+    def test_priority_ordering(self) -> None:
         """Test configuration source priority ordering."""
         # Set up environment variable (highest priority)
         os.environ["TEST_PRIORITY"] = "from_env"
@@ -310,11 +310,11 @@ class TestSettingsFactory:
 class TestConfigureKwikFunction:
     """Test the configure_kwik function."""
 
-    def teardown_method(self):
+    def teardown_method(self) -> None:
         """Clean up after each test."""
         reset_settings()
 
-    def test_configure_with_custom_settings(self):
+    def test_configure_with_custom_settings(self) -> None:
         """Test configure_kwik with custom settings class."""
         configure_kwik(settings_class=TestCustomSettings)
         settings = get_settings()
@@ -322,14 +322,14 @@ class TestConfigureKwikFunction:
         assert isinstance(settings, TestCustomSettings)
         assert settings.CUSTOM_SETTING == "DEFAULT_VALUE"
 
-    def test_configure_with_dict(self):
+    def test_configure_with_dict(self) -> None:
         """Test configure_kwik with dictionary."""
         configure_kwik(config_dict={"PROJECT_NAME": "configured_project"})
         settings = get_settings()
 
         assert settings.PROJECT_NAME == "configured_project"
 
-    def test_configure_with_env_override(self):
+    def test_configure_with_env_override(self) -> None:
         """Test configure_kwik respects environment variable override."""
         os.environ["PROJECT_NAME"] = "env_project"
 
@@ -342,7 +342,7 @@ class TestConfigureKwikFunction:
         finally:
             os.environ.pop("PROJECT_NAME", None)
 
-    def test_multiple_configure_calls(self):
+    def test_multiple_configure_calls(self) -> None:
         """Test multiple configure_kwik calls."""
         # First configuration
         configure_kwik(config_dict={"PROJECT_NAME": "first"})
@@ -358,7 +358,7 @@ class TestConfigureKwikFunction:
 class TestBackwardCompatibility:
     """Test backward compatibility with existing code."""
 
-    def teardown_method(self):
+    def teardown_method(self) -> None:
         """Clean up after each test."""
         reset_settings()
 
@@ -367,11 +367,11 @@ class TestBackwardCompatibility:
 class TestExtensibilityUseCases:
     """Test real-world extensibility use cases."""
 
-    def teardown_method(self):
+    def teardown_method(self) -> None:
         """Clean up after each test."""
         reset_settings()
 
-    def test_custom_feature_flags(self):
+    def test_custom_feature_flags(self) -> None:
         """Test adding custom feature flags."""
         class FeatureFlagSettings(BaseKwikSettings):
             FEATURE_X_ENABLED: bool = False
@@ -392,7 +392,7 @@ class TestExtensibilityUseCases:
         EXPECTED_ROLLOUT_PERCENTAGE = 50
         assert settings.FEATURE_Z_ROLLOUT_PERCENTAGE == EXPECTED_ROLLOUT_PERCENTAGE
 
-    def test_custom_api_settings(self):
+    def test_custom_api_settings(self) -> None:
         """Test adding custom API-related settings."""
         class APISettings(BaseKwikSettings):
             API_RATE_LIMIT: int = 1000
@@ -419,7 +419,7 @@ class TestExtensibilityUseCases:
         assert settings.API_TIMEOUT == EXPECTED_TIMEOUT
         assert settings.CUSTOM_API_ENDPOINT == "https://api.example.com"
 
-    def test_environment_specific_settings(self):
+    def test_environment_specific_settings(self) -> None:
         """Test environment-specific configuration."""
         class EnvironmentSettings(BaseKwikSettings):
             ENVIRONMENT: str = "development"

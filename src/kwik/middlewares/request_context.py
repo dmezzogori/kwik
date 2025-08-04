@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
+from starlette.responses import Response
 
 REQUEST_ID_CTX_KEY = "request_id"
 
@@ -22,7 +23,7 @@ def get_request_id() -> str:
 class RequestContextMiddleware(BaseHTTPMiddleware):
     """Middleware for setting unique request IDs in context variables."""
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         """Set unique request ID in context for request lifetime."""
         token = _request_id_ctx_var.set(str(uuid4()))
         response = await call_next(request)

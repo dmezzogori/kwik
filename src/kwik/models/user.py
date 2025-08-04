@@ -1,7 +1,14 @@
 """Database models for user management and permissions."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
+
+if TYPE_CHECKING:
+    from kwik.models.user import Permission
 
 from kwik.database.base import Base
 from kwik.database.mixins import RecordInfoMixin
@@ -29,7 +36,7 @@ class User(Base):
     )
 
     @property
-    def permissions(self):
+    def permissions(self) -> list[Permission]:
         """Get all permissions from all user roles."""
         return [permission for role in self.roles for permission in role.permissions]
 

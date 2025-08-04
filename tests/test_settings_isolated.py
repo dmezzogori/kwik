@@ -36,7 +36,7 @@ class TestCustomSettings(BaseKwikSettings):
         return v.upper()
 
 
-def test_environment_source_loads_from_env():
+def test_environment_source_loads_from_env() -> None:
     """Test EnvironmentSource loads from environment variables."""
     # Set up environment variable
     os.environ["TEST_SETTING"] = "test_value"
@@ -53,7 +53,7 @@ def test_environment_source_loads_from_env():
         os.environ.pop("TEST_SETTING", None)
 
 
-def test_dict_source_loads_from_dict():
+def test_dict_source_loads_from_dict() -> None:
     """Test DictSource loads from dictionary."""
     test_dict = {
         "TEST_SETTING": "dict_value",
@@ -68,7 +68,7 @@ def test_dict_source_loads_from_dict():
     assert source.priority == DICT_SOURCE_PRIORITY
 
 
-def test_file_source_loads_json():
+def test_file_source_loads_json() -> None:
     """Test FileSource loads from JSON file."""
     test_config = {
         "BACKEND_PORT": 9000,
@@ -91,7 +91,7 @@ def test_file_source_loads_json():
         os.unlink(json_file)
 
 
-def test_settings_registry_add_source_and_priority_ordering():
+def test_settings_registry_add_source_and_priority_ordering() -> None:
     """Test adding sources and priority ordering."""
     registry = SettingsRegistry()
 
@@ -110,7 +110,7 @@ def test_settings_registry_add_source_and_priority_ordering():
     assert registry._sources[2] == file_source
 
 
-def test_settings_registry_merged_config():
+def test_settings_registry_merged_config() -> None:
     """Test configuration merging with priority."""
     registry = SettingsRegistry()
 
@@ -134,7 +134,7 @@ def test_settings_registry_merged_config():
     assert config["UNIQUE2"] == "value2"
 
 
-def test_configure_kwik_with_custom_settings():
+def test_configure_kwik_with_custom_settings() -> None:
     """Test configure_kwik with custom settings class."""
     try:
         reset_settings()
@@ -149,7 +149,7 @@ def test_configure_kwik_with_custom_settings():
         reset_settings()
 
 
-def test_configure_kwik_with_dict():
+def test_configure_kwik_with_dict() -> None:
     """Test configure_kwik with dictionary."""
     try:
         reset_settings()
@@ -161,7 +161,7 @@ def test_configure_kwik_with_dict():
         reset_settings()
 
 
-def test_extensibility_custom_feature_flags():
+def test_extensibility_custom_feature_flags() -> None:
     """Test adding custom feature flags."""
     class FeatureFlagSettings(BaseKwikSettings):
         FEATURE_X_ENABLED: bool = False
@@ -187,7 +187,7 @@ def test_extensibility_custom_feature_flags():
         reset_settings()
 
 
-def test_priority_ordering_with_env():
+def test_priority_ordering_with_env() -> None:
     """Test configuration source priority ordering with environment variables."""
     # Set up environment variable (highest priority)
     os.environ["PROJECT_NAME"] = "from_env"
@@ -209,7 +209,7 @@ def test_priority_ordering_with_env():
         reset_settings()
 
 
-def test_multiple_configure_calls():
+def test_multiple_configure_calls() -> None:
     """Test multiple configure_kwik calls."""
     try:
         reset_settings()
@@ -227,7 +227,7 @@ def test_multiple_configure_calls():
         reset_settings()
 
 
-def test_lazy_loading():
+def test_lazy_loading() -> None:
     """Test that settings are loaded lazily."""
     try:
         reset_settings()
