@@ -18,7 +18,6 @@ from typing import Any, ClassVar
 from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, validator
 
 
-
 class ConfigurationSource(ABC):
     """Abstract base class for configuration sources."""
 
