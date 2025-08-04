@@ -14,9 +14,9 @@ class _BaseSchema(BaseModel):
     after: Any | None = None
 
 
-class LogORMSchema(ORMMixin, _BaseSchema):
-    """ORM schema for application log entries with database ID."""
+class LogProfile(ORMMixin, _BaseSchema):
+    """Schema for application log profile information with database ID."""
 
 
-class LogCreateSchema(_BaseSchema):
+class LogEntry(_BaseSchema):
     """Schema for creating new application log entries."""

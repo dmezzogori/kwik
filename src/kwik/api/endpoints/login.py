@@ -33,7 +33,7 @@ def login_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()
     return kwik.core.security.create_token(user_id=user.id)
 
 
-@router.post("/test-token", response_model=kwik.schemas.UserORMSchema)
+@router.post("/test-token", response_model=kwik.schemas.UserProfile)
 def test_token(current_user: kwik.api.deps.current_user) -> kwik.models.User:
     """Test access token."""
     return current_user
@@ -75,7 +75,7 @@ def is_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusable_
 
 
 @router.post("/stop_impersonating", response_model=kwik.typings.Token)
-def stop_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusable_oauth2)]):
+def stop_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusable_oauth2)]) -> kwik.typings.Token:
     """
     Stop impersonating and return the original token.
 

@@ -6,16 +6,16 @@ from fastapi.encoders import jsonable_encoder
 
 from kwik import models
 from kwik.models import User
-from kwik.schemas import LogCreateSchema
-from kwik.schemas.logs import LogORMSchema
+from kwik.schemas import LogEntry
+from kwik.schemas.logs import LogProfile
 
 from .auto_crud import AutoCRUD
 
 
-class CRUDLogs(AutoCRUD[models.Log, LogCreateSchema, LogORMSchema]):
+class CRUDLogs(AutoCRUD[models.Log, LogEntry, LogProfile]):
     """CRUD operations for application log entries with user tracking."""
 
-    def create(self, *, obj_in: LogCreateSchema, user: User | None = None) -> models.Log:
+    def create(self, *, obj_in: LogEntry, user: User | None = None) -> models.Log:
         """Create new log entry with optional user association."""
         obj_in_data = jsonable_encoder(obj_in)
         if user is not None:

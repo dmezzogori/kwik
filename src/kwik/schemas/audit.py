@@ -20,9 +20,9 @@ class _BaseSchema(BaseModel):
     status_code: str | None = None
 
 
-class AuditORMSchema(ORMMixin, _BaseSchema):
-    """ORM schema for audit entries with database ID."""
+class AuditProfile(ORMMixin, _BaseSchema):
+    """Schema for audit profile information with database ID."""
 
 
-class AuditCreateSchema(_BaseSchema):
+class AuditEntry(_BaseSchema):
     """Schema for creating new audit log entries."""

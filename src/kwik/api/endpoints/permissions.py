@@ -9,7 +9,7 @@ from kwik.api.deps import Pagination, has_permission
 from kwik.core.enum import Permissions
 from kwik.exceptions import DuplicatedEntity
 from kwik.routers import AuditorRouter
-from kwik.schemas import Paginated, PermissionCreate, PermissionORMSchema, PermissionUpdate
+from kwik.schemas import Paginated, PermissionDefinition, PermissionProfile, PermissionUpdate
 from kwik.typings import PaginatedResponse
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ router = AuditorRouter(prefix="/permissions")
 
 @router.get(
     "/",
-    response_model=Paginated[PermissionORMSchema],
+    response_model=Paginated[PermissionProfile],
     dependencies=(has_permission(Permissions.permissions_management_read),),
 )
 def get_many_permissions(paginated: Pagination) -> PaginatedResponse[Permission]:
@@ -37,7 +37,7 @@ def get_many_permissions(paginated: Pagination) -> PaginatedResponse[Permission]
 
 @router.get(
     "/{permission_id}",
-    response_model=PermissionORMSchema,
+    response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_read),),
 )
 def get_single_permission(permission_id: int) -> Permission:
@@ -56,10 +56,10 @@ def get_single_permission(permission_id: int) -> Permission:
 
 @router.post(
     "",
-    response_model=PermissionORMSchema,
+    response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_create),),
 )
-def create_permission(permission_in: PermissionCreate) -> Permission:
+def create_permission(permission_in: PermissionDefinition) -> Permission:
     """
     Create new permission.
 
@@ -79,7 +79,7 @@ def create_permission(permission_in: PermissionCreate) -> Permission:
 
 @router.post(
     "/{permission_id}/{role_id}",
-    response_model=PermissionORMSchema,
+    response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_update),),
 )
 def associate_permission_to_role(permission_id: int, role_id: int) -> Permission:
@@ -98,7 +98,7 @@ def associate_permission_to_role(permission_id: int, role_id: int) -> Permission
 
 @router.put(
     "/{permission_id}",
-    response_model=PermissionORMSchema,
+    response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_update),),
 )
 def update_permission(permission_id: int, permission_in: PermissionUpdate) -> Permission:
@@ -118,7 +118,7 @@ def update_permission(permission_id: int, permission_in: PermissionUpdate) -> Pe
 
 @router.delete(
     "/{permission_id}/roles",
-    response_model=PermissionORMSchema,
+    response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_delete),),
 )
 def purge_all_roles(permission_id: int) -> Permission:
@@ -139,7 +139,7 @@ def purge_all_roles(permission_id: int) -> Permission:
 
 @router.delete(
     "/{permission_id}/{role_id}",
-    response_model=PermissionORMSchema,
+    response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_delete),),
 )
 def purge_role_from_permission(permission_id: int, role_id: int) -> Permission:
@@ -155,7 +155,7 @@ def purge_role_from_permission(permission_id: int, role_id: int) -> Permission:
 
 @router.delete(
     "/{permission_id}",
-    response_model=PermissionORMSchema,
+    response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_delete),),
 )
 def delete_permission(permission_id: int) -> Permission:

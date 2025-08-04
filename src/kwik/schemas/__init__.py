@@ -8,47 +8,47 @@ and API schema definitions across the kwik web framework.
 from __future__ import annotations
 
 from . import role_permissions
-from .audit import AuditCreateSchema, AuditORMSchema
-from .login import RecoverPassword
-from .logs import LogCreateSchema, LogORMSchema
+from .audit import AuditEntry, AuditProfile
+from .login import PasswordRecoveryRequest
+from .logs import LogEntry, LogProfile
 from .mixins.orm import ORMMixin
 from .mixins.record_info import RecordInfoMixin
 from .pagination import Paginated
-from .permission import PermissionCreate, PermissionORMSchema, PermissionUpdate
-from .role import Role, RoleCreate, RoleInDB, RoleUpdate, UserRoleCreate, UserRoleRemove
+from .permission import PermissionDefinition, PermissionProfile, PermissionUpdate
+from .role import RoleDefinition, RoleInDB, RoleProfile, RoleUpdate, UserRoleAssignment, UserRoleRevocation
 from .token import Token, TokenPayload
 from .user import (
-    UserChangePasswordSchema,
-    UserCreateSchema,
-    UserORMExtendedSchema,
-    UserORMSchema,
-    UserUpdateSchema,
+    UserAuthenticationInfo,
+    UserPasswordChange,
+    UserProfile,
+    UserProfileUpdate,
+    UserRegistration,
 )
 
 __all__ = [
-    "AuditCreateSchema",
-    "AuditORMSchema",
-    "LogCreateSchema",
-    "LogORMSchema",
+    "AuditEntry",
+    "AuditProfile",
+    "LogEntry",
+    "LogProfile",
     "ORMMixin",
     "Paginated",
-    "PermissionCreate",
-    "PermissionORMSchema",
+    "PasswordRecoveryRequest",
+    "PermissionDefinition",
+    "PermissionProfile",
     "PermissionUpdate",
     "RecordInfoMixin",
-    "RecoverPassword",
-    "Role",
-    "RoleCreate",
+    "RoleDefinition",
     "RoleInDB",
+    "RoleProfile",
     "RoleUpdate",
     "Token",
     "TokenPayload",
-    "UserChangePasswordSchema",
-    "UserCreateSchema",
-    "UserORMExtendedSchema",
-    "UserORMSchema",
-    "UserRoleCreate",
-    "UserRoleRemove",
-    "UserUpdateSchema",
+    "UserAuthenticationInfo",
+    "UserPasswordChange",
+    "UserProfile",
+    "UserProfileUpdate",
+    "UserRegistration",
+    "UserRoleAssignment",
+    "UserRoleRevocation",
     "role_permissions",
 ]

@@ -14,7 +14,7 @@ router = AuditorRouter(prefix="/roles")
 
 @router.get(
     "/",
-    response_model=schemas.Paginated[schemas.Role],
+    response_model=schemas.Paginated[schemas.RoleProfile],
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
 )
 def read_roles(paginated: kwik.api.deps.Pagination) -> kwik.typings.PaginatedResponse[models.Role]:
@@ -25,7 +25,7 @@ def read_roles(paginated: kwik.api.deps.Pagination) -> kwik.typings.PaginatedRes
 
 @router.get(
     "/me",
-    response_model=list[schemas.Role],
+    response_model=list[schemas.RoleProfile],
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
 )
 def read_role_of_logged_user(current_user: kwik.api.deps.current_user) -> list[models.Role]:
@@ -35,7 +35,7 @@ def read_role_of_logged_user(current_user: kwik.api.deps.current_user) -> list[m
 
 @router.get(
     "/{role_id}/users",
-    response_model=schemas.Paginated[schemas.UserORMSchema],
+    response_model=schemas.Paginated[schemas.UserProfile],
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
 )
 def read_users_by_role(role_id: int) -> kwik.typings.PaginatedResponse[models.User]:
@@ -46,7 +46,7 @@ def read_users_by_role(role_id: int) -> kwik.typings.PaginatedResponse[models.Us
 
 @router.get(
     "/{role_id}/assignable-users",
-    response_model=schemas.Paginated[schemas.UserORMSchema],
+    response_model=schemas.Paginated[schemas.UserProfile],
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
 )
 def read_users_not_in_role(role_id: int) -> kwik.typings.PaginatedResponse[models.User]:
@@ -57,10 +57,10 @@ def read_users_not_in_role(role_id: int) -> kwik.typings.PaginatedResponse[model
 
 @router.get(
     "/{role_id}/permissions",
-    response_model=schemas.Paginated[schemas.PermissionORMSchema],
+    response_model=schemas.Paginated[schemas.PermissionProfile],
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
 )
-def read_users_by_role(role_id: int) -> kwik.typings.PaginatedResponse[models.Permission]:
+def read_permissions_by_role(role_id: int) -> kwik.typings.PaginatedResponse[models.Permission]:
     """Get permissions by role."""
     permissions = crud.role.get_permissions_by_role_id(role_id=role_id)
     return kwik.typings.PaginatedResponse(data=permissions, total=len(permissions))
@@ -68,7 +68,7 @@ def read_users_by_role(role_id: int) -> kwik.typings.PaginatedResponse[models.Pe
 
 @router.get(
     "/{role_id}/assignable-permissions",
-    response_model=schemas.Paginated[schemas.PermissionORMSchema],
+    response_model=schemas.Paginated[schemas.PermissionProfile],
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
 )
 def read_permissions_not_assigned_to_role(role_id: int) -> kwik.typings.PaginatedResponse[models.Permission]:
@@ -79,7 +79,7 @@ def read_permissions_not_assigned_to_role(role_id: int) -> kwik.typings.Paginate
 
 @router.get(
     "/{role_id}",
-    response_model=schemas.Role,
+    response_model=schemas.RoleProfile,
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
 )
 def read_role_by_id(role_id: int) -> models.Role:
@@ -89,7 +89,7 @@ def read_role_by_id(role_id: int) -> models.Role:
 
 @router.put(
     "/{role_id}",
-    response_model=schemas.Role,
+    response_model=schemas.RoleProfile,
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_update),),
 )
 def update_role(role_id: int, role_in: schemas.RoleUpdate) -> models.Role:
@@ -100,10 +100,10 @@ def update_role(role_id: int, role_in: schemas.RoleUpdate) -> models.Role:
 
 @router.post(
     "/associate",
-    response_model=schemas.Role,
+    response_model=schemas.RoleProfile,
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_update),),
 )
-def associate_user_to_role(user_role_in: schemas.UserRoleCreate) -> models.Role:
+def associate_user_to_role(user_role_in: schemas.UserRoleAssignment) -> models.Role:
     """Associate user with role."""
     user = crud.users.get_if_exist(id=user_role_in.user_id)
     role = crud.role.get_if_exist(id=user_role_in.role_id)
@@ -112,10 +112,10 @@ def associate_user_to_role(user_role_in: schemas.UserRoleCreate) -> models.Role:
 
 @router.post(
     "/purge",
-    response_model=schemas.Role,
+    response_model=schemas.RoleProfile,
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_update),),
 )
-def purge_role_from_user(user_role_in: schemas.UserRoleRemove) -> models.Role:
+def purge_role_from_user(user_role_in: schemas.UserRoleRevocation) -> models.Role:
     """Remove role from user."""
     user = crud.users.get_if_exist(id=user_role_in.user_id)
     role = crud.role.get_if_exist(id=user_role_in.role_id)
@@ -124,10 +124,10 @@ def purge_role_from_user(user_role_in: schemas.UserRoleRemove) -> models.Role:
 
 @router.post(
     "",
-    response_model=schemas.Role,
+    response_model=schemas.RoleProfile,
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_create),),
 )
-def create_role(role_in: schemas.RoleCreate) -> models.Role:
+def create_role(role_in: schemas.RoleDefinition) -> models.Role:
     """Create new role."""
     role = crud.role.get_by_name(name=role_in.name)
     if role is not None:
@@ -138,7 +138,7 @@ def create_role(role_in: schemas.RoleCreate) -> models.Role:
 
 @router.delete(
     "/{role_id}",
-    response_model=schemas.Role,
+    response_model=schemas.RoleProfile,
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_delete),),
 )
 def delete_role(role_id: int) -> models.Role:
@@ -149,7 +149,7 @@ def delete_role(role_id: int) -> models.Role:
 
 @router.delete(
     "/{name}/deprecate",
-    response_model=schemas.Role,
+    response_model=schemas.RoleProfile,
     dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_delete),),
 )
 def deprecate_role_by_name(name: str) -> models.Role:

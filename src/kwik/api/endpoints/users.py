@@ -10,7 +10,7 @@ from kwik.core.enum import Permissions
 from kwik.crud import users
 from kwik.exceptions import DuplicatedEntity, Forbidden
 from kwik.routers import AuditorRouter
-from kwik.schemas import Paginated, UserChangePasswordSchema, UserCreateSchema, UserORMSchema, UserUpdateSchema
+from kwik.schemas import Paginated, UserPasswordChange, UserProfile, UserProfileUpdate, UserRegistration
 
 if TYPE_CHECKING:
     from kwik.models import User
@@ -20,7 +20,7 @@ router = AuditorRouter(prefix="/users")
 
 @router.get(
     "/",
-    response_model=Paginated[UserORMSchema],
+    response_model=Paginated[UserProfile],
     dependencies=(has_permission(Permissions.users_management_read),),
 )
 def read_users(pagination: Pagination) -> kwik.typings.PaginatedResponse[User]:
@@ -29,13 +29,13 @@ def read_users(pagination: Pagination) -> kwik.typings.PaginatedResponse[User]:
     return kwik.typings.PaginatedResponse(data=data, total=total)
 
 
-@router.get("/me", response_model=UserORMSchema)
+@router.get("/me", response_model=UserProfile)
 def read_user_me(user: current_user) -> User:
     """Get current user."""
     return user
 
 
-@router.get("/{user_id}", response_model=UserORMSchema)
+@router.get("/{user_id}", response_model=UserProfile)
 def read_user_by_id(user_id: int, user: current_user) -> User:
     """
     Get a specific user by id.
@@ -53,10 +53,10 @@ def read_user_by_id(user_id: int, user: current_user) -> User:
 
 @router.post(
     "/",
-    response_model=UserORMSchema,
+    response_model=UserProfile,
     dependencies=(has_permission(Permissions.users_management_create),),
 )
-def create_user(user_in: UserCreateSchema) -> User:
+def create_user(user_in: UserRegistration) -> User:
     """Create new user."""
     user = users.get_by_email(email=user_in.email)
     if user:
@@ -65,18 +65,18 @@ def create_user(user_in: UserCreateSchema) -> User:
     return users.create(obj_in=user_in)
 
 
-@router.put("/me", response_model=UserORMSchema)
-def update_myself(user: current_user, user_in: UserUpdateSchema) -> User:
+@router.put("/me", response_model=UserProfile)
+def update_myself(user: current_user, user_in: UserProfileUpdate) -> User:
     """Update details of the logged in user."""
     return users.update(db_obj=user, obj_in=user_in)
 
 
 @router.put(
     "/{user_id}",
-    response_model=UserORMSchema,
+    response_model=UserProfile,
     dependencies=(has_permission(Permissions.users_management_update),),
 )
-def update_user(user_id: int, user_in: UserUpdateSchema) -> User:
+def update_user(user_id: int, user_in: UserProfileUpdate) -> User:
     """Update a user."""
     user = users.get_if_exist(id=user_id)
     return users.update(db_obj=user, obj_in=user_in)
@@ -84,13 +84,13 @@ def update_user(user_id: int, user_in: UserUpdateSchema) -> User:
 
 @router.put(
     "/{user_id}/update_password",
-    response_model=UserORMSchema,
+    response_model=UserProfile,
     dependencies=(has_permission(Permissions.users_management_update),),
 )
 def update_password(
     user_id: int,
     user: current_user,
-    obj_in: UserChangePasswordSchema,
+    obj_in: UserPasswordChange,
 ) -> User:
     """
     Update the provided user's password.

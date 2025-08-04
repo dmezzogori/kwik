@@ -5,7 +5,7 @@ from kwik import models, schemas
 from . import auto_crud
 
 
-class CRUDAudit(auto_crud.AutoCRUD[models.Audit, schemas.AuditCreateSchema, schemas.AuditORMSchema]):
+class CRUDAudit(auto_crud.AutoCRUD[models.Audit, schemas.AuditEntry, schemas.AuditProfile]):
     """CRUD operations for audit log entries."""
 
 

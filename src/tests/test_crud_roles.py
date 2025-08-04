@@ -16,7 +16,7 @@ class TestRoleCRUD:
 
     def test_create_role(self, db_session, clean_db, user_context) -> None:
         """Test creating a new role."""
-        role_data = schemas.RoleCreate(
+        role_data = schemas.RoleDefinition(
             name="Test Role",
             is_active=True,
             is_locked=False,

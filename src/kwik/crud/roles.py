@@ -10,7 +10,7 @@ from .auto_crud import AutoCRUD
 from .user_roles import user_roles
 
 
-class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleCreate, schemas.RoleUpdate]):
+class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleDefinition, schemas.RoleUpdate]):
     """CRUD operations for roles with user and permission management."""
 
     def get_by_name(self, *, name: str) -> models.Role | None:

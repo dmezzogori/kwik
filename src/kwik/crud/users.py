@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, schemas.UserUpdateSchema]):
+class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserRegistration, schemas.UserProfileUpdate]):
     """CRUD operations for users with authentication and authorization support."""
 
     def get_by_email(self, *, email: str) -> models.User | None:
@@ -29,7 +29,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         return self.db.query(models.User).filter(models.User.name == name).first()
 
     # noinspection PyMethodOverriding
-    def create(self, *, obj_in: schemas.UserCreateSchema) -> models.User:
+    def create(self, *, obj_in: schemas.UserRegistration) -> models.User:
         """Create new user with hashed password."""
         db_obj = models.User(
             name=obj_in.name,
@@ -44,7 +44,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         self.db.refresh(db_obj)
         return db_obj
 
-    def create_if_not_exist(self, *, filters: dict, obj_in: schemas.UserCreateSchema, **kwargs) -> models.User:
+    def create_if_not_exist(self, *, filters: dict, obj_in: schemas.UserRegistration, **kwargs) -> models.User:
         """Create user if it doesn't exist based on filters, otherwise return existing user."""
         obj_db = self.db.query(models.User).filter_by(**filters).one_or_none()
         if obj_db is None:
@@ -52,7 +52,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         return obj_db
 
     # noinspection PyMethodOverriding
-    def update(self, *, db_obj: models.User, obj_in: schemas.UserUpdateSchema | dict[str, Any]) -> models.User:
+    def update(self, *, db_obj: models.User, obj_in: schemas.UserProfileUpdate | dict[str, Any]) -> models.User:
         """Update user with password hashing support."""
         update_data = obj_in if isinstance(obj_in, dict) else obj_in.dict(exclude_unset=True)
         if update_data.get("password"):
@@ -61,7 +61,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
             update_data["hashed_password"] = hashed_password
         return super().update(db_obj=db_obj, obj_in=update_data)
 
-    def change_password(self, *, user_id: int, obj_in: schemas.UserChangePasswordSchema) -> models.User:
+    def change_password(self, *, user_id: int, obj_in: schemas.UserPasswordChange) -> models.User:
         """Change user password after validating old password."""
         user_db = self.get(id=user_id)
         if not user_db:
@@ -88,10 +88,10 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserCreateSchema, sch
         self.is_active(user_db)
 
         hashed_password = get_password_hash(password)
-        user.hashed_password = hashed_password
-        self.db.add(user)
+        user_db.hashed_password = hashed_password
+        self.db.add(user_db)
         self.db.flush()
-        return user
+        return user_db
 
     def authenticate(self, *, email: str, password: str) -> models.User:
         """

@@ -10,23 +10,23 @@ class RoleBase(BaseModel):
     is_active: bool | None = True
 
 
-class RoleCreate(RoleBase):
-    """Schema for creating new roles."""
+class RoleDefinition(RoleBase):
+    """Schema for defining new roles."""
 
     name: str
     is_active: bool
     is_locked: bool
 
 
-class UserRoleCreate(BaseModel):
-    """Schema for creating user-role associations."""
+class UserRoleAssignment(BaseModel):
+    """Schema for assigning roles to users."""
 
     user_id: int
     role_id: int
 
 
-class UserRoleRemove(UserRoleCreate):
-    """Schema for removing user-role associations."""
+class UserRoleRevocation(UserRoleAssignment):
+    """Schema for revoking roles from users."""
 
 
 class RoleUpdate(RoleBase):
@@ -47,15 +47,15 @@ class RoleInDBBase(RoleBase):
         orm_mode = True
 
 
-class Role(RoleInDBBase):
-    """Role schema for API responses."""
+class RoleProfile(RoleInDBBase):
+    """Schema for role profile information."""
 
 
 class RoleInDB(RoleInDBBase):
     """Role schema for internal database operations."""
 
 
-class RoleLookupSchema(BaseModel):
+class RoleLookup(BaseModel):
     """Schema for role lookup operations with ID and name."""
 
     id: int

@@ -16,7 +16,7 @@ class TestUserCRUD:
 
     def test_create_user(self, db_session, clean_db) -> None:
         """Test creating a new user."""
-        user_data = schemas.UserCreateSchema(
+        user_data = schemas.UserRegistration(
             name="Test",
             surname="User",
             email="test@example.com",
@@ -44,7 +44,7 @@ class TestUserCRUD:
         db_conn_ctx_var.set(db_session)
 
         # Create first user
-        user_data = schemas.UserCreateSchema(
+        user_data = schemas.UserRegistration(
             name="Test1",
             surname="User1",
             email="test@example.com",
@@ -53,7 +53,7 @@ class TestUserCRUD:
         crud.users.create(obj_in=user_data)
 
         # Try to create second user with same email
-        user_data2 = schemas.UserCreateSchema(
+        user_data2 = schemas.UserRegistration(
             name="Test2",
             surname="User2",
             email="test@example.com",  # Same email
@@ -133,7 +133,7 @@ class TestUserCRUD:
         user = create_test_user(db_session, name="original")
 
         # Update the user
-        update_data = schemas.UserUpdateSchema(name="updated")
+        update_data = schemas.UserProfileUpdate(name="updated")
         updated_user = crud.users.update(db_obj=user, obj_in=update_data)
 
         assert updated_user.id == user.id

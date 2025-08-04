@@ -86,7 +86,7 @@ class _AuditedRoute(APIRoute):
             response.headers["X-Response-Time"] = str(process_time)
 
             # let's audit the request
-            audit_in = schemas.AuditCreateSchema(
+            audit_in = schemas.AuditEntry(
                 client_host=request.client.host,
                 request_id=get_request_id(),
                 user_id=user_id,

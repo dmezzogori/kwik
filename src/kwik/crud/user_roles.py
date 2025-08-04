@@ -6,7 +6,7 @@ from . import auto_crud
 
 
 class AutoCRUDUserRoles(
-    auto_crud.AutoCRUD[models.UserRole, schemas.UserRoleCreate, None],
+    auto_crud.AutoCRUD[models.UserRole, schemas.UserRoleAssignment, None],
 ):
     """CRUD operations for user-role associations and relationship management."""
 

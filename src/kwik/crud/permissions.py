@@ -8,7 +8,7 @@ from .auto_crud import AutoCRUD
 from .roles_permissions import roles_permissions
 
 
-class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionCreate, schemas.PermissionUpdate]):
+class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionDefinition, schemas.PermissionUpdate]):
     """CRUD operations for permissions with role association management."""
 
     def get_by_name(self, *, name: str) -> models.Permission | None:

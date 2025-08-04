@@ -3,7 +3,7 @@
 from pydantic import BaseModel
 
 
-class RecoverPassword(BaseModel):
+class PasswordRecoveryRequest(BaseModel):
     """Schema for password recovery requests with user email."""
 
     email: str

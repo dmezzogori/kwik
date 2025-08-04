@@ -11,12 +11,12 @@ class _BaseSchema(BaseModel):
     name: str
 
 
-class PermissionORMSchema(ORMMixin, _BaseSchema):
-    """ORM schema for permissions with database ID."""
+class PermissionProfile(ORMMixin, _BaseSchema):
+    """Schema for permission profile information."""
 
 
-class PermissionCreate(_BaseSchema):
-    """Schema for creating new permissions."""
+class PermissionDefinition(_BaseSchema):
+    """Schema for defining new permissions."""
 
 
 class PermissionUpdate(_BaseSchema):
