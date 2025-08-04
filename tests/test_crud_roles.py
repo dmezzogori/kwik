@@ -104,26 +104,26 @@ class TestRoleCRUD:
         db_conn_ctx_var.set(db_session)
 
         # Test constants
-        TOTAL_ROLES = 5
-        PAGE_LIMIT = 3
-        REMAINING_ROLES = 2
+        total_roles = 5
+        page_limit = 3
+        remaining_roles = 2
 
         # Create multiple test roles
         roles = []
-        for i in range(TOTAL_ROLES):
+        for i in range(total_roles):
             role = create_test_role(db_session, name=f"Role {i}")
             roles.append(role)
 
         # Get multiple roles
-        count, retrieved_roles = crud.roles.get_multi(skip=0, limit=PAGE_LIMIT)
+        count, retrieved_roles = crud.roles.get_multi(skip=0, limit=page_limit)
 
-        assert count == TOTAL_ROLES  # Total count
-        assert len(retrieved_roles) == PAGE_LIMIT  # Limited to 3
+        assert count == total_roles  # Total count
+        assert len(retrieved_roles) == page_limit  # Limited to 3
 
         # Test pagination
-        count, second_page = crud.roles.get_multi(skip=PAGE_LIMIT, limit=PAGE_LIMIT)
-        assert count == TOTAL_ROLES
-        assert len(second_page) == REMAINING_ROLES  # Remaining roles
+        count, second_page = crud.roles.get_multi(skip=page_limit, limit=page_limit)
+        assert count == total_roles
+        assert len(second_page) == remaining_roles  # Remaining roles
 
     def test_get_multi_with_filters(self, db_session: Session, user_context: Generator[None, None, None]) -> None:  # noqa: ARG002
         """Test getting multiple roles with filters."""
@@ -137,8 +137,8 @@ class TestRoleCRUD:
 
         # Filter by is_active
         count, active_roles = crud.roles.get_multi(is_active=True)
-        EXPECTED_ACTIVE_ROLES = 2  # Active Role and Locked Role
-        assert count == EXPECTED_ACTIVE_ROLES
+        expected_active_roles = 2  # Active Role and Locked Role
+        assert count == expected_active_roles
 
         count, inactive_roles = crud.roles.get_multi(is_active=False)
         assert count == 1
@@ -180,8 +180,8 @@ class TestRoleCRUD:
         # Get all roles
         all_roles = crud.roles.get_all()
 
-        EXPECTED_TOTAL_ROLES = 3
-        assert len(all_roles) == EXPECTED_TOTAL_ROLES
+        expected_total_roles = 3
+        assert len(all_roles) == expected_total_roles
         role_names = [role.name for role in all_roles]
         assert "Role 1" in role_names
         assert "Role 2" in role_names

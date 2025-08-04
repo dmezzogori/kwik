@@ -87,9 +87,9 @@ class TestSettingsSources:
         source = DictSource(test_dict)
         config = source.load()
 
-        DICT_SOURCE_PRIORITY = 2
+        dict_source_priority = 2
         assert config == test_dict
-        assert source.priority == DICT_SOURCE_PRIORITY
+        assert source.priority == dict_source_priority
 
     def test_file_source_loads_json(self) -> None:
         """Test FileSource loads from JSON file."""
@@ -107,9 +107,9 @@ class TestSettingsSources:
             source = FileSource(json_file)
             config = source.load()
 
-            FILE_SOURCE_PRIORITY = 3
+            file_source_priority = 3
             assert config == test_config
-            assert source.priority == FILE_SOURCE_PRIORITY
+            assert source.priority == file_source_priority
         finally:
             os.unlink(json_file)
 
@@ -235,8 +235,8 @@ class TestSettingsFactory:
 
         assert isinstance(settings, TestCustomSettings)
         assert settings.CUSTOM_SETTING == "DEFAULT_VALUE"  # Validator uppercases
-        EXPECTED_INT_VALUE = 42
-        assert settings.CUSTOM_INT_SETTING == EXPECTED_INT_VALUE
+        expected_int_value = 42
+        assert expected_int_value == settings.CUSTOM_INT_SETTING
 
     def test_configure_with_dict(self) -> None:
         """Test configuring with dictionary."""
@@ -250,8 +250,8 @@ class TestSettingsFactory:
         settings = self.factory.get_settings()
 
         assert settings.PROJECT_NAME == "test_project"
-        EXPECTED_PORT = 9000
-        assert settings.BACKEND_PORT == EXPECTED_PORT
+        expected_port = 9000
+        assert expected_port == settings.BACKEND_PORT
         assert settings.DEBUG is True
 
     def test_configure_with_file(self) -> None:
@@ -267,8 +267,8 @@ class TestSettingsFactory:
             settings = self.factory.get_settings()
 
             assert settings.PROJECT_NAME == "file_project"
-            EXPECTED_FILE_PORT = 8888
-            assert settings.BACKEND_PORT == EXPECTED_FILE_PORT
+            expected_file_port = 8888
+            assert expected_file_port == settings.BACKEND_PORT
         finally:
             os.unlink(config_file)
 
@@ -389,8 +389,8 @@ class TestExtensibilityUseCases:
         settings = get_settings()
         assert settings.FEATURE_X_ENABLED is True
         assert settings.FEATURE_Y_ENABLED is True  # Default
-        EXPECTED_ROLLOUT_PERCENTAGE = 50
-        assert settings.FEATURE_Z_ROLLOUT_PERCENTAGE == EXPECTED_ROLLOUT_PERCENTAGE
+        expected_rollout_percentage = 50
+        assert expected_rollout_percentage == settings.FEATURE_Z_ROLLOUT_PERCENTAGE
 
     def test_custom_api_settings(self) -> None:
         """Test adding custom API-related settings."""
@@ -413,10 +413,10 @@ class TestExtensibilityUseCases:
         )
 
         settings = get_settings()
-        EXPECTED_RATE_LIMIT = 5000
-        EXPECTED_TIMEOUT = 30
-        assert settings.API_RATE_LIMIT == EXPECTED_RATE_LIMIT
-        assert settings.API_TIMEOUT == EXPECTED_TIMEOUT
+        expected_rate_limit = 5000
+        expected_timeout = 30
+        assert expected_rate_limit == settings.API_RATE_LIMIT
+        assert expected_timeout == settings.API_TIMEOUT
         assert settings.CUSTOM_API_ENDPOINT == "https://api.example.com"
 
     def test_environment_specific_settings(self) -> None:
@@ -439,8 +439,8 @@ class TestExtensibilityUseCases:
             config_dict={"ENVIRONMENT": "development", "CACHE_TTL": 60},
         )
         dev_settings = get_settings()
-        EXPECTED_DEV_CACHE_TTL = 60
-        assert dev_settings.CACHE_TTL == EXPECTED_DEV_CACHE_TTL
+        expected_dev_cache_ttl = 60
+        assert expected_dev_cache_ttl == dev_settings.CACHE_TTL
 
         # Reset and test production environment
         reset_settings()
@@ -449,5 +449,5 @@ class TestExtensibilityUseCases:
             config_dict={"ENVIRONMENT": "production", "CACHE_TTL": 60},
         )
         prod_settings = get_settings()
-        EXPECTED_PROD_CACHE_TTL = 3600  # Adjusted by validator
-        assert prod_settings.CACHE_TTL == EXPECTED_PROD_CACHE_TTL
+        expected_prod_cache_ttl = 3600  # Adjusted by validator
+        assert expected_prod_cache_ttl == prod_settings.CACHE_TTL

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import pytest
@@ -173,26 +172,26 @@ class TestUserCRUD:
         db_conn_ctx_var.set(db_session)
 
         # Test constants
-        TOTAL_USERS = 5
-        PAGE_LIMIT = 3
-        REMAINING_USERS = 2
+        total_users = 5
+        page_limit = 3
+        remaining_users = 2
 
         # Create multiple test users
         users = []
-        for i in range(TOTAL_USERS):
+        for i in range(total_users):
             user = create_test_user(db_session, email=f"user{i}@example.com", name=f"User{i}")
             users.append(user)
 
         # Get multiple users
-        count, retrieved_users = crud.users.get_multi(skip=0, limit=PAGE_LIMIT)
+        count, retrieved_users = crud.users.get_multi(skip=0, limit=page_limit)
 
-        assert count == TOTAL_USERS  # Total count
-        assert len(retrieved_users) == PAGE_LIMIT  # Limited to 3
+        assert count == total_users  # Total count
+        assert len(retrieved_users) == page_limit  # Limited to 3
 
         # Test pagination
-        count, second_page = crud.users.get_multi(skip=PAGE_LIMIT, limit=PAGE_LIMIT)
-        assert count == TOTAL_USERS
-        assert len(second_page) == REMAINING_USERS  # Remaining users
+        count, second_page = crud.users.get_multi(skip=page_limit, limit=page_limit)
+        assert count == total_users
+        assert len(second_page) == remaining_users  # Remaining users
 
     def test_get_multi_with_filters(self, db_session: Session) -> None:
         """Test getting multiple users with filters."""
