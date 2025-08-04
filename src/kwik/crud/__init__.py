@@ -9,7 +9,7 @@ auditing, and permissions.
 from .audits import audit
 from .auto_crud import AutoCRUD
 from .logs import logs
-from .permissions import permission
+from .permissions import permissions
 from .roles import roles
 from .roles_permissions import roles_permissions
 from .user_roles import user_roles
@@ -19,7 +19,7 @@ __all__ = [
     "AutoCRUD",
     "audit",
     "logs",
-    "permission",
+    "permissions",
     "roles",
     "roles_permissions",
     "user_roles",

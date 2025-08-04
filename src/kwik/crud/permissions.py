@@ -89,4 +89,4 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionDefinition, s
         return super().delete(id=id)
 
 
-permission = CRUDPermission()
+permissions = CRUDPermission()

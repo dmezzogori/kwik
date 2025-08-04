@@ -31,7 +31,7 @@ def get_many_permissions(paginated: Pagination) -> PaginatedResponse[Permission]
 
      -  `permissions_management_read`
     """
-    total, permissions = crud.permission.get_multi(**paginated)
+    total, permissions = crud.permissions.get_multi(**paginated)
     return PaginatedResponse(total=total, data=permissions)
 
 
@@ -51,7 +51,7 @@ def get_single_permission(permission_id: int) -> Permission:
         NotFound: If the provided permission does not exist
 
     """
-    return crud.permission.get_if_exist(id=permission_id)
+    return crud.permissions.get_if_exist(id=permission_id)
 
 
 @router.post(
@@ -70,11 +70,11 @@ def create_permission(permission_in: PermissionDefinition) -> Permission:
         * `permissions_management_create`
 
     """
-    permission = crud.permission.get_by_name(name=permission_in.name)
+    permission = crud.permissions.get_by_name(name=permission_in.name)
     if permission is not None:
         raise DuplicatedEntity
 
-    return crud.permission.create(obj_in=permission_in)
+    return crud.permissions.create(obj_in=permission_in)
 
 
 @router.post(
@@ -93,7 +93,7 @@ def associate_permission_to_role(permission_id: int, assignment: PermissionRoleA
         * `permissions_management_update`
 
     """
-    return crud.permission.associate_role(permission_id=permission_id, role_id=assignment.role_id)
+    return crud.permissions.associate_role(permission_id=permission_id, role_id=assignment.role_id)
 
 
 @router.put(
@@ -112,8 +112,8 @@ def update_permission(permission_id: int, permission_in: PermissionUpdate) -> Pe
         * `permissions_management_update`
 
     """
-    permission = crud.permission.get_if_exist(id=permission_id)
-    return crud.permission.update(db_obj=permission, obj_in=permission_in)
+    permission = crud.permissions.get_if_exist(id=permission_id)
+    return crud.permissions.update(db_obj=permission, obj_in=permission_in)
 
 
 @router.delete(
@@ -134,7 +134,7 @@ def purge_all_roles(permission_id: int) -> Permission:
         * `permissions_management_delete`
 
     """
-    return crud.permission.purge_all_roles(permission_id=permission_id)
+    return crud.permissions.purge_all_roles(permission_id=permission_id)
 
 
 @router.delete(
@@ -153,7 +153,7 @@ def purge_role_from_permission(permission_id: int, role_id: int) -> Permission:
         * `permissions_management_delete`
 
     """
-    return crud.permission.purge_role(permission_id=permission_id, role_id=role_id)
+    return crud.permissions.purge_role(permission_id=permission_id, role_id=role_id)
 
 
 @router.delete(
@@ -172,4 +172,4 @@ def delete_permission(permission_id: int) -> Permission:
         * `permissions_management_delete`
 
     """
-    return crud.permission.delete(id=permission_id)
+    return crud.permissions.delete(id=permission_id)
