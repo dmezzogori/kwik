@@ -10,7 +10,6 @@ from fastapi.testclient import TestClient
 import kwik
 from kwik import configure_kwik
 from kwik.api.api import api_router
-from kwik.core.settings import BaseKwikSettings, reset_settings
 from kwik.database.base import Base
 from kwik.database.context_vars import db_conn_ctx_var
 from kwik.database.engine import get_engine, reset_engines
@@ -27,34 +26,10 @@ if TYPE_CHECKING:
     from kwik.models.user import User
 
 
-class TestSettings(BaseKwikSettings):
-    """Test-specific settings configuration."""
-
-    TEST_ENV: bool = True
-
-
-# Configure Kwik with test settings at module level
-configure_kwik(
-    settings_class=TestSettings,
-    config_dict={
-        "POSTGRES_SERVER": "localhost",
-        "POSTGRES_PORT": "5433",
-        "POSTGRES_DB": "kwik_test",
-        "POSTGRES_USER": "postgres",
-        "POSTGRES_PASSWORD": "root",
-    },
-)
-
-
 @pytest.fixture(scope="session")
-def test_settings_configured() -> None:
-    """Ensure test settings are properly configured."""
-    # Reset and reconfigure to ensure clean state
-    reset_settings()
-    reset_engines()  # Clear cached engines so they use new settings
-    reset_session_locals()  # Clear cached session factories
+def setup_test_database() -> Generator[None, None, None]:
+    """Ensure test settings are properly configured. Create all database tables for testing."""
     configure_kwik(
-        settings_class=TestSettings,
         config_dict={
             "POSTGRES_SERVER": "localhost",
             "POSTGRES_PORT": "5433",
@@ -67,10 +42,6 @@ def test_settings_configured() -> None:
     reset_engines()
     reset_session_locals()
 
-
-@pytest.fixture(scope="session")
-def setup_test_database(test_settings_configured: None) -> Generator[None, None, None]:  # noqa: ARG001
-    """Create all database tables for testing."""
     engine = get_engine()
     Base.metadata.create_all(bind=engine)
     yield
@@ -151,13 +122,3 @@ def clean_db(db_session: Session) -> Generator[None, None, None]:
     yield
     # Rollback any changes made during the test
     db_session.rollback()
-
-
-@pytest.fixture
-def clean_settings() -> Generator[None, None, None]:
-    """Reset settings system between tests to ensure isolation."""
-    # Reset settings before test runs
-    reset_settings()
-    yield
-    # Reset settings after test completes
-    reset_settings()
