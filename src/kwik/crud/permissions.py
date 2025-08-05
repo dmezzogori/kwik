@@ -27,11 +27,7 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionDefinition, s
 
     def _get_role_associations(self, *, permission_id: int) -> list[models.RolePermission]:
         """Get all associations of a permission."""
-        return (
-            self.db.query(models.RolePermission)
-            .filter(models.RolePermission.permission_id == permission_id)
-            .all()
-        )
+        return self.db.query(models.RolePermission).filter(models.RolePermission.permission_id == permission_id).all()
 
     def associate_role(self, *, role_id: int, permission_id: int) -> models.Permission:
         """

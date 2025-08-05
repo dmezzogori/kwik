@@ -141,7 +141,10 @@ class AuditorRouter(APIRouter):
         - _AuditedRoute as the route class for automatic audit logging
         """
         super().__init__(
-            prefix=prefix, tags=[prefix.strip("/")], dependencies=[Depends(get_token)], route_class=_AuditedRoute,
+            prefix=prefix,
+            tags=[prefix.strip("/")],
+            dependencies=[Depends(get_token)],
+            route_class=_AuditedRoute,
         )
 
 

@@ -3,6 +3,7 @@ Kwik - A modern, batteries-included web framework for building RESTful backends 
 
 Kwik is built on FastAPI and provides an opinionated, business-oriented API for rapid development.
 """
+
 from __future__ import annotations
 
 from . import database as database

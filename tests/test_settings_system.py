@@ -364,7 +364,6 @@ class TestBackwardCompatibility:
         reset_settings()
 
 
-
 class TestExtensibilityUseCases:
     """Test real-world extensibility use cases."""
 
@@ -374,6 +373,7 @@ class TestExtensibilityUseCases:
 
     def test_custom_feature_flags(self) -> None:
         """Test adding custom feature flags."""
+
         class FeatureFlagSettings(BaseKwikSettings):
             FEATURE_X_ENABLED: bool = False
             FEATURE_Y_ENABLED: bool = True
@@ -395,6 +395,7 @@ class TestExtensibilityUseCases:
 
     def test_custom_api_settings(self) -> None:
         """Test adding custom API-related settings."""
+
         class APISettings(BaseKwikSettings):
             API_RATE_LIMIT: int = 1000
             API_TIMEOUT: int = 30
@@ -422,6 +423,7 @@ class TestExtensibilityUseCases:
 
     def test_environment_specific_settings(self) -> None:
         """Test environment-specific configuration."""
+
         class EnvironmentSettings(BaseKwikSettings):
             ENVIRONMENT: str = "development"
             CACHE_TTL: int = 300

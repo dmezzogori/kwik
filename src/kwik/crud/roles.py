@@ -20,7 +20,6 @@ class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleDefinition, schemas.RoleUpd
         """Get all roles assigned to a specific user."""
         return self.db.query(models.Role).join(models.UserRole).filter(models.UserRole.user_id == user_id).all()
 
-
     def get_users_not_in_role(self, *, role_id: int) -> list[models.User]:
         """Get all users not involved in the given role, including users with no role."""
         return (
@@ -39,16 +38,11 @@ class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleDefinition, schemas.RoleUpd
             .all()
         )
 
-
     def deprecate(self, *, name: str) -> models.Role:
         """Deprecate role by removing all user associations."""
         role_db = self.get_by_name(name=name)
         # Remove all user-role associations for this role
-        user_role_associations = (
-            self.db.query(models.UserRole)
-            .filter(models.UserRole.role_id == role_db.id)
-            .all()
-        )
+        user_role_associations = self.db.query(models.UserRole).filter(models.UserRole.role_id == role_db.id).all()
         for user_role_db in user_role_associations:
             self.db.delete(user_role_db)
         self.db.flush()
