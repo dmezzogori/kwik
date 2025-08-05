@@ -1,5 +1,6 @@
 """Tests for the main entry point of the kwik application."""
 
+import runpy
 import sys
 from collections.abc import Iterator
 from unittest.mock import MagicMock, patch
@@ -81,3 +82,16 @@ def test_main_entry_point_with_args(
     # Assert
     mock_kwik_instance.assert_not_called()
     mock_kwik_run.assert_called_once_with(app_path)
+
+
+def test_main_dunder_name_dunder_main(monkeypatch: MonkeyPatch) -> None:
+    """Verify that the script execution attempts to start the server via uvicorn."""
+    monkeypatch.setattr(sys, "argv", ["__main__"])
+    with patch("uvicorn.run") as mock_uvicorn_run:
+        # We use runpy to execute the script as if it were the main entry point.
+        # The `if __name__ == '__main__'` block should be executed.
+        runpy.run_path("src/kwik/__main__.py", run_name="__main__")
+
+        # We assert that uvicorn.run was called, which confirms the
+        # main execution path was followed.
+        mock_uvicorn_run.assert_called_once()
