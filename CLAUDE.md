@@ -121,6 +121,16 @@ uv sync
 pytest --cov=src/kwik --cov-report=term-missing
 ```
 
+### Documentation
+
+```bash
+# Start documentation website locally
+cd docs
+docker compose up
+
+# Access at http://localhost:8000
+```
+
 ## Code Style Guidelines
 
 - **Line length**: 120 characters

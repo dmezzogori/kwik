@@ -1,6 +1,8 @@
 # Kwik
 
-![Logo](docs/handbook/docs/img/logo.png)
+<div align="center">
+<img src="docs/handbook/docs/img/logo.png" alt="Kwik Logo" width="200">
+</div>
 
 ---
 
@@ -259,6 +261,16 @@ ruff format .
 
 # Fix auto-fixable issues
 ruff check --fix
+```
+
+### Documentation
+
+```bash
+# Start documentation website locally
+cd docs
+docker compose up
+
+# Access at http://localhost:8000
 ```
 
 ### Contributing

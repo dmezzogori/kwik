@@ -2,7 +2,9 @@
 title: Kwik
 ---
 
-![Logo](/img/logo.png)
+<div style="text-align: center;">
+<img src="/img/logo.png" alt="Kwik Logo" width="200">
+</div>
 
 ---
 

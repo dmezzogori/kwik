@@ -26,9 +26,6 @@ plugins:
       minify_html: true
 nav:
   - Kwik: index.md
-  - Languages:
-      - en: /
-      - it: /it/
   - features.md
   - Tutorial - User Guide:
       - tutorial/index.md
@@ -47,13 +44,6 @@ nav:
 copyright: Copyright &copy; 2022 Davide Mezzogori
 
 extra:
-  alternate:
-    - name: Italian
-      link: https://kwik.rocks/it/
-      lang: it
-    - name: English
-      link: https://kwik.rocks/en/
-      lang: en
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/dmezzogori/kwik
