@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
 
-@pytest.mark.skip(reason="Roles endpoint temporarily disabled")
 class TestRoleCRUD:
     """Test cases for role CRUD operations."""
 

@@ -38,6 +38,10 @@ class AutoCRUDRole(AutoCRUD[models.Role, schemas.RoleDefinition, schemas.RoleUpd
             .all()
         )
 
+    def get_all(self) -> list[models.Role]:
+        """Get all roles."""
+        return self.db.query(models.Role).all()
+
     def deprecate(self, *, name: str) -> models.Role:
         """Deprecate role by removing all user associations."""
         role_db = self.get_by_name(name=name)
