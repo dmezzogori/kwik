@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy.orm import Session
-
 if TYPE_CHECKING:
     from fastapi import Request
+    from sqlalchemy.orm import Session
 
 
 def get_db_from_request(request: Request) -> Session:

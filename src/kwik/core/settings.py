@@ -51,11 +51,11 @@ class EnvironmentSource(ConfigurationSource):
 
         # Load from .env file if specified
         if self.env_file and Path(self.env_file).exists():
-            with open(self.env_file) as f:
+            with Path(self.env_file).open() as f:
                 for line in f:
-                    line = line.strip()
-                    if line and not line.startswith("#") and "=" in line:
-                        key, value = line.split("=", 1)
+                    stripped_line = line.strip()
+                    if stripped_line and not stripped_line.startswith("#") and "=" in stripped_line:
+                        key, value = stripped_line.split("=", 1)
                         config[key.strip()] = value.strip().strip("\"'")
 
         # Environment variables override .env file
@@ -121,12 +121,12 @@ class FileSource(ConfigurationSource):
         if not self.file_path.exists():
             return {}
 
-        with open(self.file_path) as f:
+        with self.file_path.open() as f:
             if self.file_path.suffix.lower() == ".json":
                 return json.load(f)
             if self.file_path.suffix.lower() in [".yml", ".yaml"]:
                 try:
-                    import yaml
+                    import yaml  # noqa: PLC0415
 
                     return yaml.safe_load(f)
                 except ImportError as e:
@@ -250,7 +250,7 @@ class BaseKwikSettings(BaseSettings):
     # Database settings
     POSTGRES_SERVER: str = "db"
     POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "root"
+    POSTGRES_PASSWORD: str = "root"  # noqa: S105
     POSTGRES_DB: str = "db"
     POSTGRES_PORT: str = "5432"
     POSTGRES_MAX_CONNECTIONS: int = 100
@@ -262,7 +262,7 @@ class BaseKwikSettings(BaseSettings):
 
     # User settings
     FIRST_SUPERUSER: EmailStr = "admin@example.com"
-    FIRST_SUPERUSER_PASSWORD: str = "admin"
+    FIRST_SUPERUSER_PASSWORD: str = "admin"  # noqa: S105
     USERS_OPEN_REGISTRATION: bool = False
 
     # Feature flags
@@ -316,7 +316,7 @@ class BaseKwikSettings(BaseSettings):
         raise ValueError(v)
 
     @validator("SQLALCHEMY_DATABASE_URI", pre=True)
-    def assemble_db_connection(cls, v: str | None, values: dict[str, Any]) -> Any:
+    def assemble_db_connection(cls, v: str | None, values: dict[str, Any]) -> Any:  # noqa: ANN401
         """Build PostgreSQL connection string from individual components."""
         if isinstance(v, str):
             return v

@@ -23,7 +23,7 @@ def get_current_user(token: current_token) -> kwik.models.User:
     """
     user = kwik.crud.users.get(id=token.sub)
     if user is None:
-        raise kwik.exceptions.Forbidden
+        raise kwik.exceptions.AccessDeniedError
 
     return user
 

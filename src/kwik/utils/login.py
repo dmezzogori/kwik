@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from jose import jwt
 
@@ -12,7 +12,7 @@ from kwik.core.settings import get_settings
 def generate_password_reset_token(email: str) -> str:
     """Generate JWT token for password reset with expiration."""
     delta = timedelta(hours=48)  # Default 48 hours for password reset token
-    now = datetime.utcnow()
+    now = datetime.now(tz=UTC)
     expires = now + delta
     exp = expires.timestamp()
     return jwt.encode(

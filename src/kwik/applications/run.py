@@ -18,9 +18,9 @@ def run(kwik_app: str | Kwik) -> None:
     reload = get_settings().HOTRELOAD
     workers = get_settings().BACKEND_WORKERS
     if isinstance(kwik_app, str):
-        kwik_app = f"{kwik_app}._app"
+        kwik_app = f"{kwik_app}.app"
     else:
-        kwik_app = kwik_app._app
+        kwik_app = kwik_app.app
         reload = False
 
     if get_settings().APP_ENV == "development":

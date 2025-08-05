@@ -12,7 +12,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 import kwik.exceptions.handler
 import kwik.logger
 from kwik.core.settings import get_settings
-from kwik.exceptions import KwikException
+from kwik.exceptions import KwikError
 from kwik.middlewares import DBSessionMiddleware, RequestContextMiddleware
 from kwik.websocket.deps import broadcast
 
@@ -42,6 +42,11 @@ class Kwik:
             f"Swagger available at {get_settings().PROTOCOL}://{get_settings().BACKEND_HOST}:{get_settings().BACKEND_PORT}/docs",
         )
 
+    @property
+    def app(self) -> FastAPI:
+        """Get the FastAPI application instance."""
+        return self._app
+
     def init_fastapi_app(self, *, api_router: APIRouter) -> FastAPI:
         """
         Initialize the FastAPI application.
@@ -64,7 +69,7 @@ class Kwik:
 
         app.include_router(api_router, prefix=get_settings().API_V1_STR)
 
-        app.exception_handler(KwikException)(kwik.exceptions.handler.kwik_exception_handler)
+        app.exception_handler(KwikError)(kwik.exceptions.handler.kwik_exception_handler)
 
         return app
 

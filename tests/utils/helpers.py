@@ -21,7 +21,7 @@ def cleanup_database(db_session: Session) -> None:
     db_session.commit()
 
 
-def create_test_user(
+def create_test_user(  # noqa: PLR0913
     db_session: Session,
     *,
     name: str = "testuser",

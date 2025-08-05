@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from kwik import crud
 from kwik.api.deps import Pagination, has_permission
 from kwik.core.enum import Permissions
-from kwik.exceptions import DuplicatedEntity
+from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuditorRouter
 from kwik.schemas import Paginated, PermissionDefinition, PermissionProfile, PermissionRoleAssignment, PermissionUpdate
 from kwik.typings import PaginatedResponse
@@ -72,7 +72,7 @@ def create_permission(permission_in: PermissionDefinition) -> Permission:
     """
     permission = crud.permissions.get_by_name(name=permission_in.name)
     if permission is not None:
-        raise DuplicatedEntity
+        raise DuplicatedEntityError
 
     return crud.permissions.create(obj_in=permission_in)
 

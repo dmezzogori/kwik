@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -75,7 +76,7 @@ class TestSettingsSources:
             assert config["ANOTHER_SETTING"] == "another_value"
             assert config["QUOTED_SETTING"] == "quoted value"
         finally:
-            os.unlink(env_file)
+            Path(env_file).unlink()
 
     def test_dict_source_loads_from_dict(self) -> None:
         """Test DictSource loads from dictionary."""
@@ -111,7 +112,7 @@ class TestSettingsSources:
             assert config == test_config
             assert source.priority == file_source_priority
         finally:
-            os.unlink(json_file)
+            Path(json_file).unlink()
 
     def test_file_source_handles_missing_file(self) -> None:
         """Test FileSource handles missing files gracefully."""
@@ -131,7 +132,7 @@ class TestSettingsSources:
             with pytest.raises(ValueError, match="Unsupported file format"):
                 source.load()
         finally:
-            os.unlink(txt_file)
+            Path(txt_file).unlink()
 
 
 class TestSettingsRegistry:
@@ -270,7 +271,7 @@ class TestSettingsFactory:
             expected_file_port = 8888
             assert expected_file_port == settings.BACKEND_PORT
         finally:
-            os.unlink(config_file)
+            Path(config_file).unlink()
 
     def test_priority_ordering(self) -> None:
         """Test configuration source priority ordering."""
@@ -302,7 +303,7 @@ class TestSettingsFactory:
                 # Environment should win (highest priority)
                 assert settings.TEST_PRIORITY == "from_env"
             finally:
-                os.unlink(config_file)
+                Path(config_file).unlink()
         finally:
             os.environ.pop("TEST_PRIORITY", None)
 

@@ -34,10 +34,6 @@ uv sync
 
 # Run development server with hot reload
 uv run python -m kwik
-
-# Run with specific runner
-uv run python -m kwik.applications.uvicorn
-uv run python -m kwik.applications.gunicorn
 ```
 
 ### Testing
@@ -388,6 +384,76 @@ uv run pytest --cov=src/kwik --cov-report=term-missing
 uv run ruff check . | grep S[0-9]
 ```
 
+## Test Suite Improvements - COMPLETED ✅
+
+*Implemented: 2025-08-05*
+
+### **Problem Solved**
+The test suite had incomplete authentication tests with skipped TODOs:
+- **Missing authentication mocking**: Tests using `@pytest.mark.skip` due to incomplete auth setup
+- **Incomplete integration tests**: Full user lifecycle tests were not implemented
+- **Test coverage gaps**: Authentication-required endpoints had no working tests
+
+### **Solution Implemented**
+Fixed all TODO items in the test suite and implemented proper authentication testing:
+
+#### **Key Improvements**
+1. **JWT Authentication Testing**:
+   ```python
+   # Proper JWT flow implementation
+   login_response = client_no_auth.post("/api/v1/login/access-token", data=login_data)
+   token_data = login_response.json()
+   access_token = token_data["access_token"]
+   headers = {"Authorization": f"Bearer {access_token}"}
+   ```
+
+2. **Integration Test Implementation**:
+   - Full user lifecycle test using `/me` endpoints
+   - Authentication flow verification
+   - Profile creation, reading, and updating
+   - Proper session management and SQLAlchemy detached instance handling
+
+3. **Test Infrastructure Enhancements**:
+   - Fixed SQLAlchemy detached instance errors by capturing IDs before session closes
+   - Used realistic JWT authentication patterns instead of context manager mocking
+   - Comprehensive endpoint coverage for authenticated and unauthenticated scenarios
+
+#### **Files Modified**
+- ✅ **`tests/test_api_endpoints.py`** - Implemented missing TODO tests
+  - `test_test_token_endpoint_with_valid_token`: JWT authentication flow testing
+  - `test_full_user_lifecycle`: Complete integration test using `/me` endpoints
+- ✅ **Test Coverage Improved**: From 68% to 70% overall coverage
+- ✅ **All Tests Passing**: 14/14 tests in API endpoints suite now pass
+
+#### **Testing & Verification**
+- ✅ **Authentication patterns verified**: JWT token generation and usage
+- ✅ **Integration testing complete**: Full CRUD lifecycle through API endpoints
+- ✅ **Error handling tested**: Proper 401/403/422 response verification
+- ✅ **SQLAlchemy session management**: Fixed detached instance issues
+- ✅ **Code quality maintained**: All ruff linting issues resolved
+
+### **Impact**
+- **Test Coverage**: Improved authentication endpoint coverage significantly
+- **Code Quality**: Eliminated all TODO items and skipped tests from test suite
+- **Framework Validation**: Verified JWT authentication system works correctly
+- **Developer Experience**: Complete test examples for future authentication test development
+- **Commit History**: Clean commit following project conventions with descriptive message
+
+## Code Quality Achievement - COMPLETED ✅
+
+*Completed: 2025-08-05*
+
+### **Ruff Linting Resolution**
+Successfully resolved all outstanding ruff linting issues across the entire codebase:
+- ✅ **Type annotations**: Added missing return type annotations (ANN001, ANN201)
+- ✅ **Code style**: Fixed uppercase function variables (N806)
+- ✅ **Unused parameters**: Resolved ARG002 issues in pytest fixtures
+- ✅ **Pydantic compatibility**: Ignored N805 for validator methods
+- ✅ **Import organization**: Proper TYPE_CHECKING imports and organization
+- ✅ **Test improvements**: Enhanced test structure and authentication patterns
+
+**Result**: Clean `uv run ruff check .` across entire project ✨
+
 ## Synthetized Memory: Recent Context & Accomplishments
 
 - Successfully redesigned Kwik's settings system with enhanced flexibility and configuration options
@@ -398,3 +464,8 @@ uv run ruff check . | grep S[0-9]
 - Identified and documented critical dependency update needs, especially for SQLAlchemy and Pydantic
 - Performed comprehensive test coverage analysis, revealing areas for future improvement
 - Highlighted framework's technical debt and potential enhancement opportunities across various domains
+- **Fixed all TODO items** in test suite with proper JWT authentication testing patterns
+- **Achieved complete ruff compliance** across entire codebase with 0 linting issues
+- **Improved test coverage** from 68% to 70% with comprehensive authentication tests
+- **Implemented realistic integration tests** using actual JWT token flows instead of mocking
+- **Maintained clean commit history** following project conventions

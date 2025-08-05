@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 from kwik import crud, schemas
 from kwik.database.context_vars import db_conn_ctx_var
-from kwik.exceptions import NotFound
+from kwik.exceptions import EntityNotFoundError
 from tests.utils import create_test_user
 
 if TYPE_CHECKING:
@@ -163,7 +163,7 @@ class TestUserCRUD:
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
 
-        with pytest.raises(NotFound):
+        with pytest.raises(EntityNotFoundError):
             crud.users.get_if_exist(id=99999)
 
     def test_get_multi_users(self, db_session: Session) -> None:

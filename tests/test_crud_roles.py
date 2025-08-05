@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import pytest
 
 from kwik import crud, schemas
 from kwik.database.context_vars import db_conn_ctx_var
-from kwik.exceptions import NotFound
+from kwik.exceptions import EntityNotFoundError
 from tests.utils import create_test_role
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from sqlalchemy.orm import Session
 
 
@@ -77,7 +78,11 @@ class TestRoleCRUD:
         assert updated_role.name == "Updated Role"
         assert updated_role.is_active == role.is_active  # Should remain unchanged
 
-    def test_get_if_exist_with_existing_role(self, db_session: Session, user_context: Generator[None, None, None]) -> None:  # noqa: ARG002
+    def test_get_if_exist_with_existing_role(
+        self,
+        db_session: Session,
+        user_context: Generator[None, None, None],  # noqa: ARG002
+    ) -> None:
         """Test get_if_exist with an existing role."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -95,7 +100,7 @@ class TestRoleCRUD:
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
 
-        with pytest.raises(NotFound):
+        with pytest.raises(EntityNotFoundError):
             crud.roles.get_if_exist(id=99999)
 
     def test_get_multi_roles(self, db_session: Session, user_context: Generator[None, None, None]) -> None:  # noqa: ARG002

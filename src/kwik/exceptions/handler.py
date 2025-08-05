@@ -9,10 +9,10 @@ from starlette.responses import JSONResponse
 if TYPE_CHECKING:
     from fastapi import Request
 
-    from kwik.exceptions import KwikException
+    from kwik.exceptions import KwikError
 
 
-async def kwik_exception_handler(request: Request, exc: KwikException) -> JSONResponse:
+async def kwik_exception_handler(request: Request, exc: KwikError) -> JSONResponse:  # noqa: ARG001
     """Handle KwikException by returning JSON response with error details."""
     return JSONResponse(
         status_code=exc.status_code,

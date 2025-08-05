@@ -6,7 +6,7 @@ import kwik.api.deps
 import kwik.typings
 from kwik import crud, models, schemas
 from kwik.core.enum import Permissions
-from kwik.exceptions import DuplicatedEntity
+from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuditorRouter
 
 router = AuditorRouter(prefix="/roles")
@@ -97,7 +97,7 @@ def create_role(role_in: schemas.RoleDefinition) -> models.Role:
     """Create new role."""
     role = crud.roles.get_by_name(name=role_in.name)
     if role is not None:
-        raise DuplicatedEntity
+        raise DuplicatedEntityError
 
     return crud.roles.create(obj_in=role_in)
 

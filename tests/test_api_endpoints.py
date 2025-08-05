@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import pytest
-from fastapi.testclient import TestClient
 from starlette import status
 
 from kwik.database.context_vars import db_conn_ctx_var
 from tests.utils import create_test_user
 
 if TYPE_CHECKING:
+    from fastapi.testclient import TestClient
     from sqlalchemy.orm import Session
 
 
@@ -50,7 +49,11 @@ class TestHealthEndpoints:
 class TestLoginEndpoints:
     """Test cases for authentication endpoints."""
 
-    def test_access_token_endpoint_with_invalid_credentials(self, client_no_auth: TestClient, db_session: Session) -> None:
+    def test_access_token_endpoint_with_invalid_credentials(
+        self,
+        client_no_auth: TestClient,
+        db_session: Session,
+    ) -> None:
         """Test login with invalid credentials returns 401."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
@@ -63,13 +66,17 @@ class TestLoginEndpoints:
         response = client_no_auth.post("/api/v1/login/access-token", data=login_data)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_access_token_endpoint_with_valid_credentials(self, client_no_auth: TestClient, db_session: Session) -> None:
+    def test_access_token_endpoint_with_valid_credentials(
+        self,
+        client_no_auth: TestClient,
+        db_session: Session,
+    ) -> None:
         """Test login with valid credentials returns token."""
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
 
         # Create a test user
-        test_user = create_test_user(db_session, email="test@example.com", password="testpassword123")
+        create_test_user(db_session, email="test@example.com", password="testpassword123")
 
         login_data = {
             "username": "test@example.com",
@@ -89,11 +96,35 @@ class TestLoginEndpoints:
         response = client_no_auth.post("/api/v1/login/test-token")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    @pytest.mark.skip(reason="Authentication mocking needs to be implemented")
     def test_test_token_endpoint_with_valid_token(self, client_no_auth: TestClient, db_session: Session) -> None:
         """Test test-token endpoint with valid authentication."""
-        # TODO: Implement authentication mocking for this test
-        # This would require creating a valid JWT token and setting it in headers
+        # Set the database session in context
+        db_conn_ctx_var.set(db_session)
+
+        # Create a test user and get a token
+        create_test_user(db_session, email="test@example.com", password="testpassword123")
+
+        # First, get a token by logging in
+        login_data = {
+            "username": "test@example.com",
+            "password": "testpassword123",
+        }
+
+        login_response = client_no_auth.post("/api/v1/login/access-token", data=login_data)
+        assert login_response.status_code == status.HTTP_200_OK
+        token_data = login_response.json()
+        access_token = token_data["access_token"]
+
+        # Now test the test-token endpoint with the token
+        headers = {"Authorization": f"Bearer {access_token}"}
+        response = client_no_auth.post("/api/v1/login/test-token", headers=headers)
+        assert response.status_code == status.HTTP_200_OK
+
+        user_data = response.json()
+        assert "email" in user_data
+        assert "name" in user_data
+        assert "surname" in user_data
+        assert user_data["email"] == "test@example.com"
 
 
 class TestUserEndpointsWithoutAuth:
@@ -155,7 +186,66 @@ class TestAPIErrorHandling:
 class TestAPIIntegration:
     """Integration tests for API endpoints."""
 
-    @pytest.mark.skip(reason="Full integration tests require authentication setup")
-    def test_full_user_lifecycle(self, client: TestClient, db_session: Session) -> None:
-        """Test full user lifecycle: create, read, update, delete."""
-        # TODO: Implement full integration test once authentication is properly mocked
+    def test_full_user_lifecycle(self, client_no_auth: TestClient, db_session: Session) -> None:
+        """Test full user lifecycle using /me endpoints that don't require special permissions."""
+        # Set the database session in context
+        db_conn_ctx_var.set(db_session)
+
+        # Create a regular test user
+        test_user = create_test_user(
+            db_session,
+            name="Integration",
+            surname="User",
+            email="integration@example.com",
+            password="integrationtest123",
+        )
+        test_user_id = test_user.id  # Capture ID before session detaches
+
+        # Login to get a JWT token for authentication
+        login_data = {
+            "username": "integration@example.com",
+            "password": "integrationtest123",
+        }
+
+        login_response = client_no_auth.post("/api/v1/login/access-token", data=login_data)
+        assert login_response.status_code == status.HTTP_200_OK
+        token_data = login_response.json()
+        access_token = token_data["access_token"]
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        # Test the /login/test-token endpoint (verifies authentication works)
+        response = client_no_auth.post("/api/v1/login/test-token", headers=headers)
+        assert response.status_code == status.HTTP_200_OK
+        current_user = response.json()
+        assert current_user["email"] == "integration@example.com"
+        assert current_user["name"] == "Integration"
+        assert current_user["surname"] == "User"
+
+        # Test the /users/me endpoint (get current user profile)
+        response = client_no_auth.get("/api/v1/users/me", headers=headers)
+        assert response.status_code == status.HTTP_200_OK
+        me_profile = response.json()
+        assert me_profile["email"] == "integration@example.com"
+        assert me_profile["name"] == "Integration"
+        assert me_profile["surname"] == "User"
+        assert me_profile["id"] == test_user_id
+
+        # Test updating own profile via /users/me
+        update_data = {
+            "name": "Updated Integration",
+            "surname": "Updated User",
+        }
+
+        response = client_no_auth.put("/api/v1/users/me", json=update_data, headers=headers)
+        assert response.status_code == status.HTTP_200_OK
+        updated_profile = response.json()
+        assert updated_profile["name"] == update_data["name"]
+        assert updated_profile["surname"] == update_data["surname"]
+        assert updated_profile["email"] == "integration@example.com"  # Email should remain unchanged
+
+        # Verify the update by reading the profile again
+        response = client_no_auth.get("/api/v1/users/me", headers=headers)
+        assert response.status_code == status.HTTP_200_OK
+        final_profile = response.json()
+        assert final_profile["name"] == update_data["name"]
+        assert final_profile["surname"] == update_data["surname"]

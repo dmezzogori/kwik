@@ -9,7 +9,7 @@ import pydantic
 
 from kwik.database.base import Base
 from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
-from kwik.exceptions import DuplicatedEntity, NotFound
+from kwik.exceptions import DuplicatedEntityError, EntityNotFoundError
 from kwik.typings import ParsedSortingQuery  # noqa: TC001
 
 if TYPE_CHECKING:
@@ -106,7 +106,7 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
         """Get record by ID or raise NotFound exception if it doesn't exist."""
         r = self.get(id=id)
         if r is None:
-            raise NotFound(detail=f"Entity [{self.model.__tablename__}] with id={id} does not exist")
+            raise EntityNotFoundError(detail=f"Entity [{self.model.__tablename__}] with id={id} does not exist")
         return r
 
     def create(self, *, obj_in: CreateSchemaType) -> ModelType:
@@ -139,7 +139,7 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
         if obj_db is None:
             obj_db = self.create(obj_in=obj_in)
         elif raise_on_error:
-            raise DuplicatedEntity
+            raise DuplicatedEntityError
         return obj_db
 
     def update(self, *, db_obj: ModelType, obj_in: UpdateSchemaType | dict[str, Any]) -> ModelType:

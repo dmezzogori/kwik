@@ -97,7 +97,7 @@ def test_user(db_session: Session) -> User:
         name="testuser",
         surname="testsurname",
         email="test@example.com",
-        password="testpassword123",  # noqa: S106
+        password="testpassword123",
     )
 
 

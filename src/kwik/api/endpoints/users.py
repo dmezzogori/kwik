@@ -8,7 +8,7 @@ import kwik.typings
 from kwik.api.deps import Pagination, current_user, has_permission
 from kwik.core.enum import Permissions
 from kwik.crud import roles, users
-from kwik.exceptions import DuplicatedEntity, Forbidden
+from kwik.exceptions import AccessDeniedError, DuplicatedEntityError
 from kwik.routers import AuditorRouter
 from kwik.schemas import (
     Paginated,
@@ -55,7 +55,7 @@ def read_user_by_id(user_id: int, user: current_user) -> User:
         user_id=user.id,
         permissions=(Permissions.users_management_read,),
     ):
-        raise Forbidden
+        raise AccessDeniedError
 
     return user
 
@@ -69,7 +69,7 @@ def create_user(user_in: UserRegistration) -> User:
     """Create new user."""
     user = users.get_by_email(email=user_in.email)
     if user:
-        raise DuplicatedEntity
+        raise DuplicatedEntityError
 
     return users.create(obj_in=user_in)
 
@@ -111,7 +111,7 @@ def update_password(
         user_id=user.id,
         permissions=(Permissions.users_management_update,),
     ):
-        raise Forbidden
+        raise AccessDeniedError
 
     return users.change_password(user_id=user_id, obj_in=obj_in)
 

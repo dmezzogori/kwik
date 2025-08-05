@@ -96,7 +96,7 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionDefinition, s
         self.db.flush()
         return permission
 
-    def delete(self, *, id: int) -> models.Permission:
+    def delete(self, *, permission_id: int) -> models.Permission:
         """
         Delete a permission by id.
 
@@ -106,8 +106,8 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionDefinition, s
             NotFound: If the provided permission does not exist
 
         """
-        self.purge_all_roles(permission_id=id)
-        return super().delete(id=id)
+        self.purge_all_roles(permission_id=permission_id)
+        return super().delete(id=permission_id)
 
     def get_multi_by_role_id(self, *, role_id: int) -> list[models.Permission]:
         """Get all permissions assigned to a specific role."""

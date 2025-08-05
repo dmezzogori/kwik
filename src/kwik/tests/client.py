@@ -7,12 +7,11 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Literal, Never
 
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from fastapi.testclient import TestClient
     from httpx import Response
-
+    from pydantic import BaseModel
 
 
 EndpointReturn = Mapping[str, Any] | list[Mapping[str, Any]]
@@ -59,11 +58,11 @@ class TestClientBase:
         """Get URI for resource deletion."""
         return self.BASE_URI
 
-    def make_post_data(self, **kwargs) -> Never:
+    def make_post_data(self, **kwargs: Any) -> Never:  # noqa: ANN401
         """Create data for POST requests - must be implemented by subclasses."""
         raise NotImplementedError
 
-    def make_put_data(self, **kwargs) -> Never:
+    def make_put_data(self, **kwargs: Any) -> Never:  # noqa: ANN401
         """Create data for PUT requests - must be implemented by subclasses."""
         raise NotImplementedError
 

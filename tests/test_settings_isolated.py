@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from pathlib import Path
 
 from pydantic import validator
 
@@ -20,7 +21,7 @@ from kwik.core.settings import (
 )
 
 
-class TestCustomSettings(BaseKwikSettings):
+class CustomTestSettings(BaseKwikSettings):
     """Custom settings class for testing extensibility."""
 
     CUSTOM_SETTING: str = "default_value"
@@ -88,7 +89,7 @@ def test_file_source_loads_json() -> None:
         assert config == test_config
         assert source.priority == file_source_priority
     finally:
-        os.unlink(json_file)
+        Path(json_file).unlink()
 
 
 def test_settings_registry_add_source_and_priority_ordering() -> None:
@@ -138,10 +139,10 @@ def test_configure_kwik_with_custom_settings() -> None:
     """Test configure_kwik with custom settings class."""
     try:
         reset_settings()
-        configure_kwik(settings_class=TestCustomSettings)
+        configure_kwik(settings_class=CustomTestSettings)
         settings = get_settings()
 
-        assert isinstance(settings, TestCustomSettings)
+        assert isinstance(settings, CustomTestSettings)
         assert settings.CUSTOM_SETTING == "DEFAULT_VALUE"  # Validator uppercases
         expected_int_value = 42
         assert expected_int_value == settings.CUSTOM_INT_SETTING
@@ -163,6 +164,7 @@ def test_configure_kwik_with_dict() -> None:
 
 def test_extensibility_custom_feature_flags() -> None:
     """Test adding custom feature flags."""
+
     class FeatureFlagSettings(BaseKwikSettings):
         FEATURE_X_ENABLED: bool = False
         FEATURE_Y_ENABLED: bool = True

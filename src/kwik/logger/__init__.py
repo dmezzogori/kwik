@@ -6,6 +6,7 @@ and configuration for the kwik web framework.
 """
 
 import logging
+from typing import ClassVar
 
 from kwik.core.settings import get_settings
 
@@ -21,7 +22,7 @@ class CustomFormatter(logging.Formatter):
     reset = "\x1b[0m"
     format = "%(asctime)s | %(levelname)s | %(name)s [%(filename)s:%(lineno)d] | %(message)s"
 
-    FORMATS = {
+    FORMATS: ClassVar[dict[int, str]] = {
         logging.DEBUG: grey + format + reset,
         logging.INFO: blue + format + reset,
         logging.WARNING: yellow + format + reset,

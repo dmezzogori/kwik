@@ -9,7 +9,7 @@ from starlette import status
 
 from kwik import models, schemas
 from kwik.core.security import get_password_hash, verify_password
-from kwik.exceptions import IncorrectCredentials, UserInactive, UserNotFound
+from kwik.exceptions import AuthenticationFailedError, InactiveUserError, UserNotFoundError
 
 from . import auto_crud
 
@@ -83,7 +83,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserRegistration, sch
         """Reset user password by email."""
         user_db = self.get_by_email(email=email)
         if user_db is None:
-            raise UserNotFound
+            raise UserNotFoundError
 
         self.is_active(user_db)
 
@@ -106,7 +106,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserRegistration, sch
 
         # Check if the user exists and the password is correct
         if user_db is None or not verify_password(password, user_db.hashed_password):
-            raise IncorrectCredentials
+            raise AuthenticationFailedError
 
         return user_db
 
@@ -114,7 +114,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserRegistration, sch
     def is_active(user: models.User) -> models.User:
         """Check if user is active, raise exception if not."""
         if not user.is_active:
-            raise UserInactive
+            raise InactiveUserError
         return user
 
     def is_superuser(self, *, user_id: int) -> bool:
@@ -177,8 +177,9 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserRegistration, sch
         """Assign a role to a user. Idempotent operation."""
         # Verify user and role exist
         user_db = self.get_if_exist(id=user_id)
-        from kwik import crud
-        role_db = crud.roles.get_if_exist(id=role_id)
+        from kwik import crud  # noqa: PLC0415
+
+        crud.roles.get_if_exist(id=role_id)  # Verify role exists
 
         # Check if association already exists
         user_role_db = self._get_user_role_association(user_id=user_id, role_id=role_id)
@@ -194,8 +195,9 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserRegistration, sch
         """Remove a role from a user. Idempotent operation."""
         # Verify user and role exist
         user_db = self.get_if_exist(id=user_id)
-        from kwik import crud
-        crud.roles.get_if_exist(id=role_id)
+        from kwik import crud  # noqa: PLC0415
+
+        crud.roles.get_if_exist(id=role_id)  # Verify role exists
 
         # Find and delete association if it exists
         user_role_db = self._get_user_role_association(user_id=user_id, role_id=role_id)

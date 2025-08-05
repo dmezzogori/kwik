@@ -7,17 +7,17 @@ for proper error handling throughout the kwik web framework.
 
 from __future__ import annotations
 
-from .base import DuplicatedEntity, Forbidden, KwikException, NotFound
+from .base import AccessDeniedError, DuplicatedEntityError, EntityNotFoundError, KwikError
 from .handler import kwik_exception_handler
-from .users import IncorrectCredentials, UserInactive, UserNotFound
+from .users import AuthenticationFailedError, InactiveUserError, UserNotFoundError
 
 __all__ = [
-    "DuplicatedEntity",
-    "Forbidden",
-    "IncorrectCredentials",
-    "KwikException",
-    "NotFound",
-    "UserInactive",
-    "UserNotFound",
+    "AccessDeniedError",
+    "AuthenticationFailedError",
+    "DuplicatedEntityError",
+    "EntityNotFoundError",
+    "InactiveUserError",
+    "KwikError",
+    "UserNotFoundError",
     "kwik_exception_handler",
 ]

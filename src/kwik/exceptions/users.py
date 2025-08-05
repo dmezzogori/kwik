@@ -2,10 +2,10 @@
 
 from fastapi import status
 
-from .base import KwikException
+from .base import KwikError
 
 
-class IncorrectCredentials(KwikException):
+class AuthenticationFailedError(KwikError):
     """Exception raised when user provides incorrect login credentials."""
 
     def __init__(self, detail: str = "Incorrect credentials") -> None:
@@ -13,7 +13,7 @@ class IncorrectCredentials(KwikException):
         super().__init__(status_code=status.HTTP_401_UNAUTHORIZED, detail=detail)
 
 
-class UserNotFound(KwikException):
+class UserNotFoundError(KwikError):
     """Exception raised when requested user does not exist."""
 
     def __init__(self, detail: str = "User not found") -> None:
@@ -21,7 +21,7 @@ class UserNotFound(KwikException):
         super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
 
 
-class UserInactive(KwikException):
+class InactiveUserError(KwikError):
     """Exception raised when attempting to authenticate inactive user."""
 
     def __init__(self, detail: str = "Inactive user") -> None:

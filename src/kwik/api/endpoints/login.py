@@ -15,7 +15,7 @@ import kwik.models
 import kwik.schemas
 import kwik.typings
 import kwik.utils
-from kwik.exceptions.base import InvalidToken
+from kwik.exceptions.base import TokenValidationError
 
 router = APIRouter(prefix="/login", tags=["login"])
 
@@ -93,7 +93,7 @@ def reset_password(token: Annotated[str, Body()], password: Annotated[str, Body(
     """Reset password."""
     email = kwik.utils.verify_password_reset_token(token)
     if not email:
-        raise InvalidToken
+        raise TokenValidationError
 
     kwik.crud.users.reset_password(email=email, password=password)
     return {"msg": "Password updated successfully"}

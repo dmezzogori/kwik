@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from kwik.database import DBContextManager
 from kwik.database.base import Base
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-def init_test_db(init_db: Callable, *args, **kwargs) -> None:
+def init_test_db(init_db: Callable, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
     """Initialize test database with tables and seed data."""
     # Initialize the database
     with DBContextManager() as db:
