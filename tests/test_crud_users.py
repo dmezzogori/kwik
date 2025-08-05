@@ -483,13 +483,12 @@ class TestUserCRUD:
         has_role = crud.users.has_roles(user_id=user.id, roles=["test_role"])
         assert has_role is True
 
-    def test_assign_role_idempotent_operation(self, db_session: Session) -> None:
+    def test_assign_role_idempotent_operation(self, crud_context: tuple[Session, models.User]) -> None:
         """Test that assigning same role twice is idempotent."""
-        # Set the database session in context
-        db_conn_ctx_var.set(db_session)
+        db_session, current_user = crud_context
 
         # Create test user and role
-        user = create_test_user(db_session)
+        user = create_test_user(db_session, email="idempotent@example.com")
         role = create_test_role(db_session, name="test_role", creator_user_id=user.id)
 
         # Assign role twice
@@ -511,13 +510,12 @@ class TestUserCRUD:
         with pytest.raises(EntityNotFoundError):
             crud.users.assign_role(user_id=99999, role_id=role.id)
 
-    def test_remove_role_from_user(self, db_session: Session) -> None:
+    def test_remove_role_from_user(self, crud_context: tuple[Session, models.User]) -> None:
         """Test removing a role from a user."""
-        # Set the database session in context
-        db_conn_ctx_var.set(db_session)
+        db_session, current_user = crud_context
 
         # Create test user and role
-        user = create_test_user(db_session)
+        user = create_test_user(db_session, email="remove_role@example.com")
         role = create_test_role(db_session, name="test_role", creator_user_id=user.id)
 
         # Assign then remove role
@@ -543,13 +541,12 @@ class TestUserCRUD:
         result_user = crud.users.remove_role(user_id=user.id, role_id=role.id)
         assert result_user.id == user.id
 
-    def test_has_roles_with_assigned_roles(self, db_session: Session) -> None:
+    def test_has_roles_with_assigned_roles(self, crud_context: tuple[Session, models.User]) -> None:
         """Test has_roles returns True when user has all specified roles."""
-        # Set the database session in context
-        db_conn_ctx_var.set(db_session)
+        db_session, current_user = crud_context
 
         # Create test user and roles
-        user = create_test_user(db_session)
+        user = create_test_user(db_session, email="has_roles_assigned@example.com")
         role1 = create_test_role(db_session, name="role1", creator_user_id=user.id)
         role2 = create_test_role(db_session, name="role2", creator_user_id=user.id)
 
@@ -565,13 +562,12 @@ class TestUserCRUD:
         has_one = crud.users.has_roles(user_id=user.id, roles=["role1"])
         assert has_one is True
 
-    def test_has_roles_with_missing_roles(self, db_session: Session) -> None:
+    def test_has_roles_with_missing_roles(self, crud_context: tuple[Session, models.User]) -> None:
         """Test has_roles returns False when user missing some roles."""
-        # Set the database session in context
-        db_conn_ctx_var.set(db_session)
+        db_session, current_user = crud_context
 
         # Create test user and role
-        user = create_test_user(db_session)
+        user = create_test_user(db_session, email="has_roles_missing@example.com")
         role1 = create_test_role(db_session, name="role1", creator_user_id=user.id)
 
         # Assign only one role
@@ -581,10 +577,9 @@ class TestUserCRUD:
         has_both = crud.users.has_roles(user_id=user.id, roles=["role1", "nonexistent_role"])
         assert has_both is False
 
-    def test_get_multi_by_role_name(self, db_session: Session) -> None:
+    def test_get_multi_by_role_name(self, crud_context: tuple[Session, models.User]) -> None:
         """Test getting users by role name."""
-        # Set the database session in context
-        db_conn_ctx_var.set(db_session)
+        db_session, current_user = crud_context
 
         # Create test users and role
         user1 = create_test_user(db_session, email="user1@example.com")
@@ -606,15 +601,14 @@ class TestUserCRUD:
         assert user2.id in user_ids
         assert user3.id not in user_ids
 
-    def test_get_multi_by_role_id(self, db_session: Session) -> None:
+    def test_get_multi_by_role_id(self, crud_context: tuple[Session, models.User]) -> None:
         """Test getting users by role ID."""
-        # Set the database session in context
-        db_conn_ctx_var.set(db_session)
+        db_session, current_user = crud_context
 
-        # Create test users and role
-        user1 = create_test_user(db_session, email="user1@example.com")
-        user2 = create_test_user(db_session, email="user2@example.com")
-        user3 = create_test_user(db_session, email="user3@example.com")
+        # Create test users and role (need unique emails)
+        user1 = create_test_user(db_session, email="role_id_user1@example.com")
+        user2 = create_test_user(db_session, email="role_id_user2@example.com")
+        user3 = create_test_user(db_session, email="role_id_user3@example.com")
         role = create_test_role(db_session, name="target_role", creator_user_id=user1.id)
 
         # Assign role to only user1 and user2
@@ -631,13 +625,12 @@ class TestUserCRUD:
         assert user2.id in user_ids
         assert user3.id not in user_ids
 
-    def test_has_permissions_with_assigned_permissions(self, db_session: Session) -> None:
+    def test_has_permissions_with_assigned_permissions(self, crud_context: tuple[Session, models.User]) -> None:
         """Test has_permissions returns True when user has all specified permissions through roles."""
-        # Set the database session in context
-        db_conn_ctx_var.set(db_session)
+        db_session, current_user = crud_context
 
         # Create test user, role, and permissions
-        user = create_test_user(db_session)
+        user = create_test_user(db_session, email="has_perms_assigned@example.com")
         role = create_test_role(db_session, name="test_role", creator_user_id=user.id)
         perm1 = create_test_permission(db_session, name="permission1", creator_user_id=user.id)
         perm2 = create_test_permission(db_session, name="permission2", creator_user_id=user.id)
@@ -660,13 +653,12 @@ class TestUserCRUD:
         has_one = crud.users.has_permissions(user_id=user.id, permissions=["permission1"])
         assert has_one is True
 
-    def test_has_permissions_with_missing_permissions(self, db_session: Session) -> None:
+    def test_has_permissions_with_missing_permissions(self, crud_context: tuple[Session, models.User]) -> None:
         """Test has_permissions returns False when user missing some permissions."""
-        # Set the database session in context
-        db_conn_ctx_var.set(db_session)
+        db_session, current_user = crud_context
 
         # Create test user, role, and permission
-        user = create_test_user(db_session)
+        user = create_test_user(db_session, email="has_perms_missing@example.com")
         role = create_test_role(db_session, name="test_role", creator_user_id=user.id)
         perm1 = create_test_permission(db_session, name="permission1", creator_user_id=user.id)
 
@@ -682,13 +674,12 @@ class TestUserCRUD:
         has_both = crud.users.has_permissions(user_id=user.id, permissions=["permission1", "nonexistent_permission"])
         assert has_both is False
 
-    def test_get_permissions_for_user(self, db_session: Session) -> None:
+    def test_get_permissions_for_user(self, crud_context: tuple[Session, models.User]) -> None:
         """Test getting all permissions for a user through their roles."""
-        # Set the database session in context
-        db_conn_ctx_var.set(db_session)
+        db_session, current_user = crud_context
 
         # Create test user, roles, and permissions
-        user = create_test_user(db_session)
+        user = create_test_user(db_session, email="get_perms@example.com")
         role1 = create_test_role(db_session, name="role1", creator_user_id=user.id)
         role2 = create_test_role(db_session, name="role2", creator_user_id=user.id)
         perm1 = create_test_permission(db_session, name="permission1", creator_user_id=user.id)

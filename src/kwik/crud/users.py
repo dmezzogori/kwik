@@ -184,8 +184,17 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserRegistration, sch
         # Check if association already exists
         user_role_db = self._get_user_role_association(user_id=user_id, role_id=role_id)
         if user_role_db is None:
-            # Create new user-role association
-            user_role_db = models.UserRole(user_id=user_id, role_id=role_id)
+            # Create new user-role association with proper creator_user_id
+            user_role_kwargs = {
+                "user_id": user_id,
+                "role_id": role_id,
+            }
+
+            # Set creator_user_id if current user is available (handles RecordInfoMixin requirement)
+            if self.user is not None:
+                user_role_kwargs["creator_user_id"] = self.user.id
+
+            user_role_db = models.UserRole(**user_role_kwargs)
             self.db.add(user_role_db)
             self.db.flush()
 

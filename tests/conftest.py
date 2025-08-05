@@ -112,6 +112,20 @@ def client_no_auth(app: FastAPI, db_session: Session) -> Generator[TestClient, N
     db_conn_ctx_var.set(None)
 
 
+@pytest.fixture
+def crud_context(db_session: Session, test_user: User) -> Generator[tuple[Session, User], None, None]:
+    """Set up database session and user context for CRUD operations."""
+    # Set the database session in the context variable
+    db_conn_ctx_var.set(db_session)
+
+    # Set up user context using framework's override_current_user
+    with override_current_user(test_user):
+        yield db_session, test_user
+
+    # Clean up the context variable
+    db_conn_ctx_var.set(None)
+
+
 @pytest.fixture(autouse=True)
 def clean_db(db_session: Session) -> Generator[None, None, None]:
     """Clean database tables between tests."""
