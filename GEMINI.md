@@ -1,0 +1,185 @@
+# Kwik - Claude Code Context
+
+## Project Overview
+
+Kwik is a web framework for building modern, batteries-included, RESTful backends with Python 3.12+. It's based on FastAPI and delivers an opinionated, concise, business-oriented API.
+
+**Key Technologies:**
+- Python 3.12+
+- FastAPI for web framework
+- SQLAlchemy v1.4.48 for ORM
+- Pydantic for data validation
+- PostgreSQL support
+
+## Project Structure
+
+```
+src/kwik/
+├── api/           # FastAPI routes and endpoints
+├── core/          # Configuration and security
+├── crud/          # Database operations (Create, Read, Update, Delete)
+├── database/      # Database connection and session management
+├── models/        # SQLAlchemy models
+├── schemas/       # Pydantic schemas for API validation
+├── utils/         # Utility functions
+└── applications/  # Application runners (uvicorn, gunicorn)
+```
+
+## Common Commands
+
+### Development
+```bash
+# Install dependencies (using uv)
+uv sync
+
+# Run development server with hot reload
+kwik
+```
+
+### Testing
+
+#### Local Testing Setup
+```bash
+# Start PostgreSQL test database (required for database tests)
+docker compose -f docker-compose.test.yml up -d
+
+# Wait for database to be ready
+docker compose -f docker-compose.test.yml exec postgres-test pg_isready -U postgres -d kwik_test
+
+# Run all tests with coverage
+pytest
+
+# Run tests with detailed coverage report
+pytest --cov=src/kwik --cov-report=term-missing
+
+# Run specific test file
+pytest tests/test_crud_users.py
+
+# Run specific test method
+pytest tests/test_crud_users.py::TestUserCRUD::test_create_user
+
+# Run tests in parallel (faster)
+pytest -n auto
+
+# Run only unit tests (skip integration tests)
+pytest -m "not integration"
+
+# Stop and clean up test database
+docker compose -f docker-compose.test.yml down -v
+```
+
+#### Test Database
+- **PostgreSQL Test Database**: Runs on port 5433 (different from development)
+- **Database Name**: kwik_test
+- **Credentials**: postgres/root (test-only, safe to use)
+- **Docker Compose**: `docker-compose.test.yml`
+
+#### Test Structure
+```
+tests/
+├── conftest.py              # Pytest configuration and fixtures
+├── utils/                   # Test utilities and factories
+│   ├── __init__.py
+│   ├── factories.py         # Factory Boy factories for test data
+│   └── helpers.py           # Helper functions for tests
+├── test_crud_users.py       # CRUD operation tests
+├── test_crud_roles.py       # Role CRUD tests
+├── test_api_endpoints.py    # API endpoint tests
+```
+
+#### Writing Tests
+- Use `db_session` fixture for database access
+- Use `clean_db` fixture to ensure clean state between tests
+- Use factories from `tests.utils` for creating test data
+- Mark integration tests with `@pytest.mark.integration`
+- Mark slow tests with `@pytest.mark.slow`
+
+#### Continuous Integration
+- **GitHub Actions**: Automatically runs tests on PRs and pushes to main/develop
+- **Test Workflow**: `.github/workflows/test.yml`
+- **Database**: Uses the same Docker Compose setup as local testing
+- **Coverage**: Uploads coverage reports to Codecov (if configured)
+- **Linting**: Runs ruff checks and formatting validation
+
+### Code Quality & Common Commands
+```bash
+# Run linter and formatter
+ruff check
+ruff format .
+
+# Fix auto-fixable issues
+ruff check --fix
+
+# Apply unsafe fixes (use carefully)
+ruff check --fix --unsafe-fixes
+
+# Update dependencies (after testing)
+# Update pyproject.toml manually, then:
+uv sync
+
+# Run tests to check current status
+pytest --cov=src/kwik --cov-report=term-missing
+```
+
+## Code Style Guidelines
+
+- **Line length**: 120 characters
+- **Python version**: 3.12+
+- **Indentation**: 4 spaces
+- **Linting**: Ruff with "ALL" rules enabled
+- **Type hints**: Use type annotations throughout
+
+## Database
+
+- **ORM**: SQLAlchemy v1.4.48
+- **Database**: PostgreSQL (via AsyncPG)
+- **Migrations**: Alembic
+- **Connection**: Async connection pooling
+
+## API Patterns
+
+- Follow FastAPI conventions for route definitions
+- Use Pydantic v1 schemas for request/response validation
+- Implement CRUD operations in `crud/` directory
+- Database models in `models/`
+- API schemas in `schemas/`
+
+## Development Workflow
+
+1. **Setup**: Install dependencies with `uv sync`
+2. **Development**: Run `kwik` for hot-reload server
+3. **Git Workflow**: Use feature branches (`feature/your-feature-name`)
+4. **Before starting work**: Run `pytest` to have a reference for existing tests results and coverage
+5. **After changes**: Run `pytest` to ensure tests pass
+6. **Linting**: Run `ruff check` and fix issues
+7. **Format**: Run `ruff format` to apply code style
+
+## Repository Context
+
+- **Status**: Pre-release, active development
+- **License**: MIT
+- **Documentation**: https://kwik.rocks
+- **Repository**: https://github.com/dmezzogori/kwik
+
+## Notes for Claude Code
+
+- This is a Python web framework project using FastAPI
+- Focus on maintaining consistency with existing patterns
+- Pay attention to async/await patterns throughout the codebase
+- Database operations should use the established CRUD patterns
+- All new endpoints should include proper Pydantic schemas
+- Follow the existing project structure when adding new features
+
+
+## Known Issues & Planned Migrations
+
+### Critical Dependencies
+- **SQLAlchemy**: Currently v1.4.48, migration to v2.0+ planned
+- **Pydantic**: Currently v1.10.2, migration to v2.0+ planned  
+- **Alembic**: Currently v1.8.1, update to latest stable planned
+
+### Migration Impact
+- **SQLAlchemy 2.0**: Will require updating database models, CRUD operations, and `src/kwik/database/base.py`
+- **Pydantic v2**: Schema files will need validation pattern updates for performance improvements
+
+
