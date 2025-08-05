@@ -31,7 +31,7 @@ async def store_file(*, in_file: UploadFile, path: str | None = None) -> tuple[s
     root_upload_directory = "/uploads"
 
     # Handle optional subdirectory path with security validation
-    if path is not None and len(path) > 1:
+    if path is not None:
         # Validate path to prevent directory traversal attacks
         base_path = Path("/uploads").resolve()
 
