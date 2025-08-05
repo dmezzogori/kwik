@@ -29,6 +29,9 @@ dependencies = [
     "jinja2>=3.1.4",
 ]
 
+[project.scripts]
+kwik = "kwik.__main__:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
