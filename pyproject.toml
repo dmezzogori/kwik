@@ -59,6 +59,13 @@ markers = [
     "unit: marks tests as unit tests",
 ]
 
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+]
+
+
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
 exclude = [
