@@ -50,6 +50,9 @@ dev = [
 addopts = "--cov=src/kwik --cov-report=term-missing --cov-report=xml -v"
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.coverage.run]
+omit = ["tests/*"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
