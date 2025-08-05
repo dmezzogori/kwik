@@ -182,4 +182,6 @@ pytest --cov=src/kwik --cov-report=term-missing
 - **SQLAlchemy 2.0**: Will require updating database models, CRUD operations, and `src/kwik/database/base.py`
 - **Pydantic v2**: Schema files will need validation pattern updates for performance improvements
 
+## Testing Recommendations
 
+- Remember that in pytest you must not use magic numbers or magic constants. this will trigger "ruff check". avoid the use of magic numbers/constants in tests.
