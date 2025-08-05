@@ -1,6 +1,6 @@
 site_name: Kwik
 site_description: Kwik web framework, modern, concise, opinionated API for batteries-included RESTful backends
-site_url: https://kwik.rocks
+site_url: https://dmezzogori.github.io/kwik/
 site_author: Davide Mezzogori
 theme:
   name: material
