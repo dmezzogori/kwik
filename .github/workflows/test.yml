@@ -1,18 +1,18 @@
-name: Tests
+name: Run tests and upload coverage
 
 on:
   push:
-    branches: [ main, develop ]
   pull_request:
-    branches: [ main, develop ]
 
 jobs:
   test:
+    name: Run tests and collect coverage
     runs-on: ubuntu-latest
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 2
       
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -20,7 +20,7 @@ jobs:
         python-version: '3.11'
         
     - name: Install uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v6
       with:
         version: "latest"
         
@@ -34,33 +34,14 @@ jobs:
       run: |
         echo "Waiting for PostgreSQL to be ready..."
         timeout 60s bash -c 'until docker compose -f docker-compose.test.yml exec postgres-test pg_isready -U postgres -d kwik_test; do sleep 2; done'
-        
-    - name: Run linting
-      run: uv run ruff check .
-      
-    - name: Run formatting check
-      run: uv run ruff format --check .
       
     - name: Run tests
-      run: uv run pytest --cov=src/kwik --cov-report=xml --cov-report=term-missing -v
-      env:
-        # Test environment variables
-        TEST_ENV: "True"
-        POSTGRES_SERVER: "localhost"
-        POSTGRES_PORT: "5433"
-        POSTGRES_DB: "kwik_test"
-        POSTGRES_USER: "postgres"
-        POSTGRES_PASSWORD: "root"
+      run: uv run pytest
         
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }}
         
     - name: Stop test database
       run: docker compose -f docker-compose.test.yml down

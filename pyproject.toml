@@ -48,7 +48,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=src/kwik --cov-report=term-missing --cov-report=xml -v"
+addopts = "--cov=src/kwik --cov-branch --cov-report=term-missing --cov-report=xml -v"
 asyncio_mode = "auto"
 testpaths = ["tests"]
 markers = [
