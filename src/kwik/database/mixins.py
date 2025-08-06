@@ -27,12 +27,12 @@ class UserMixin:
     __allow_unmapped__ = True
 
     @declared_attr
-    def creator_user_id(self) -> mapped_column[int]:
+    def creator_user_id(self):  # noqa: ANN201
         """Get reference to the user who created this record."""
         return mapped_column(BigInteger, ForeignKey("users.id"), nullable=False)
 
     @declared_attr
-    def last_modifier_user_id(self) -> mapped_column[int]:
+    def last_modifier_user_id(self):  # noqa: ANN201
         """Get reference to the user who last modified this record."""
         return mapped_column(BigInteger, ForeignKey("users.id"))
 

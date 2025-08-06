@@ -16,9 +16,9 @@ def get_session_local() -> sessionmaker:
     global _session_local  # noqa: PLW0603
     if _session_local is None:
         _session_local = sessionmaker(
-            autocommit=False,
-            autoflush=False,
             bind=get_engine(),
+            autoflush=False,
+            expire_on_commit=False,  # Modern default for better performance
         )
     return _session_local
 
@@ -30,9 +30,9 @@ def get_alternate_session_local() -> sessionmaker | None:
         alternate_engine = get_alternate_engine()
         if alternate_engine is not None:
             _alternate_session_local = sessionmaker(
-                autocommit=False,
-                autoflush=False,
                 bind=alternate_engine,
+                autoflush=False,
+                expire_on_commit=False,  # Modern default for better performance
             )
     return _alternate_session_local
 

@@ -26,6 +26,8 @@ def get_engine() -> Engine:
             pool_pre_ping=True,
             pool_size=settings.POSTGRES_MAX_CONNECTIONS // settings.BACKEND_WORKERS,
             max_overflow=0,
+            # Modern SQLAlchemy 2.0 optimizations
+            query_cache_size=1200,  # Enable query compilation caching for better performance
         )
     return _engine
 
@@ -36,7 +38,11 @@ def get_alternate_engine() -> Engine | None:
     if _alternate_engine is None:
         settings = get_settings()
         if settings.alternate_db.ALTERNATE_SQLALCHEMY_DATABASE_URI is not None:
-            _alternate_engine = create_engine(url=settings.alternate_db.ALTERNATE_SQLALCHEMY_DATABASE_URI)
+            _alternate_engine = create_engine(
+                url=settings.alternate_db.ALTERNATE_SQLALCHEMY_DATABASE_URI,
+                # Modern SQLAlchemy 2.0 optimizations
+                query_cache_size=1200,  # Enable query compilation caching for better performance
+            )
     return _alternate_engine
 
 
