@@ -10,6 +10,7 @@
 
 **Repository**: https://github.com/dmezzogori/kwik
 
+[![codecov](https://codecov.io/github/dmezzogori/kwik/branch/feature%2Fv2/graph/badge.svg?token=7WBOPGCSWS)](https://codecov.io/github/dmezzogori/kwik)
 ---
 
 Kwik is a web framework for building modern, batteries-included, RESTful backends with Python 3.12+.
