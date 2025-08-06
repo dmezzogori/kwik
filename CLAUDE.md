@@ -40,13 +40,7 @@ kwik
 
 #### Local Testing Setup
 ```bash
-# Start PostgreSQL test database (required for database tests)
-docker compose -f docker-compose.test.yml up -d
-
-# Wait for database to be ready
-docker compose -f docker-compose.test.yml exec postgres-test pg_isready -U postgres -d kwik_test
-
-# Run all tests with coverage
+# Run all tests with coverage (testcontainers automatically manages PostgreSQL)
 pytest
 
 # Run tests with detailed coverage report
@@ -63,16 +57,13 @@ pytest -n auto
 
 # Run only unit tests (skip integration tests)
 pytest -m "not integration"
-
-# Stop and clean up test database
-docker compose -f docker-compose.test.yml down -v
 ```
 
 #### Test Database
-- **PostgreSQL Test Database**: Runs on port 5433 (different from development)
+- **PostgreSQL Test Database**: Automatically managed by testcontainers
 - **Database Name**: kwik_test
 - **Credentials**: postgres/root (test-only, safe to use)
-- **Docker Compose**: `docker-compose.test.yml`
+- **Container Management**: Automatic startup, readiness checks, and cleanup
 
 #### Test Structure
 ```
@@ -97,7 +88,7 @@ tests/
 #### Continuous Integration
 - **GitHub Actions**: Automatically runs tests on PRs and pushes to main/develop
 - **Test Workflow**: `.github/workflows/test.yml`
-- **Database**: Uses the same Docker Compose setup as local testing
+- **Database**: Uses testcontainers for automatic PostgreSQL management
 - **Coverage**: Uploads coverage reports to Codecov (if configured)
 - **Linting**: Runs ruff checks and formatting validation
 

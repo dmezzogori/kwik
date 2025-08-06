@@ -45,6 +45,7 @@ dev = [
     "factory-boy>=3.3.0",
     "ruff>=0.12.1",
     "bump-pydantic>=0.8.0",
+    "testcontainers>=4.0.0",
 ]
 
 [tool.pytest.ini_options]

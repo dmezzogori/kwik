@@ -236,21 +236,20 @@ kwik
 ### Testing
 
 ```bash
-# Start PostgreSQL test database
-docker compose -f docker-compose.test.yml up -d
-
-# Wait for database to be ready
-docker compose -f docker-compose.test.yml exec postgres-test pg_isready -U postgres -d kwik_test
-
-# Run all tests with coverage
+# Run all tests with coverage (testcontainers automatically manages PostgreSQL)
 pytest --cov=src/kwik --cov-report=term-missing
 
 # Run tests in parallel (faster)
 pytest -n auto
 
-# Stop test database
-docker compose -f docker-compose.test.yml down -v
+# Run specific test file
+pytest tests/test_crud_users.py
+
+# Run only unit tests (skip integration tests)
+pytest -m "not integration"
 ```
+
+**Note**: Tests use testcontainers to automatically manage the PostgreSQL database. No manual database setup required.
 
 ### Code Quality
 

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from fastapi.testclient import TestClient
+from testcontainers.postgres import PostgresContainer
 
 import kwik
 from kwik import configure_kwik
@@ -29,23 +30,31 @@ if TYPE_CHECKING:
 @pytest.fixture(scope="session")
 def setup_test_database() -> Generator[None, None, None]:
     """Ensure test settings are properly configured. Create all database tables for testing."""
-    configure_kwik(
-        config_dict={
-            "POSTGRES_SERVER": "localhost",
-            "POSTGRES_PORT": "5433",
-            "POSTGRES_DB": "kwik_test",
-            "POSTGRES_USER": "postgres",
-            "POSTGRES_PASSWORD": "root",
-        },
-    )
-    # Reset caches again after configuration to ensure fresh instances with new settings
-    reset_engines()
-    reset_session_locals()
+    with PostgresContainer("postgres:15-alpine", username="postgres", password="root", dbname="kwik_test") as postgres:
+        # Set additional environment variables to match docker-compose config
+        postgres.with_env("POSTGRES_INITDB_ARGS", "--encoding=UTF-8")
 
-    engine = get_engine()
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
+        # Get dynamic connection details from the container
+        host = postgres.get_container_host_ip()
+        port = postgres.get_exposed_port(5432)  # PostgreSQL default port inside container
+
+        configure_kwik(
+            config_dict={
+                "POSTGRES_SERVER": host,
+                "POSTGRES_PORT": str(port),
+                "POSTGRES_DB": "kwik_test",
+                "POSTGRES_USER": "postgres",
+                "POSTGRES_PASSWORD": "root",
+            },
+        )
+        # Reset caches again after configuration to ensure fresh instances with new settings
+        reset_engines()
+        reset_session_locals()
+
+        engine = get_engine()
+        Base.metadata.create_all(bind=engine)
+        yield
+        Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture
