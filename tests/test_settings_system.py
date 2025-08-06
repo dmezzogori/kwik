@@ -23,7 +23,7 @@ from kwik.core.settings import (
 )
 
 
-class TestCustomSettings(BaseKwikSettings):
+class CustomSettingsExample(BaseKwikSettings):
     """Custom settings class for testing extensibility."""
 
     CUSTOM_SETTING: str = "default_value"
@@ -160,8 +160,8 @@ class TestSettingsRegistry:
 
     def test_set_settings_class(self) -> None:
         """Test setting custom settings class."""
-        self.registry.set_settings_class(TestCustomSettings)
-        assert self.registry._settings_class == TestCustomSettings
+        self.registry.set_settings_class(CustomSettingsExample)
+        assert self.registry._settings_class == CustomSettingsExample
 
     def test_get_merged_config(self) -> None:
         """Test configuration merging with priority."""
@@ -197,7 +197,7 @@ class TestSettingsRegistry:
     def test_reset_clears_state(self) -> None:
         """Test reset clears registry state."""
         self.registry.add_source(DictSource({"TEST": "value"}))
-        self.registry.set_settings_class(TestCustomSettings)
+        self.registry.set_settings_class(CustomSettingsExample)
 
         # Get instance to cache it
         instance = self.registry.get_settings_instance()
@@ -231,10 +231,10 @@ class TestSettingsFactory:
 
     def test_configure_with_custom_class(self) -> None:
         """Test configuring with custom settings class."""
-        self.factory.configure(settings_class=TestCustomSettings)
+        self.factory.configure(settings_class=CustomSettingsExample)
         settings = self.factory.get_settings()
 
-        assert isinstance(settings, TestCustomSettings)
+        assert isinstance(settings, CustomSettingsExample)
         assert settings.CUSTOM_SETTING == "DEFAULT_VALUE"  # Validator uppercases
         expected_int_value = 42
         assert expected_int_value == settings.CUSTOM_INT_SETTING
@@ -317,10 +317,10 @@ class TestConfigureKwikFunction:
 
     def test_configure_with_custom_settings(self) -> None:
         """Test configure_kwik with custom settings class."""
-        configure_kwik(settings_class=TestCustomSettings)
+        configure_kwik(settings_class=CustomSettingsExample)
         settings = get_settings()
 
-        assert isinstance(settings, TestCustomSettings)
+        assert isinstance(settings, CustomSettingsExample)
         assert settings.CUSTOM_SETTING == "DEFAULT_VALUE"
 
     def test_configure_with_dict(self) -> None:

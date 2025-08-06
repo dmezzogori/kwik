@@ -248,7 +248,7 @@ class TestAPIErrorHandling:
         # Try to post invalid JSON to an endpoint that expects JSON
         response = client_no_auth.post(
             "/api/v1/users/",
-            data="invalid json",  # Send raw string instead of JSON
+            content="invalid json",  # Send raw string instead of JSON
             headers={"content-type": "application/json"},
         )
         # Should return 422 for validation error or 401 for unauthorized

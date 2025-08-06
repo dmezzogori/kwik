@@ -17,10 +17,10 @@ dependencies = [
     "gunicorn==23.0.0",
     "httptools==0.6.4",
     "httpx==0.28.1",
-    "passlib==1.7.4",
+    "passlib>=1.7.4",
     "psycopg2-binary==2.9.10",
     "pydantic[email]>=2.0.0,<3.0.0",
-    "python-jose==3.3.0",
+    "python-jose>=3.3.0",
     "python-multipart==0.0.19",
     "requests==2.32.4",
     "sqlalchemy==1.4.48",
@@ -52,14 +52,14 @@ dev = [
 addopts = "--cov=src/kwik --cov-report=term-missing --cov-report=xml -v"
 asyncio_mode = "auto"
 testpaths = ["tests"]
-
-[tool.coverage.run]
-omit = ["tests/*"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
 ]
+
+[tool.coverage.run]
+omit = ["tests/*"]
 
 [tool.coverage.report]
 exclude_lines = [
