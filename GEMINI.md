@@ -7,7 +7,7 @@ Kwik is a web framework for building modern, batteries-included, RESTful backend
 **Key Technologies:**
 - Python 3.12+
 - FastAPI for web framework
-- SQLAlchemy v1.4.48 for ORM
+- SQLAlchemy 2.0+ for ORM
 - Pydantic for data validation
 - PostgreSQL support
 
@@ -148,7 +148,7 @@ docker compose up
 
 ## Database
 
-- **ORM**: SQLAlchemy v1.4.48
+- **ORM**: SQLAlchemy 2.0+
 - **Database**: PostgreSQL (via AsyncPG)
 - **Migrations**: Alembic
 - **Connection**: Async connection pooling
@@ -188,14 +188,22 @@ docker compose up
 - Follow the existing project structure when adding new features
 
 
-## Known Issues & Planned Migrations
+## Recently Completed Migrations
+
+### SQLAlchemy 2.0 Migration ✅
+- **Status**: Completed in feature/sqlalchemy-2.0-modernization branch
+- **Scope**: Full migration to SQLAlchemy 2.0 with modern syntax and type safety
+- **Updated Components**:
+  - Database models with SQLAlchemy 2.0 syntax
+  - CRUD operations with new query patterns
+  - Database engine and session management
+  - Enhanced database mixins
+- **Documentation**: See `SQLALCHEMY_MIGRATION_GUIDE.md` and `SQLALCHEMY_PLAN.md`
+
+## Remaining Planned Migrations
 
 ### Critical Dependencies
-- **SQLAlchemy**: Currently v1.4.48, migration to v2.0+ planned
 - **Alembic**: Currently v1.8.1, update to latest stable planned
-
-### Migration Impact
-- **SQLAlchemy 2.0**: Will require updating database models, CRUD operations, and `src/kwik/database/base.py`
 
 ## Testing Recommendations
 

@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Pydantic V2 Migration:** Completed the full migration to Pydantic V2, including updating all validators and eliminating deprecation warnings.
 - **Python 3.12 Upgrade:** Migrated the entire framework to Python 3.12, adopting modern generic type syntax (PEP 695).
 - **Extensible Settings System:** Implemented a new, extensible settings system that supports multiple configuration sources (environment variables, JSON/YAML files, and programmatic configuration) and allows for custom settings.
+- **SQLAlchemy 2.0 Migration:** Completed comprehensive migration to SQLAlchemy 2.0, modernizing the entire database layer:
+    - Updated all database models to use SQLAlchemy 2.0 syntax and features
+    - Modernized CRUD operations with full type safety and new query patterns
+    - Migrated database engine configuration and session management
+    - Enhanced database mixins with modern SQLAlchemy patterns
+    - Added comprehensive migration documentation and guides
 - **CRUD Layer Refactoring:**
     - Consolidated the CRUD layer by applying the entity ownership principle, removing many-to-many relationship files and centralizing logic within the primary entity's CRUD module.
     - Merged the abstract `CRUDBase` into `AutoCRUD`, simplifying the class hierarchy.
