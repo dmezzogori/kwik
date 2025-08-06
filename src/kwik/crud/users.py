@@ -54,7 +54,7 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserRegistration, sch
     # noinspection PyMethodOverriding
     def update(self, *, db_obj: models.User, obj_in: schemas.UserProfileUpdate | dict[str, Any]) -> models.User:
         """Update user with password hashing support."""
-        update_data = obj_in if isinstance(obj_in, dict) else obj_in.dict(exclude_unset=True)
+        update_data = obj_in if isinstance(obj_in, dict) else obj_in.model_dump(exclude_unset=True)
         if update_data.get("password"):
             hashed_password = get_password_hash(update_data["password"])
             del update_data["password"]

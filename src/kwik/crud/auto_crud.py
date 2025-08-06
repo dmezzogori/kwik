@@ -111,7 +111,7 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
 
     def create(self, *, obj_in: CreateSchemaType) -> ModelType:
         """Create new record from schema data."""
-        obj_in_data = dict(obj_in)
+        obj_in_data = obj_in.model_dump() if hasattr(obj_in, "model_dump") else dict(obj_in)
 
         # Import here to avoid circular import
         from kwik.database.mixins import RecordInfoMixin  # noqa: PLC0415
@@ -144,7 +144,7 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
 
     def update(self, *, db_obj: ModelType, obj_in: UpdateSchemaType | dict[str, Any]) -> ModelType:
         """Update existing record with new data."""
-        update_data = obj_in if isinstance(obj_in, dict) else obj_in.dict(exclude_unset=True)
+        update_data = obj_in if isinstance(obj_in, dict) else obj_in.model_dump(exclude_unset=True)
 
         # Import here to avoid circular import
         from kwik.database.mixins import RecordInfoMixin  # noqa: PLC0415

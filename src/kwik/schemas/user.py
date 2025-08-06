@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, EmailStr, root_validator
+from pydantic import BaseModel, EmailStr, model_validator
 
 from .mixins import ORMMixin
 
@@ -20,8 +20,8 @@ class UserRegistration(BaseModel):
     surname: str
     email: EmailStr
     password: str
-    is_active = True
-    is_superuser = False
+    is_active: bool = True
+    is_superuser: bool = False
 
 
 class UserProfileUpdate(BaseModel):
@@ -32,14 +32,14 @@ class UserProfileUpdate(BaseModel):
     email: EmailStr | None = None
     is_active: bool | None = None
 
-    @root_validator(pre=False)
-    def require_at_least_one_field(cls, values: dict[str, Any]) -> dict[str, Any]:
+    @model_validator(mode="after")
+    def require_at_least_one_field(self) -> UserProfileUpdate:
         """Ensure at least one field is provided for update."""
-        provided_fields = [k for k, val in values.items() if val is not None]
+        provided_fields = [k for k, val in self.model_dump().items() if val is not None]
         if not provided_fields:
             msg = "At least one field must be provided for update"
             raise ValueError(msg)
-        return values
+        return self
 
 
 class UserPasswordChange(BaseModel):

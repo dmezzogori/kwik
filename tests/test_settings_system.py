@@ -6,10 +6,9 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from typing import Any
 
 import pytest
-from pydantic import validator
+from pydantic import ValidationInfo, field_validator
 
 from kwik.core.settings import (
     BaseKwikSettings,
@@ -31,7 +30,8 @@ class TestCustomSettings(BaseKwikSettings):
     CUSTOM_INT_SETTING: int = 42
     CUSTOM_BOOL_SETTING: bool = True
 
-    @validator("CUSTOM_SETTING")
+    @field_validator("CUSTOM_SETTING")
+    @classmethod
     def validate_custom_setting(cls, v: str) -> str:
         """Validate custom setting."""
         if not v:
@@ -402,7 +402,8 @@ class TestExtensibilityUseCases:
             API_RETRIES: int = 3
             CUSTOM_API_ENDPOINT: str = "https://api.example.com"
 
-            @validator("API_RATE_LIMIT")
+            @field_validator("API_RATE_LIMIT")
+            @classmethod
             def validate_rate_limit(cls, v: int) -> int:
                 if v <= 0:
                     msg = "Rate limit must be positive"
@@ -429,9 +430,10 @@ class TestExtensibilityUseCases:
             CACHE_TTL: int = 300
             LOG_RETENTION_DAYS: int = 7
 
-            @validator("CACHE_TTL")
-            def adjust_cache_for_env(cls, v: int, values: dict[str, Any]) -> int:
-                env = values.get("ENVIRONMENT", "development")
+            @field_validator("CACHE_TTL")
+            @classmethod
+            def adjust_cache_for_env(cls, v: int, info: ValidationInfo) -> int:
+                env = info.data.get("ENVIRONMENT", "development")
                 if env == "production":
                     return max(v, 3600)  # Minimum 1 hour in production
                 return v

@@ -16,8 +16,8 @@ class _BaseSchema(BaseModel):
     query_params: str | None = None
     path_params: str | None = None
     body: str | None = None
-    process_time: str | None = None
-    status_code: str | None = None
+    process_time: float | None = None
+    status_code: int | None = None
 
 
 class AuditProfile(ORMMixin, _BaseSchema):

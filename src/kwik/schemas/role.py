@@ -1,6 +1,6 @@
 """Pydantic schemas for role validation."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class RoleBase(BaseModel):
@@ -41,10 +41,7 @@ class RoleInDBBase(RoleBase):
 
     id: int | None = None
 
-    class Config:
-        """Pydantic configuration for ORM compatibility."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RoleProfile(RoleInDBBase):
@@ -61,7 +58,4 @@ class RoleLookup(BaseModel):
     id: int
     name: str
 
-    class Config:
-        """Pydantic configuration for ORM compatibility."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

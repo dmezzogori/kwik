@@ -1,6 +1,6 @@
 """Pydantic schemas for orm validation."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ORMMixin(BaseModel):
@@ -8,7 +8,4 @@ class ORMMixin(BaseModel):
 
     id: int
 
-    class Config:
-        """Pydantic configuration for ORM compatibility."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

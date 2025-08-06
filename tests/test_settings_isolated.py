@@ -7,7 +7,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from pydantic import validator
+from pydantic import field_validator
 
 from kwik.core.settings import (
     BaseKwikSettings,
@@ -28,7 +28,8 @@ class CustomTestSettings(BaseKwikSettings):
     CUSTOM_INT_SETTING: int = 42
     CUSTOM_BOOL_SETTING: bool = True
 
-    @validator("CUSTOM_SETTING")
+    @field_validator("CUSTOM_SETTING")
+    @classmethod
     def validate_custom_setting(cls, v: str) -> str:
         """Validate custom setting."""
         if not v:
