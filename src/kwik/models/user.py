@@ -18,6 +18,7 @@ class User(Base):
     """Database model for user accounts with authentication and authorization."""
 
     __tablename__ = "users"
+    __allow_unmapped__ = True
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
@@ -45,6 +46,7 @@ class Role(Base, RecordInfoMixin):
     """Database model for user roles with record tracking."""
 
     __tablename__ = "roles"
+    __allow_unmapped__ = True
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
@@ -62,6 +64,7 @@ class UserRole(Base, RecordInfoMixin):
     """Database model for user-role associations with record tracking."""
 
     __tablename__ = "users_roles"
+    __allow_unmapped__ = True
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
@@ -72,6 +75,7 @@ class Permission(Base, RecordInfoMixin):
     """Database model for system permissions with record tracking."""
 
     __tablename__ = "permissions"
+    __allow_unmapped__ = True
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
@@ -81,6 +85,7 @@ class RolePermission(Base, RecordInfoMixin):
     """Database model for role-permission associations with record tracking."""
 
     __tablename__ = "roles_permissions"
+    __allow_unmapped__ = True
 
     id = Column(Integer, primary_key=True, index=True)
     role_id = Column(Integer, ForeignKey("roles.id"))

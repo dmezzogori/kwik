@@ -9,6 +9,7 @@ class Audit(Base):
     """Database model for storing HTTP request audit logs."""
 
     __tablename__ = "audits"
+    __allow_unmapped__ = True
 
     id = Column(Integer, primary_key=True, index=True)
     client_host = Column(String, index=True, nullable=False)
