@@ -17,7 +17,6 @@ dependencies = [
     "gunicorn==23.0.0",
     "httptools==0.6.4",
     "httpx==0.28.1",
-    "passlib>=1.7.4",
     "psycopg2-binary==2.9.10",
     "pydantic[email]>=2.0.0,<3.0.0",
     "pyjwt>=2.10.0",
