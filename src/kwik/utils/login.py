@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from jose import jwt
+import jwt
 
 from kwik.core.settings import get_settings
 

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
+import jwt
 import pytest
-from jose import jwt
 
 from kwik.core.settings import get_settings
 from kwik.utils.login import generate_password_reset_token, verify_password_reset_token
@@ -47,7 +47,7 @@ def test_verify_password_reset_token_invalid_signature() -> None:
     token = generate_password_reset_token(EMAIL)
     # Tamper with the token
     tampered_token = token + "invalid"
-    with pytest.raises(jwt.JWTError):
+    with pytest.raises(jwt.PyJWTError):
         verify_password_reset_token(tampered_token)
 
 

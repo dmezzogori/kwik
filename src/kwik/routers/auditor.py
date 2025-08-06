@@ -5,9 +5,9 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING
 
+import jwt
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.routing import APIRoute
-from jose import jwt
 
 from kwik import crud, schemas
 from kwik.api.deps.token import get_token

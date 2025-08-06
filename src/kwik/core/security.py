@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from jose import jwt
+import jwt
 from passlib.context import CryptContext
 from pydantic import ValidationError
 
@@ -55,7 +55,7 @@ def decode_token(token: str) -> schemas.TokenPayload:
     try:
         payload = jwt.decode(token, get_settings().SECRET_KEY, algorithms=[ALGORITHM])
         return schemas.TokenPayload(**payload)
-    except (jwt.JWTError, ValidationError):
+    except (jwt.PyJWTError, ValidationError):
         raise TokenValidationError from None
 
 
