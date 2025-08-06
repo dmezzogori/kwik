@@ -6,6 +6,7 @@ import inspect
 from typing import TYPE_CHECKING, Any, get_args
 
 import pydantic
+from sqlalchemy import func, select
 
 from kwik.database.base import Base
 from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
@@ -13,11 +14,14 @@ from kwik.exceptions import DuplicatedEntityError, EntityNotFoundError
 from kwik.typings import ParsedSortingQuery  # noqa: TC001
 
 if TYPE_CHECKING:
-    from sqlalchemy.orm import Query, Session
+    from sqlalchemy import Select
+    from sqlalchemy.orm import Session
 
 
-def _sort_query[ModelType: Base](*, model: type[ModelType], query: Query, sort: ParsedSortingQuery) -> Query:
-    """Apply sorting parameters to SQLAlchemy query."""
+def _sort_query[ModelType: Base](
+    *, model: type[ModelType], stmt: Select[tuple[ModelType]], sort: ParsedSortingQuery
+) -> Select[tuple[ModelType]]:
+    """Apply sorting parameters to SQLAlchemy select statement."""
     order_by = []
     for attr, order in sort:
         model_attr = getattr(model, attr)
@@ -25,7 +29,7 @@ def _sort_query[ModelType: Base](*, model: type[ModelType], query: Query, sort: 
             order_by.append(model_attr.asc())
         else:
             order_by.append(model_attr.desc())
-    return query.order_by(*order_by)
+    return stmt.order_by(*order_by)
 
 
 class NoDatabaseConnectionError(Exception):
@@ -79,7 +83,7 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
 
     def get(self, *, id: int) -> ModelType | None:  # noqa: A002
         """Get single record by primary key ID."""
-        return self.db.query(self.model).get(id)
+        return self.db.get(self.model, id)
 
     def get_multi(
         self,
@@ -90,17 +94,27 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
         **filters: object,
     ) -> tuple[int, list[ModelType]]:
         """Get multiple records with pagination, filtering, and sorting."""
-        q = self.db.query(self.model)
+        # Build base select statement
+        stmt = select(self.model)
+
+        # Apply filters if provided
         if filters:
-            q = q.filter_by(**filters)
+            for key, value in filters.items():
+                stmt = stmt.where(getattr(self.model, key) == value)
 
-        count: int = q.count()
+        # Get count for pagination
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        count: int = self.db.execute(count_stmt).scalar()
 
+        # Apply sorting if provided
         if sort is not None:
-            q = _sort_query(model=self.model, query=q, sort=sort)
+            stmt = _sort_query(model=self.model, stmt=stmt, sort=sort)
 
-        r = q.offset(skip).limit(limit).all()
-        return count, r
+        # Apply pagination and execute
+        stmt = stmt.offset(skip).limit(limit)
+        result = self.db.execute(stmt).scalars().all()
+
+        return count, list(result)
 
     def get_if_exist(self, *, id: int) -> ModelType:  # noqa: A002
         """Get record by ID or raise NotFound exception if it doesn't exist."""
@@ -135,7 +149,12 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
         raise_on_error: bool = False,
     ) -> ModelType:
         """Create record if it doesn't exist, or return existing record."""
-        obj_db: ModelType | None = self.db.query(self.model).filter_by(**filters).one_or_none()
+        # Build select statement with filters
+        stmt = select(self.model)
+        for key, value in filters.items():
+            stmt = stmt.where(getattr(self.model, key) == value)
+
+        obj_db: ModelType | None = self.db.execute(stmt).scalar_one_or_none()
         if obj_db is None:
             obj_db = self.create(obj_in=obj_in)
         elif raise_on_error:
@@ -164,7 +183,7 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
 
     def delete(self, *, id: int) -> ModelType:  # noqa: A002
         """Delete record by ID and return the deleted object."""
-        obj: ModelType = self.db.query(self.model).get(id)
+        obj: ModelType = self.db.get(self.model, id)
 
         self.db.delete(obj)
         self.db.flush()

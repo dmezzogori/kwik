@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from fastapi import HTTPException
+from sqlalchemy import select
 from starlette import status
 
 from kwik import models, schemas
@@ -22,11 +23,13 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserRegistration, sch
 
     def get_by_email(self, *, email: str) -> models.User | None:
         """Get user by email address."""
-        return self.db.query(models.User).filter(models.User.email == email).first()
+        stmt = select(models.User).where(models.User.email == email)
+        return self.db.execute(stmt).scalar_one_or_none()
 
     def get_by_name(self, *, name: str) -> models.User | None:
         """Get user by name."""
-        return self.db.query(models.User).filter(models.User.name == name).first()
+        stmt = select(models.User).where(models.User.name == name)
+        return self.db.execute(stmt).scalar_one_or_none()
 
     # noinspection PyMethodOverriding
     def create(self, *, obj_in: schemas.UserRegistration) -> models.User:
@@ -46,7 +49,11 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserRegistration, sch
 
     def create_if_not_exist(self, *, filters: dict, obj_in: schemas.UserRegistration) -> models.User:
         """Create user if it doesn't exist based on filters, otherwise return existing user."""
-        obj_db = self.db.query(models.User).filter_by(**filters).one_or_none()
+        stmt = select(models.User)
+        for key, value in filters.items():
+            stmt = stmt.where(getattr(models.User, key) == value)
+
+        obj_db = self.db.execute(stmt).scalar_one_or_none()
         if obj_db is None:
             obj_db = self.create(obj_in=obj_in)
         return obj_db
@@ -124,54 +131,57 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserRegistration, sch
 
     def has_permissions(self, *, user_id: int, permissions: Sequence[str]) -> bool:
         """Check if the user has all the permissions provided."""
-        r = (
-            self.db.query(models.Permission)
-            .join(models.RolePermission, models.Role, models.UserRole)
+        stmt = (
+            select(models.Permission)
+            .join(models.RolePermission, models.RolePermission.permission_id == models.Permission.id)
+            .join(models.Role, models.Role.id == models.RolePermission.role_id)
+            .join(models.UserRole, models.UserRole.role_id == models.Role.id)
             .join(models.User, models.User.id == models.UserRole.user_id)
-            .filter(
+            .where(
                 models.Permission.name.in_(permissions),
                 models.User.id == user_id,
             )
             .distinct()
         )
-        return r.count() == len(permissions)
+        result = self.db.execute(stmt).scalars().all()
+        return len(result) == len(permissions)
 
     def has_roles(self, *, user_id: int, roles: Sequence[str]) -> bool:
         """Check if the user has all the roles provided."""
-        r = (
-            self.db.query(models.Role)
+        stmt = (
+            select(models.Role)
             .join(models.UserRole, models.Role.id == models.UserRole.role_id)
             .join(models.User, models.User.id == models.UserRole.user_id)
-            .filter(
+            .where(
                 models.Role.name.in_(roles),
                 models.User.id == user_id,
             )
             .distinct()
         )
 
-        return r.count() == len(roles)
+        result = self.db.execute(stmt).scalars().all()
+        return len(result) == len(roles)
 
     def get_permissions(self, *, user_id: int) -> list[models.Permission]:
         """Get all permissions for a user through their roles."""
-        return (
-            self.db.query(models.Permission)
-            .join(models.RolePermission, models.Role, models.UserRole)
+        stmt = (
+            select(models.Permission)
+            .join(models.RolePermission, models.RolePermission.permission_id == models.Permission.id)
+            .join(models.Role, models.Role.id == models.RolePermission.role_id)
+            .join(models.UserRole, models.UserRole.role_id == models.Role.id)
             .join(models.User, models.User.id == models.UserRole.user_id)
-            .filter(models.User.id == user_id)
+            .where(models.User.id == user_id)
             .distinct()
-            .all()
         )
+        return list(self.db.execute(stmt).scalars().all())
 
     def _get_user_role_association(self, *, user_id: int, role_id: int) -> models.UserRole | None:
         """Get user-role association by user ID and role ID."""
-        return (
-            self.db.query(models.UserRole)
-            .filter(
-                models.UserRole.user_id == user_id,
-                models.UserRole.role_id == role_id,
-            )
-            .one_or_none()
+        stmt = select(models.UserRole).where(
+            models.UserRole.user_id == user_id,
+            models.UserRole.role_id == role_id,
         )
+        return self.db.execute(stmt).scalar_one_or_none()
 
     def assign_role(self, *, user_id: int, role_id: int) -> models.User:
         """Assign a role to a user. Idempotent operation."""
@@ -218,22 +228,22 @@ class AutoCRUDUser(auto_crud.AutoCRUD[models.User, schemas.UserRegistration, sch
 
     def get_multi_by_role_name(self, *, role_name: str) -> list[models.User]:
         """Get all users assigned to a role by role name."""
-        return (
-            self.db.query(models.User)
+        stmt = (
+            select(models.User)
             .join(models.UserRole, models.User.id == models.UserRole.user_id)
-            .join(models.Role)
-            .filter(models.Role.name == role_name)
-            .all()
+            .join(models.Role, models.Role.id == models.UserRole.role_id)
+            .where(models.Role.name == role_name)
         )
+        return list(self.db.execute(stmt).scalars().all())
 
     def get_multi_by_role_id(self, *, role_id: int) -> list[models.User]:
         """Get all users assigned to a specific role."""
-        return (
-            self.db.query(models.User)
+        stmt = (
+            select(models.User)
             .join(models.UserRole, models.User.id == models.UserRole.user_id)
-            .filter(models.UserRole.role_id == role_id)
-            .all()
+            .where(models.UserRole.role_id == role_id)
         )
+        return list(self.db.execute(stmt).scalars().all())
 
 
 users = AutoCRUDUser()
