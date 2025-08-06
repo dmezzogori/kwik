@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, ForeignKey, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
     from kwik.models.user import Permission
@@ -18,15 +18,14 @@ class User(Base):
     """Database model for user accounts with authentication and authorization."""
 
     __tablename__ = "users"
-    __allow_unmapped__ = True
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True, nullable=False)
-    surname = Column(String, index=True, nullable=False)
-    email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    is_active = Column(Boolean(), default=True)
-    is_superuser = Column(Boolean(), default=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, index=True)
+    surname: Mapped[str] = mapped_column(String, index=True)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True)
+    hashed_password: Mapped[str] = mapped_column(String)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
 
     roles = relationship(
         "Role",
@@ -46,12 +45,11 @@ class Role(Base, RecordInfoMixin):
     """Database model for user roles with record tracking."""
 
     __tablename__ = "roles"
-    __allow_unmapped__ = True
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    is_active = Column(Boolean(), default=True, nullable=False)
-    is_locked = Column(Boolean(), default=False, nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str | None] = mapped_column(String, index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_locked: Mapped[bool] = mapped_column(Boolean, default=False)
 
     permissions = relationship(
         "Permission",
@@ -64,32 +62,29 @@ class UserRole(Base, RecordInfoMixin):
     """Database model for user-role associations with record tracking."""
 
     __tablename__ = "users_roles"
-    __allow_unmapped__ = True
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    role_id = Column(Integer, ForeignKey("roles.id"))
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    role_id: Mapped[int | None] = mapped_column(ForeignKey("roles.id"))
 
 
 class Permission(Base, RecordInfoMixin):
     """Database model for system permissions with record tracking."""
 
     __tablename__ = "permissions"
-    __allow_unmapped__ = True
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True, nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, index=True)
 
 
 class RolePermission(Base, RecordInfoMixin):
     """Database model for role-permission associations with record tracking."""
 
     __tablename__ = "roles_permissions"
-    __allow_unmapped__ = True
 
-    id = Column(Integer, primary_key=True, index=True)
-    role_id = Column(Integer, ForeignKey("roles.id"))
-    permission_id = Column(Integer, ForeignKey("permissions.id"))
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    role_id: Mapped[int | None] = mapped_column(ForeignKey("roles.id"))
+    permission_id: Mapped[int | None] = mapped_column(ForeignKey("permissions.id"))
 
     role = relationship("Role")
     permission = relationship("Permission")
