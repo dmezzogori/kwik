@@ -112,6 +112,32 @@ uv sync
 pytest --cov=src/kwik --cov-report=term-missing
 ```
 
+### Documentation
+
+#### Local Development
+```bash
+# Start documentation website locally
+cd docs
+docker compose up
+
+# Access at http://localhost:8000
+```
+
+#### Documentation Hosting & Deployment
+- **Technology**: MkDocs Material
+- **Source files**: Located in `docs/handbook/` 
+- **GitHub Pages**: Hosted at `https://dmezzogori.github.io/kwik/`
+- **Auto-deployment**: GitHub Actions workflow `.github/workflows/mkdocs.yml`
+
+#### Documentation Update Workflow
+1. Make changes to documentation files in `docs/handbook/`
+2. Commit and push to feature branch
+3. Merge or push changes to `main` branch (required for deployment)
+4. GitHub Actions automatically builds and deploys to `gh-pages` branch
+5. Documentation updates live at `https://dmezzogori.github.io/kwik/`
+
+**Note**: Documentation only rebuilds when changes reach the `main` branch, not from feature branches. Manual deployment possible via GitHub Actions `workflow_dispatch`.
+
 ## Code Style Guidelines
 
 - **Line length**: 120 characters
@@ -130,7 +156,7 @@ pytest --cov=src/kwik --cov-report=term-missing
 ## API Patterns
 
 - Follow FastAPI conventions for route definitions
-- Use Pydantic v1 schemas for request/response validation
+- Use Pydantic v2 schemas for request/response validation
 - Implement CRUD operations in `crud/` directory
 - Database models in `models/`
 - API schemas in `schemas/`
@@ -149,7 +175,7 @@ pytest --cov=src/kwik --cov-report=term-missing
 
 - **Status**: Pre-release, active development
 - **License**: MIT
-- **Documentation**: https://kwik.rocks
+- **Documentation**: https://dmezzogori.github.io/kwik/
 - **Repository**: https://github.com/dmezzogori/kwik
 
 ## Notes for Claude Code
@@ -166,12 +192,10 @@ pytest --cov=src/kwik --cov-report=term-missing
 
 ### Critical Dependencies
 - **SQLAlchemy**: Currently v1.4.48, migration to v2.0+ planned
-- **Pydantic**: Currently v1.10.2, migration to v2.0+ planned  
 - **Alembic**: Currently v1.8.1, update to latest stable planned
 
 ### Migration Impact
 - **SQLAlchemy 2.0**: Will require updating database models, CRUD operations, and `src/kwik/database/base.py`
-- **Pydantic v2**: Schema files will need validation pattern updates for performance improvements
 
 ## Testing Recommendations
 

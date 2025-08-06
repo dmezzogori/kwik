@@ -156,7 +156,7 @@ docker compose up
 ## API Patterns
 
 - Follow FastAPI conventions for route definitions
-- Use Pydantic v1 schemas for request/response validation
+- Use Pydantic v2 schemas for request/response validation
 - Implement CRUD operations in `crud/` directory
 - Database models in `models/`
 - API schemas in `schemas/`
@@ -192,12 +192,10 @@ docker compose up
 
 ### Critical Dependencies
 - **SQLAlchemy**: Currently v1.4.48, migration to v2.0+ planned
-- **Pydantic**: Currently v1.10.2, migration to v2.0+ planned  
 - **Alembic**: Currently v1.8.1, update to latest stable planned
 
 ### Migration Impact
 - **SQLAlchemy 2.0**: Will require updating database models, CRUD operations, and `src/kwik/database/base.py`
-- **Pydantic v2**: Schema files will need validation pattern updates for performance improvements
 
 ## Testing Recommendations
 
