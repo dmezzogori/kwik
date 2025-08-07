@@ -29,7 +29,6 @@ def create_test_user(  # noqa: PLR0913
     email: str = "test@example.com",
     password: str = "testpassword123",
     is_active: bool = True,
-    is_superuser: bool = False,
 ) -> User:
     """Create a test user with the specified parameters."""
     user = User(
@@ -38,7 +37,6 @@ def create_test_user(  # noqa: PLR0913
         email=email,
         hashed_password=get_password_hash(password),
         is_active=is_active,
-        is_superuser=is_superuser,
     )
     db_session.add(user)
     db_session.commit()

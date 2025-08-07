@@ -21,7 +21,6 @@ class UserRegistration(BaseModel):
     email: EmailStr
     password: str
     is_active: bool = True
-    is_superuser: bool = False
 
 
 class UserProfileUpdate(BaseModel):

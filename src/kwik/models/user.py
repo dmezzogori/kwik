@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from sqlalchemy import Boolean, ForeignKey, String
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-if TYPE_CHECKING:
-    from kwik.models.user import Permission
 
 from kwik.database.base import Base
 from kwik.database.mixins import RecordInfoMixin
@@ -20,14 +16,13 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String, index=True)
-    surname: Mapped[str] = mapped_column(String, index=True)
-    email: Mapped[str] = mapped_column(String, unique=True, index=True)
-    hashed_password: Mapped[str] = mapped_column(String)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
+    name: Mapped[str] = mapped_column(String, index=True, nullable=False)
+    surname: Mapped[str] = mapped_column(String, index=True, nullable=False)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    roles = relationship(
+    roles: Mapped[list[Role]] = relationship(
         "Role",
         secondary="users_roles",
         primaryjoin="User.id==UserRole.user_id",
@@ -35,10 +30,13 @@ class User(Base):
         viewonly=True,
     )
 
-    @property
+    @hybrid_property
     def permissions(self) -> list[Permission]:
-        """Get all permissions from all user roles."""
-        return [permission for role in self.roles for permission in role.permissions]
+        """Get all permissions for this user through their roles."""
+        permissions = []
+        for role in self.roles:
+            permissions.extend(role.permissions)
+        return permissions
 
 
 class Role(Base, RecordInfoMixin):
@@ -47,11 +45,11 @@ class Role(Base, RecordInfoMixin):
     __tablename__ = "roles"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    name: Mapped[str | None] = mapped_column(String, index=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    is_locked: Mapped[bool] = mapped_column(Boolean, default=False)
+    name: Mapped[str] = mapped_column(String, index=True, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_locked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    permissions = relationship(
+    permissions: Mapped[list[Permission]] = relationship(
         "Permission",
         secondary="roles_permissions",
         viewonly=True,
@@ -64,8 +62,8 @@ class UserRole(Base, RecordInfoMixin):
     __tablename__ = "users_roles"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
-    role_id: Mapped[int | None] = mapped_column(ForeignKey("roles.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
 
 
 class Permission(Base, RecordInfoMixin):
@@ -74,7 +72,7 @@ class Permission(Base, RecordInfoMixin):
     __tablename__ = "permissions"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String, index=True)
+    name: Mapped[str] = mapped_column(String, index=True, nullable=False)
 
 
 class RolePermission(Base, RecordInfoMixin):
@@ -83,8 +81,5 @@ class RolePermission(Base, RecordInfoMixin):
     __tablename__ = "roles_permissions"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    role_id: Mapped[int | None] = mapped_column(ForeignKey("roles.id"))
-    permission_id: Mapped[int | None] = mapped_column(ForeignKey("permissions.id"))
-
-    role = relationship("Role")
-    permission = relationship("Permission")
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
+    permission_id: Mapped[int] = mapped_column(ForeignKey("permissions.id"), nullable=False)

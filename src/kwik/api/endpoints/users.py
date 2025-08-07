@@ -8,7 +8,7 @@ import kwik.typings
 from kwik.api.deps import Pagination, current_user, has_permission
 from kwik.core.enum import Permissions
 from kwik.crud import roles, users
-from kwik.exceptions import AccessDeniedError, DuplicatedEntityError
+from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuditorRouter
 from kwik.schemas import (
     Paginated,
@@ -44,23 +44,20 @@ def read_user_me(user: current_user) -> User:
     return user
 
 
-# TODO: this endpoint should be protected by user_management_read permission
-# and should be used to get other users' profiles if permissions allow it.
-# to get the current user's profile, use /me endpoint.
-@router.get("/{user_id}", response_model=UserProfile)
-def read_user_by_id(user_id: int, user: current_user) -> User:
-    """
-    Get a specific user by id.
+@router.put("/me/password", response_model=UserProfile)
+def update_my_password(user: current_user, obj_in: UserPasswordChange) -> User:
+    """Update current user's password."""
+    return users.change_password(user_id=user.id, obj_in=obj_in)
 
-    If the user requested is not the same as the logged-in user, the user must have the user_management_read permission.
-    """
-    if user_id != user.id and not users.has_permissions(
-        user_id=user.id,
-        permissions=(Permissions.users_management_read,),
-    ):
-        raise AccessDeniedError
 
-    return user
+@router.get(
+    "/{user_id}",
+    response_model=UserProfile,
+    dependencies=(has_permission(Permissions.users_management_read),),
+)
+def read_user_by_id(user_id: int) -> User:
+    """Get a specific user by id."""
+    return users.get_if_exist(id=user_id)
 
 
 @router.post(
@@ -83,10 +80,6 @@ def update_myself(user: current_user, user_in: UserProfileUpdate) -> User:
     return users.update(db_obj=user, obj_in=user_in)
 
 
-# TODO: this endpoint is meant to be used by admins to update other users' profiles.
-# It should be protected by user_management_update permission.
-# If you want to update your own profile, use /me endpoint.
-# Check this is true.
 @router.put(
     "/{user_id}",
     response_model=UserProfile,
@@ -98,32 +91,13 @@ def update_user(user_id: int, user_in: UserProfileUpdate) -> User:
     return users.update(db_obj=user, obj_in=user_in)
 
 
-# TODO: this endpoint is meant to be used by admins to change other users' passwords.
-# It should be protected by user_management_update permission.
-# If you want to change your own password, use /me/password endpoint.
-# Check this is true.
 @router.put(
-    "/{user_id}/update_password",
+    "/{user_id}/password",
     response_model=UserProfile,
-    dependencies=(has_permission(Permissions.users_management_update),),
+    dependencies=(has_permission(Permissions.password_management_update),),
 )
-def update_password(
-    user_id: int,
-    user: current_user,
-    obj_in: UserPasswordChange,
-) -> User:
-    """
-    Update the provided user's password.
-
-    If the user is not the same as the logged-in user, the logged-in user must have the
-    user_management_update permission.
-    """
-    if user_id != user.id and not users.has_permissions(
-        user_id=user.id,
-        permissions=(Permissions.users_management_update,),
-    ):
-        raise AccessDeniedError
-
+def update_password(user_id: int, obj_in: UserPasswordChange) -> User:
+    """Update user's password (admin operation)."""
     return users.change_password(user_id=user_id, obj_in=obj_in)
 
 
@@ -133,24 +107,29 @@ def read_roles_of_current_user(user: current_user) -> list[Role]:
     return roles.get_multi_by_user_id(user_id=user.id)
 
 
-# TODO: are we sure we want to check if the user exists before returning roles?
-# If the user does not exist, it will raise a UserNotFoundError.
-# This could be exploited by an attacker to enumerate users.
 @router.get(
     "/{user_id}/roles",
     response_model=list[RoleProfile],
-    dependencies=(has_permission(Permissions.roles_management_read),),
+    dependencies=(
+        has_permission(
+            Permissions.users_management_read,
+            Permissions.roles_management_read,
+        ),
+    ),
 )
 def read_user_roles(user_id: int) -> list[Role]:
     """Get all roles assigned to a specific user."""
-    users.get_if_exist(id=user_id)  # Ensure user exists
-    return roles.get_multi_by_user_id(user_id=user_id)
+    user = users.get_if_exist(id=user_id)
+    return roles.get_multi_by_user_id(user_id=user.id)
 
 
 @router.post(
     "/{user_id}/roles",
     response_model=RoleProfile,
-    dependencies=(has_permission(Permissions.roles_management_update),),
+    dependencies=(
+        has_permission(Permissions.users_management_update),
+        has_permission(Permissions.roles_management_update),
+    ),
 )
 def assign_role_to_user(user_id: int, role_assignment: UserRoleAssignment) -> Role:
     """Assign a role to a user."""
@@ -161,7 +140,10 @@ def assign_role_to_user(user_id: int, role_assignment: UserRoleAssignment) -> Ro
 @router.delete(
     "/{user_id}/roles/{role_id}",
     response_model=RoleProfile,
-    dependencies=(has_permission(Permissions.roles_management_update),),
+    dependencies=(
+        has_permission(Permissions.users_management_update),
+        has_permission(Permissions.roles_management_delete),
+    ),
 )
 def remove_role_from_user(user_id: int, role_id: int) -> Role:
     """Remove a role from a user."""
@@ -178,9 +160,12 @@ def read_permissions_of_current_user(user: current_user) -> list[Permission]:
 @router.get(
     "/{user_id}/permissions",
     response_model=list[PermissionProfile],
-    dependencies=(has_permission(Permissions.permissions_management_read),),
+    dependencies=(
+        has_permission(Permissions.users_management_read),
+        has_permission(Permissions.permissions_management_read),
+    ),
 )
 def read_user_permissions(user_id: int) -> list[Permission]:
     """Get all effective permissions for a specific user."""
-    users.get_if_exist(id=user_id)  # Ensure user exists
-    return users.get_permissions(user_id=user_id)
+    user = users.get_if_exist(id=user_id)
+    return users.get_permissions(user_id=user.id)

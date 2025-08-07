@@ -5,9 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
-from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
-from starlette.status import HTTP_412_PRECONDITION_FAILED
 
 from kwik import crud, models, schemas
 from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
@@ -36,7 +34,6 @@ class TestUserCRUD:
             email="test@example.com",
             password="testpassword123",
             is_active=True,
-            is_superuser=False,
         )
 
         # Set the database session in context
@@ -48,7 +45,6 @@ class TestUserCRUD:
         assert created_user.surname == "User"
         assert created_user.email == "test@example.com"
         assert created_user.is_active is True
-        assert created_user.is_superuser is False
         assert created_user.hashed_password != "testpassword123"  # Should be hashed
         assert created_user.id is not None
 
@@ -322,11 +318,8 @@ class TestUserCRUD:
         # Try to change password for non-existent user
         password_change = schemas.UserPasswordChange(old_password="anypassword", new_password="newpassword456")
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(UserNotFoundError):
             crud.users.change_password(user_id=99999, obj_in=password_change)
-
-        assert exc_info.value.status_code == HTTP_412_PRECONDITION_FAILED
-        assert "does not exist" in exc_info.value.detail
 
     def test_reset_password_with_valid_email(self, db_session: Session) -> None:
         """Test resetting password for existing active user."""
@@ -433,38 +426,6 @@ class TestUserCRUD:
         with pytest.raises(InactiveUserError):
             crud.users.is_active(user)
 
-    def test_is_superuser_with_superuser(self, db_session: Session) -> None:
-        """Test is_superuser returns True for superuser."""
-        # Set the database session in context
-        db_conn_ctx_var.set(db_session)
-
-        # Create a superuser
-        user = create_test_user(db_session, is_superuser=True)
-
-        # Check is_superuser
-        result = crud.users.is_superuser(user_id=user.id)
-        assert result is True
-
-    def test_is_superuser_with_regular_user(self, db_session: Session) -> None:
-        """Test is_superuser returns False for regular user."""
-        # Set the database session in context
-        db_conn_ctx_var.set(db_session)
-
-        # Create a regular user
-        user = create_test_user(db_session, is_superuser=False)
-
-        # Check is_superuser
-        result = crud.users.is_superuser(user_id=user.id)
-        assert result is False
-
-    def test_is_superuser_with_nonexistent_user_raises_error(self, db_session: Session) -> None:
-        """Test is_superuser raises EntityNotFoundError for non-existent user."""
-        # Set the database session in context
-        db_conn_ctx_var.set(db_session)
-
-        with pytest.raises(EntityNotFoundError):
-            crud.users.is_superuser(user_id=99999)
-
     def test_assign_role_to_user(self, db_session: Session) -> None:
         """Test assigning a role to a user."""
         # Create test user and set context
@@ -480,7 +441,7 @@ class TestUserCRUD:
         assert result_user.id == user.id
 
         # Verify user has the role
-        has_role = crud.users.has_roles(user_id=user.id, roles=["test_role"])
+        has_role = crud.users.has_roles(user=user, roles=["test_role"])
         assert has_role is True
 
     def test_assign_role_idempotent_operation(self, crud_context: tuple[Session, models.User]) -> None:
@@ -525,7 +486,7 @@ class TestUserCRUD:
         assert result_user.id == user.id
 
         # Verify user no longer has the role
-        has_role = crud.users.has_roles(user_id=user.id, roles=["test_role"])
+        has_role = crud.users.has_roles(user=result_user, roles=["test_role"])
         assert has_role is False
 
     def test_remove_role_idempotent_operation(self, db_session: Session) -> None:
@@ -551,15 +512,15 @@ class TestUserCRUD:
         role2 = create_test_role(db_session, name="role2", creator_user_id=user.id)
 
         # Assign both roles
-        crud.users.assign_role(user_id=user.id, role_id=role1.id)
-        crud.users.assign_role(user_id=user.id, role_id=role2.id)
+        user = crud.users.assign_role(user_id=user.id, role_id=role1.id)
+        user = crud.users.assign_role(user_id=user.id, role_id=role2.id)
 
         # Check if user has both roles
-        has_both = crud.users.has_roles(user_id=user.id, roles=["role1", "role2"])
+        has_both = crud.users.has_roles(user=user, roles=["role1", "role2"])
         assert has_both is True
 
         # Check if user has one role
-        has_one = crud.users.has_roles(user_id=user.id, roles=["role1"])
+        has_one = crud.users.has_roles(user=user, roles=["role1"])
         assert has_one is True
 
     def test_has_roles_with_missing_roles(self, crud_context: tuple[Session, models.User]) -> None:
@@ -574,7 +535,7 @@ class TestUserCRUD:
         crud.users.assign_role(user_id=user.id, role_id=role1.id)
 
         # Check if user has both roles (should be False)
-        has_both = crud.users.has_roles(user_id=user.id, roles=["role1", "nonexistent_role"])
+        has_both = crud.users.has_roles(user=user, roles=["role1", "nonexistent_role"])
         assert has_both is False
 
     def test_get_multi_by_role_name(self, crud_context: tuple[Session, models.User]) -> None:
@@ -643,14 +604,14 @@ class TestUserCRUD:
         db_session.commit()
 
         # Assign role to user
-        crud.users.assign_role(user_id=user.id, role_id=role.id)
+        user = crud.users.assign_role(user_id=user.id, role_id=role.id)
 
         # Check if user has both permissions
-        has_both = crud.users.has_permissions(user_id=user.id, permissions=["permission1", "permission2"])
+        has_both = crud.users.has_permissions(user=user, permissions=["permission1", "permission2"])
         assert has_both is True
 
         # Check if user has one permission
-        has_one = crud.users.has_permissions(user_id=user.id, permissions=["permission1"])
+        has_one = crud.users.has_permissions(user=user, permissions=["permission1"])
         assert has_one is True
 
     def test_has_permissions_with_missing_permissions(self, crud_context: tuple[Session, models.User]) -> None:
@@ -671,7 +632,7 @@ class TestUserCRUD:
         crud.users.assign_role(user_id=user.id, role_id=role.id)
 
         # Check if user has both permissions (should be False)
-        has_both = crud.users.has_permissions(user_id=user.id, permissions=["permission1", "nonexistent_permission"])
+        has_both = crud.users.has_permissions(user=user, permissions=["permission1", "nonexistent_permission"])
         assert has_both is False
 
     def test_get_permissions_for_user(self, crud_context: tuple[Session, models.User]) -> None:
@@ -702,7 +663,7 @@ class TestUserCRUD:
         crud.users.assign_role(user_id=user.id, role_id=role2.id)
 
         # Get all permissions for user
-        user_permissions = crud.users.get_permissions(user_id=user.id)
+        user_permissions = crud.users.get_permissions(user=user)
 
         # Should get distinct permissions (perm2 should appear only once despite being in both roles)
         permission_names = {perm.name for perm in user_permissions}
@@ -721,5 +682,5 @@ class TestUserCRUD:
         user = create_test_user(db_session)
 
         # Get permissions (should be empty)
-        user_permissions = crud.users.get_permissions(user_id=user.id)
+        user_permissions = crud.users.get_permissions(user=user)
         assert len(user_permissions) == 0

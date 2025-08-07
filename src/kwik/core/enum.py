@@ -28,3 +28,5 @@ class Permissions(StrEnum):
     roles_management_read = "roles_management_read"
     roles_management_update = "roles_management_update"
     roles_management_delete = "roles_management_delete"
+
+    password_management_update = "password_management_update"  # noqa: S105
