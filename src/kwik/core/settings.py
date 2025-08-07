@@ -8,6 +8,7 @@ to extend settings classes and configure applications through multiple methods.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import secrets
 from abc import ABC, abstractmethod
@@ -16,6 +17,8 @@ from typing import Any, ClassVar
 
 from pydantic import AnyHttpUrl, ConfigDict, EmailStr, field_validator, model_validator
 from pydantic_settings import BaseSettings
+
+logger = logging.getLogger(__name__)
 
 
 class ConfigurationSource(ABC):
@@ -362,6 +365,15 @@ class SettingsFactory:
         config_file: str | Path | None = None,
         env_file: str | Path | None = None,
         sources: list[ConfigurationSource] | None = None,
+        profiles_enabled: bool = False,
+        profiles_dir: str | Path = "config",
+        environment: str | None = None,
+        hot_reload: bool = False,
+        hot_reload_paths: list[str | Path] | None = None,
+        hot_reload_files: list[str | Path] | None = None,
+        secrets_enabled: bool = False,
+        secrets_auto_resolve: bool = True,
+        cloud_secrets_enabled: bool = False,
     ) -> None:
         """
         Configure the settings system.
@@ -372,6 +384,15 @@ class SettingsFactory:
             config_file: Path to JSON/YAML configuration file
             env_file: Path to .env file (if different from default)
             sources: List of custom configuration sources
+            profiles_enabled: Enable hierarchical configuration profiles
+            profiles_dir: Directory containing profile configuration files
+            environment: Override environment detection for profile loading
+            hot_reload: Enable hot reloading of configuration files
+            hot_reload_paths: Directories to watch for configuration changes
+            hot_reload_files: Specific files to watch for configuration changes
+            secrets_enabled: Enable automatic secrets resolution in configurations
+            secrets_auto_resolve: Automatically resolve secret references in configuration values
+            cloud_secrets_enabled: Enable cloud secrets providers (AWS, Azure, GCP)
 
         """
         # Reset registry to clear any previous configuration
@@ -397,9 +418,81 @@ class SettingsFactory:
             if config_dict:
                 self._registry.add_source(DictSource(config_dict))
 
+            # Hierarchical profiles source (medium priority)
+            if profiles_enabled:
+                from kwik.core.profiles import ProfilesSettingsSource  # noqa: PLC0415
+
+                self._registry.add_source(ProfilesSettingsSource(profiles_dir=profiles_dir, environment=environment))
+
             # File source (lowest priority)
             if config_file:
                 self._registry.add_source(FileSource(config_file))
+
+        # Configure hot reloading if enabled
+        if hot_reload:
+            from kwik.core.hot_reload import configure_hot_reload, enable_hot_reload  # noqa: PLC0415
+
+            # Set up watched paths - include profiles directory if profiles are enabled
+            watched_paths = list(hot_reload_paths) if hot_reload_paths else []
+            if profiles_enabled:
+                watched_paths.append(profiles_dir)
+
+            # Set up watched files
+            watched_files = list(hot_reload_files) if hot_reload_files else []
+            if config_file:
+                watched_files.append(config_file)
+            if env_file:
+                watched_files.append(env_file)
+
+            configure_hot_reload(
+                settings_factory=self,
+                watched_paths=watched_paths if watched_paths else None,
+                watched_files=watched_files if watched_files else None,
+            )
+            enable_hot_reload()
+
+        # Configure secrets resolution if enabled
+        if secrets_enabled:
+            self._setup_secrets_resolution(
+                auto_resolve=secrets_auto_resolve,
+                cloud_enabled=cloud_secrets_enabled,
+            )
+
+    def _setup_secrets_resolution(self, auto_resolve: bool = True, cloud_enabled: bool = False) -> None:
+        """
+        Set up secrets resolution for the settings system.
+
+        Args:
+            auto_resolve: Enable automatic resolution of secrets in configuration
+            cloud_enabled: Enable cloud secrets providers
+
+        """
+        try:
+            from kwik.core.secrets import SecretsResolvingSource, get_secrets_manager  # noqa: PLC0415
+
+            # Set up cloud providers if requested
+            if cloud_enabled:
+                try:
+                    from kwik.core.cloud_secrets import register_cloud_providers  # noqa: PLC0415
+
+                    secrets_manager = get_secrets_manager()
+                    register_cloud_providers(secrets_manager)
+                except ImportError:
+                    logger.warning("Cloud secrets providers requested but dependencies not installed")
+
+            # If auto-resolve is enabled, wrap existing sources with secrets resolution
+            if auto_resolve:
+                # Wrap all existing sources with secrets resolution
+                wrapped_sources = []
+                for source in self._registry._sources:
+                    wrapped_source = SecretsResolvingSource(source)
+                    wrapped_sources.append(wrapped_source)
+
+                # Replace sources with wrapped versions
+                self._registry._sources = wrapped_sources
+
+        except ImportError as e:
+            logger.warning(f"Secrets system not available: {e}")
 
     def get_settings(self) -> BaseKwikSettings:
         """Get the current settings instance."""
@@ -422,6 +515,15 @@ def configure_kwik[SettingsType: BaseKwikSettings](
     config_file: str | Path | None = None,
     env_file: str | Path | None = None,
     sources: list[ConfigurationSource] | None = None,
+    profiles_enabled: bool = False,
+    profiles_dir: str | Path = "config",
+    environment: str | None = None,
+    hot_reload: bool = False,
+    hot_reload_paths: list[str | Path] | None = None,
+    hot_reload_files: list[str | Path] | None = None,
+    secrets_enabled: bool = False,
+    secrets_auto_resolve: bool = True,
+    cloud_secrets_enabled: bool = False,
 ) -> None:
     """
     Configure Kwik settings system.
@@ -434,6 +536,15 @@ def configure_kwik[SettingsType: BaseKwikSettings](
         config_file: Path to JSON/YAML configuration file
         env_file: Path to .env file
         sources: List of custom configuration sources
+        profiles_enabled: Enable hierarchical configuration profiles
+        profiles_dir: Directory containing profile configuration files
+        environment: Override environment detection for profile loading
+        hot_reload: Enable hot reloading of configuration files
+        hot_reload_paths: Directories to watch for configuration changes
+        hot_reload_files: Specific files to watch for configuration changes
+        secrets_enabled: Enable automatic secrets resolution in configurations
+        secrets_auto_resolve: Automatically resolve secret references in configuration values
+        cloud_secrets_enabled: Enable cloud secrets providers (AWS, Azure, GCP)
 
     Examples:
         # Use custom settings class
@@ -451,6 +562,15 @@ def configure_kwik[SettingsType: BaseKwikSettings](
         # Use custom .env file
         configure_kwik(env_file=".env.production")
 
+        # Enable hierarchical configuration profiles
+        configure_kwik(profiles_enabled=True, profiles_dir="config")
+
+        # Enable hot reloading of configuration files
+        configure_kwik(hot_reload=True, hot_reload_paths=["config"])
+
+        # Enable secrets resolution with cloud providers
+        configure_kwik(secrets_enabled=True, cloud_secrets_enabled=True)
+
     """
     _settings_factory.configure(
         settings_class=settings_class,
@@ -458,6 +578,15 @@ def configure_kwik[SettingsType: BaseKwikSettings](
         config_file=config_file,
         env_file=env_file,
         sources=sources,
+        profiles_enabled=profiles_enabled,
+        profiles_dir=profiles_dir,
+        environment=environment,
+        hot_reload=hot_reload,
+        hot_reload_paths=hot_reload_paths,
+        hot_reload_files=hot_reload_files,
+        secrets_enabled=secrets_enabled,
+        secrets_auto_resolve=secrets_auto_resolve,
+        cloud_secrets_enabled=cloud_secrets_enabled,
     )
 
 
