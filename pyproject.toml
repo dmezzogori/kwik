@@ -26,6 +26,7 @@ dependencies = [
     "websockets==14.1",
     "jinja2>=3.1.4",
     "pydantic-settings>=2.10.1",
+    "watchdog>=5.0.0",
 ]
 
 [project.scripts]
