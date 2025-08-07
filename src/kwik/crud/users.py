@@ -241,3 +241,5 @@ class AutoCRUDUser(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
 
 
 users = AutoCRUDUser()
+
+__all__ = ["users"]
