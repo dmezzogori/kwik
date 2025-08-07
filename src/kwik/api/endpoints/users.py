@@ -44,6 +44,9 @@ def read_user_me(user: current_user) -> User:
     return user
 
 
+# TODO: this endpoint should be protected by user_management_read permission
+# and should be used to get other users' profiles if permissions allow it.
+# to get the current user's profile, use /me endpoint.
 @router.get("/{user_id}", response_model=UserProfile)
 def read_user_by_id(user_id: int, user: current_user) -> User:
     """
@@ -80,6 +83,10 @@ def update_myself(user: current_user, user_in: UserProfileUpdate) -> User:
     return users.update(db_obj=user, obj_in=user_in)
 
 
+# TODO: this endpoint is meant to be used by admins to update other users' profiles.
+# It should be protected by user_management_update permission.
+# If you want to update your own profile, use /me endpoint.
+# Check this is true.
 @router.put(
     "/{user_id}",
     response_model=UserProfile,
@@ -91,6 +98,10 @@ def update_user(user_id: int, user_in: UserProfileUpdate) -> User:
     return users.update(db_obj=user, obj_in=user_in)
 
 
+# TODO: this endpoint is meant to be used by admins to change other users' passwords.
+# It should be protected by user_management_update permission.
+# If you want to change your own password, use /me/password endpoint.
+# Check this is true.
 @router.put(
     "/{user_id}/update_password",
     response_model=UserProfile,
@@ -122,6 +133,9 @@ def read_roles_of_current_user(user: current_user) -> list[Role]:
     return roles.get_multi_by_user_id(user_id=user.id)
 
 
+# TODO: are we sure we want to check if the user exists before returning roles?
+# If the user does not exist, it will raise a UserNotFoundError.
+# This could be exploited by an attacker to enumerate users.
 @router.get(
     "/{user_id}/roles",
     response_model=list[RoleProfile],

@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from fastapi import HTTPException
 from sqlalchemy import select
-from starlette import status
 
 from kwik.core.security import get_password_hash, verify_password
 from kwik.crud import roles as crud_roles
@@ -33,8 +31,30 @@ class AutoCRUDUser(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
         stmt = select(User).where(User.name == name)
         return self.db.execute(stmt).scalar_one_or_none()
 
+    def get_multi_by_role_name(self, *, role_name: str) -> list[User]:
+        """Get all users assigned to a role by role name."""
+        stmt = (
+            select(User)
+            .join(UserRole, User.id == UserRole.user_id)
+            .join(Role, Role.id == UserRole.role_id)
+            .where(Role.name == role_name)
+        )
+        return list(self.db.execute(stmt).scalars().all())
+
+    def get_multi_by_role_id(self, *, role_id: int) -> list[User]:
+        """Get all users assigned to a specific role."""
+        stmt = select(User).join(UserRole, User.id == UserRole.user_id).where(UserRole.role_id == role_id)
+        return list(self.db.execute(stmt).scalars().all())
+
     def create(self, *, obj_in: UserRegistration) -> User:
-        """Create new user with hashed password."""
+        """
+        Create new user with hashed password.
+
+        This method overrides the superclass to ensure that the user's password
+        is securely hashed before being stored in the database. The base class
+        does not handle password hashing, so this override is necessary for
+        proper security.
+        """
         db_obj = User(
             name=obj_in.name,
             surname=obj_in.surname,
@@ -59,28 +79,24 @@ class AutoCRUDUser(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
             obj_db = self.create(obj_in=obj_in)
         return obj_db
 
-    def update(self, *, db_obj: User, obj_in: UserProfileUpdate | dict[str, Any]) -> User:
-        """Update user with password hashing support."""
-        update_data = obj_in if isinstance(obj_in, dict) else obj_in.model_dump(exclude_unset=True)
-        if update_data.get("password"):
-            hashed_password = get_password_hash(update_data["password"])
-            del update_data["password"]
-            update_data["hashed_password"] = hashed_password
-        return super().update(db_obj=db_obj, obj_in=update_data)
+    def authenticate(self, *, email: str, password: str) -> User:
+        """Authenticate a user with email and password."""
+        # Retrieve the user from the database
+        user_db = self.get_by_email(email=email)
+
+        # Check if the user exists and the password is correct
+        if user_db is None or not verify_password(password, user_db.hashed_password):
+            raise AuthenticationFailedError
+
+        return user_db
 
     def change_password(self, *, user_id: int, obj_in: UserPasswordChange) -> User:
         """Change user password after validating old password."""
         user_db = self.get(id=user_id)
         if not user_db:
-            raise HTTPException(
-                status_code=status.HTTP_412_PRECONDITION_FAILED,
-                detail="The provided user does not exist",
-            )
+            raise UserNotFoundError
         if not self.authenticate(email=user_db.email, password=obj_in.old_password):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="The provided password is wrong",
-            )
+            raise AuthenticationFailedError
 
         hashed_password = get_password_hash(obj_in.new_password)
         user_db.hashed_password = hashed_password
@@ -98,23 +114,6 @@ class AutoCRUDUser(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
         user_db.hashed_password = hashed_password
         self.db.add(user_db)
         self.db.flush()
-        return user_db
-
-    def authenticate(self, *, email: str, password: str) -> User:
-        """
-        Authenticate a user with email and password.
-
-        Raises:
-            IncorrectCredentials: If the user does not exist or the password is wrong
-
-        """
-        # Retrieve the user from the database
-        user_db = self.get_by_email(email=email)
-
-        # Check if the user exists and the password is correct
-        if user_db is None or not verify_password(password, user_db.hashed_password):
-            raise AuthenticationFailedError
-
         return user_db
 
     @staticmethod
@@ -152,10 +151,7 @@ class AutoCRUDUser(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
             select(Role)
             .join(UserRole, Role.id == UserRole.role_id)
             .join(User, User.id == UserRole.user_id)
-            .where(
-                Role.name.in_(roles),
-                User.id == user_id,
-            )
+            .where(Role.name.in_(roles), User.id == user_id)
             .distinct()
         )
 
@@ -177,10 +173,7 @@ class AutoCRUDUser(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
 
     def _get_user_role_association(self, *, user_id: int, role_id: int) -> UserRole | None:
         """Get user-role association by user ID and role ID."""
-        stmt = select(UserRole).where(
-            UserRole.user_id == user_id,
-            UserRole.role_id == role_id,
-        )
+        stmt = select(UserRole).where(UserRole.user_id == user_id, UserRole.role_id == role_id)
         return self.db.execute(stmt).scalar_one_or_none()
 
     def assign_role(self, *, user_id: int, role_id: int) -> User:
@@ -223,21 +216,6 @@ class AutoCRUDUser(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
             self.db.flush()
 
         return user_db
-
-    def get_multi_by_role_name(self, *, role_name: str) -> list[User]:
-        """Get all users assigned to a role by role name."""
-        stmt = (
-            select(User)
-            .join(UserRole, User.id == UserRole.user_id)
-            .join(Role, Role.id == UserRole.role_id)
-            .where(Role.name == role_name)
-        )
-        return list(self.db.execute(stmt).scalars().all())
-
-    def get_multi_by_role_id(self, *, role_id: int) -> list[User]:
-        """Get all users assigned to a specific role."""
-        stmt = select(User).join(UserRole, User.id == UserRole.user_id).where(UserRole.role_id == role_id)
-        return list(self.db.execute(stmt).scalars().all())
 
 
 users = AutoCRUDUser()
