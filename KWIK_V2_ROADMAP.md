@@ -10,22 +10,13 @@ Based on comprehensive codebase analysis and creative brainstorming, this roadma
 
 ## Phase 1: Foundation Strengthening (2-3 weeks)
 
-### 1.1 Library Structure Review & Modernization
-- **Goal:** Ensure modular, maintainable architecture
-- **Tasks:** 
-  - Review current module organization and dependencies
-  - Implement plugin architecture for extensibility
-  - Improve dependency injection patterns
-  - Create clear separation of concerns
-- **Branch:** `feature/v2-structure`
-
-### 1.2 Hierarchical Settings Management
+### 1.1 Hierarchical Settings Management
 - **Goal:** Replace basic settings with production-grade configuration
 - **Implementation:** Multi-source loading (files → env vars → secrets), Pydantic validation
 - **Features:** Environment-specific configs, validation, hot reloading
 - **Branch:** `feature/v2-settings`
 
-### 1.3 Enhanced Testing Infrastructure
+### 1.2 Enhanced Testing Infrastructure
 - **Goal:** Robust testing foundation for all improvements
 - **Key Features:**
   - **Fluent Scenario Builder:** `Scenario().with_user(admin=True).with_posts(5).build()`
@@ -34,7 +25,7 @@ Based on comprehensive codebase analysis and creative brainstorming, this roadma
   - Better fixtures and factories
 - **Branch:** `feature/v2-testing`
 
-### 1.4 Critical Bug Fixes
+### 1.3 Critical Bug Fixes
 - **Goal:** Address existing issues before adding features
 - **Approach:** Systematic review and resolution of known issues
 - **Branch:** `feature/v2-bugfixes`
@@ -164,17 +155,30 @@ Based on comprehensive codebase analysis and creative brainstorming, this roadma
 
 This roadmap transforms basic v2 requirements into a comprehensive, innovative framework that positions Kwik as a leading Python web framework for modern application development.
 
+## Optional Phase: Advanced Architecture (Optional)
+
+### Optional.1 Library Structure Review & Modernization
+- **Status:** Optional - Requires Further Analysis
+- **Goal:** Ensure modular, maintainable architecture
+- **Tasks:** 
+  - Review current module organization and dependencies
+  - Implement plugin architecture for extensibility
+  - Improve dependency injection patterns
+  - Create clear separation of concerns
+- **Branch:** `feature/v2-structure`
+- **Notes:** This task showed significant complexity during initial implementation attempts. The current architecture may already be sufficient for v2 goals. Recommend evaluating necessity after core features are complete.
+
 ## Original 12 Tasks Mapping
 
 1. **Finalize the API** → Phase 2.4 (API Versioning & Stability)
 2. **Complete the Documentation** → Phase 5.2 (Complete Documentation Update)
-3. **Testing** → Phase 1.3 (Enhanced Testing Infrastructure)
-4. **Bug Fixes** → Phase 1.4 (Critical Bug Fixes)
+3. **Testing** → Phase 1.2 (Enhanced Testing Infrastructure)
+4. **Bug Fixes** → Phase 1.3 (Critical Bug Fixes)
 5. **Improve Paging** → Phase 2.1 (Declarative Data Shaping Engine - Cursor Pagination)
 6. **Improve Sorting** → Phase 2.1 (Declarative Data Shaping Engine - Smart Sorting)
 7. **Improve logging** → Phase 2.2 (Context-Aware Structured Logging)
 8. **Enhance Security** → Phase 2.3 (Enhanced Security System)
-9. **Library Structure** → Phase 1.1 (Library Structure Review & Modernization)
+9. **Library Structure** → Optional.1 (Library Structure Review & Modernization)
 10. **Support for Caching mechanisms** → Phase 3.1 (Adaptive Caching Layer)
 11. **Built-in Email Support** → Phase 4.1 (Visual Email System)
 12. **Built-in Notification Support** → Phase 4.3 (Enhanced Notifications System)
