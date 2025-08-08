@@ -128,7 +128,7 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
         obj_in_data = obj_in.model_dump() if hasattr(obj_in, "model_dump") else dict(obj_in)
 
         # Import here to avoid circular import
-        from kwik.database.mixins import RecordInfoMixin  # noqa: PLC0415
+        from kwik.models.mixins import RecordInfoMixin  # noqa: PLC0415
 
         if self.user is not None and inspect.isclass(self.model) and issubclass(self.model, RecordInfoMixin):
             obj_in_data["creator_user_id"] = self.user.id
@@ -166,7 +166,7 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
         update_data = obj_in.model_dump(exclude_unset=True)
 
         # Import here to avoid circular import
-        from kwik.database.mixins import RecordInfoMixin  # noqa: PLC0415
+        from kwik.models.mixins import RecordInfoMixin  # noqa: PLC0415
 
         if self.user is not None and inspect.isclass(self.model) and issubclass(self.model, RecordInfoMixin):
             update_data["last_modifier_user_id"] = self.user.id

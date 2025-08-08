@@ -7,7 +7,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from kwik.database.base import Base
-from kwik.database.mixins import RecordInfoMixin
+from kwik.models.mixins import RecordInfoMixin
 
 
 class User(Base):

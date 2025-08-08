@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from kwik.database.context_vars import db_conn_ctx_var
-from kwik.database.session_local import SessionLocal
+from kwik.database.session_local import get_session_local
 
 if TYPE_CHECKING:
     from contextvars import Token
@@ -41,7 +41,7 @@ class DBContextManager:
             # No session found in the context variable.
 
             # Create a new session.
-            self.db = SessionLocal()
+            self.db = get_session_local()()
             # Store the session in the context variable.
             self.token = db_conn_ctx_var.set(self.db)
         else:
