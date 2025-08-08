@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, get_args
+from typing import TYPE_CHECKING, get_args
 
 import pydantic
 from sqlalchemy import func, select
@@ -161,9 +161,9 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
             raise DuplicatedEntityError
         return obj_db
 
-    def update(self, *, db_obj: ModelType, obj_in: UpdateSchemaType | dict[str, Any]) -> ModelType:
+    def update(self, *, db_obj: ModelType, obj_in: UpdateSchemaType) -> ModelType:
         """Update existing record with new data."""
-        update_data = obj_in if isinstance(obj_in, dict) else obj_in.model_dump(exclude_unset=True)
+        update_data = obj_in.model_dump(exclude_unset=True)
 
         # Import here to avoid circular import
         from kwik.database.mixins import RecordInfoMixin  # noqa: PLC0415

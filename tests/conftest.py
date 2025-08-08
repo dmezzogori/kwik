@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from fastapi import FastAPI
     from sqlalchemy.orm import Session
 
-    from kwik.models.user import User
+    from kwik.models import User
 
 
 @pytest.fixture(scope="session")
@@ -47,7 +47,7 @@ def setup_test_database() -> Generator[None, None, None]:
                 "POSTGRES_PASSWORD": "root",
             },
         )
-        # Reset caches again after configuration to ensure fresh instances with new settings
+        # Reset caches after configuration to ensure fresh instances with new settings
         reset_engines()
         reset_session_locals()
 
@@ -57,12 +57,13 @@ def setup_test_database() -> Generator[None, None, None]:
         Base.metadata.drop_all(bind=engine)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def db_session(setup_test_database: None) -> Generator[Session, None, None]:  # noqa: ARG001
     """Create a test database session with transaction rollback."""
     session_factory = get_session_local()
     session = session_factory()
     try:
+        db_conn_ctx_var.set(session)
         yield session
     finally:
         session.rollback()
@@ -73,7 +74,6 @@ def db_session(setup_test_database: None) -> Generator[Session, None, None]:  # 
 def test_user(db_session: Session) -> User:
     """Create a test user in the current database session."""
     return create_test_user(
-        db_session,
         name="testuser",
         surname="testsurname",
         email="test@example.com",
@@ -99,7 +99,6 @@ def app() -> FastAPI:
 def client(app: FastAPI, db_session: Session, user_context: None) -> Generator[TestClient, None, None]:  # noqa: ARG001
     """Create test client with database session and user context."""
     # Set the database session in the context variable
-    db_conn_ctx_var.set(db_session)
 
     with TestClient(app) as c:
         yield c
@@ -112,36 +111,9 @@ def client(app: FastAPI, db_session: Session, user_context: None) -> Generator[T
 def client_no_auth(app: FastAPI, db_session: Session) -> Generator[TestClient, None, None]:
     """Create test client with database session but without user context (for unauthenticated tests)."""
     # Set the database session in the context variable
-    db_conn_ctx_var.set(db_session)
 
     with TestClient(app) as c:
         yield c
 
     # Clean up the context variable
     db_conn_ctx_var.set(None)
-
-
-@pytest.fixture
-def crud_context(db_session: Session, test_user: User) -> Generator[tuple[Session, User], None, None]:
-    """Set up database session and user context for CRUD operations."""
-    # Set the database session in the context variable
-    db_conn_ctx_var.set(db_session)
-
-    # Set up user context using framework's override_current_user
-    with override_current_user(test_user):
-        yield db_session, test_user
-
-    # Clean up the context variable
-    db_conn_ctx_var.set(None)
-
-
-@pytest.fixture(autouse=True)
-def clean_db(db_session: Session) -> Generator[None, None, None]:
-    """Clean database tables between tests."""
-    # Delete all data from tables (in reverse order to handle foreign keys)
-    for table in reversed(Base.metadata.sorted_tables):
-        db_session.execute(table.delete())
-    db_session.commit()
-    yield
-    # Rollback any changes made during the test
-    db_session.rollback()

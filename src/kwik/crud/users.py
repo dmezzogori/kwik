@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from kwik.core.security import get_password_hash, verify_password
 from kwik.exceptions import AuthenticationFailedError, InactiveUserError, UserNotFoundError
-from kwik.models import Permission, Role, User, UserRole
+from kwik.models import Permission, Role, User
 from kwik.schemas import UserPasswordChange, UserProfileUpdate, UserRegistration
 
 from .autocrud import AutoCRUD
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-class CRUDUser(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
+class _CRUDUsers(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
     """CRUD operations for users with authentication and authorization support."""
 
     def get_by_email(self, *, email: str) -> User | None:
@@ -119,44 +119,7 @@ class CRUDUser(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
         """Get all roles associated to the user."""
         return user.roles
 
-    def _get_user_role_association(self, *, user: User, role: Role) -> UserRole | None:
-        """Get user-role association record for a given user and role."""
-        stmt = select(UserRole).where(UserRole.user_id == user.id, UserRole.role_id == role.id)
-        return self.db.execute(stmt).scalar_one_or_none()
 
-    def assign_role(self, *, user: User, role: Role) -> User:
-        """Assign a role to a user. Idempotent operation."""
-        # Check if association already exists
-        user_role = self._get_user_role_association(user=user, role=role)
-        if user_role is None:
-            # Create new user-role association with proper creator_user_id
-            user_role_kwargs = {
-                "user_id": user.id,
-                "role_id": role.id,
-            }
-
-            # Set creator_user_id if current user is available (handles RecordInfoMixin requirement)
-            # TODO: needs to be removed, the user must exist and not be None
-            if self.user is not None:
-                user_role_kwargs["creator_user_id"] = self.user.id
-
-            user_role = UserRole(**user_role_kwargs)
-            self.db.add(user_role)
-            self.db.flush()
-
-        return user
-
-    def remove_role(self, *, user: User, role: Role) -> User:
-        """Remove a role from a user. Idempotent operation."""
-        # Find and delete association if it exists
-        user_role = self._get_user_role_association(user=user, role=role)
-        if user_role is not None:
-            self.db.delete(user_role)
-            self.db.flush()
-
-        return user
-
-
-crud_users = CRUDUser()
+crud_users = _CRUDUsers()
 
 __all__ = ["crud_users"]
