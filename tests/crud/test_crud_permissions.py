@@ -27,7 +27,7 @@ class TestPermissionCRUD:
     def test_create_permission(self, db_session: Session) -> None:
         """Test creating a new permission."""
         # Set up context
-        user = create_test_user(db_session)
+        user = create_test_user()
         self._setup_context(db_session, user)
 
         permission_data = schemas.PermissionDefinition(name="test_permission")
@@ -40,7 +40,7 @@ class TestPermissionCRUD:
     def test_create_permission_duplicate_name_allowed(self, db_session: Session) -> None:
         """Test that creating permissions with duplicate names is allowed."""
         # Set up context
-        user = create_test_user(db_session)
+        user = create_test_user()
         self._setup_context(db_session, user)
 
         # Create first permission
@@ -58,11 +58,11 @@ class TestPermissionCRUD:
     def test_get_permission_by_id(self, db_session: Session) -> None:
         """Test getting a permission by ID."""
         # Set up context
-        user = create_test_user(db_session)
+        user = create_test_user()
         self._setup_context(db_session, user)
 
         # Create a test permission
-        permission = create_test_permission(db_session, name="get_test_permission", creator_user_id=user.id)
+        permission = create_test_permission(name="get_test_permission")
 
         # Get the permission by ID
         retrieved_permission = crud.crud_permissions.get(id=permission.id)
@@ -74,7 +74,7 @@ class TestPermissionCRUD:
     def test_get_permission_by_nonexistent_id_returns_none(self, db_session: Session) -> None:
         """Test getting a permission by non-existent ID returns None."""
         # Set up context
-        user = create_test_user(db_session)
+        user = create_test_user()
         self._setup_context(db_session, user)
 
         retrieved_permission = crud.crud_permissions.get(id=99999)
@@ -83,11 +83,11 @@ class TestPermissionCRUD:
     def test_get_permission_by_name(self, db_session: Session) -> None:
         """Test getting a permission by name."""
         # Set up context
-        user = create_test_user(db_session)
+        user = create_test_user()
         self._setup_context(db_session, user)
 
         # Create a test permission
-        permission = create_test_permission(db_session, name="unique_permission", creator_user_id=user.id)
+        permission = create_test_permission(name="unique_permission")
 
         # Get the permission by name
         retrieved_permission = crud.crud_permissions.get_by_name(name="unique_permission")
@@ -99,7 +99,7 @@ class TestPermissionCRUD:
     def test_get_permission_by_nonexistent_name_returns_none(self, db_session: Session) -> None:
         """Test getting a permission by non-existent name returns None."""
         # Set up context
-        user = create_test_user(db_session)
+        user = create_test_user()
         self._setup_context(db_session, user)
 
         retrieved_permission = crud.crud_permissions.get_by_name(name="nonexistent_permission")
@@ -108,11 +108,11 @@ class TestPermissionCRUD:
     def test_update_permission(self, db_session: Session) -> None:
         """Test updating a permission."""
         # Set up context
-        user = create_test_user(db_session)
+        user = create_test_user()
         self._setup_context(db_session, user)
 
         # Create a test permission
-        permission = create_test_permission(db_session, name="original_permission", creator_user_id=user.id)
+        permission = create_test_permission(name="original_permission")
 
         # Update the permission
         update_data = schemas.PermissionUpdate(name="updated_permission")
@@ -124,11 +124,11 @@ class TestPermissionCRUD:
     def test_get_if_exist_with_existing_permission(self, db_session: Session) -> None:
         """Test get_if_exist with an existing permission."""
         # Set up context
-        user = create_test_user(db_session)
+        user = create_test_user()
         self._setup_context(db_session, user)
 
         # Create a test permission
-        permission = create_test_permission(db_session, creator_user_id=user.id)
+        permission = create_test_permission()
 
         # Get the permission using get_if_exist
         retrieved_permission = crud.crud_permissions.get_if_exist(id=permission.id)
@@ -138,7 +138,7 @@ class TestPermissionCRUD:
     def test_get_if_exist_with_nonexistent_permission_raises_error(self, db_session: Session) -> None:
         """Test get_if_exist with non-existent permission raises EntityNotFoundError."""
         # Set up context
-        user = create_test_user(db_session)
+        user = create_test_user()
         self._setup_context(db_session, user)
 
         with pytest.raises(EntityNotFoundError):
@@ -147,7 +147,7 @@ class TestPermissionCRUD:
     def test_get_multi_permissions(self, db_session: Session) -> None:
         """Test getting multiple permissions with pagination."""
         # Set up context
-        user = create_test_user(db_session)
+        user = create_test_user()
         self._setup_context(db_session, user)
 
         # Test constants
@@ -158,7 +158,7 @@ class TestPermissionCRUD:
         # Create multiple test permissions
         permissions = []
         for i in range(total_permissions):
-            permission = create_test_permission(db_session, name=f"permission_{i}", creator_user_id=user.id)
+            permission = create_test_permission(name=f"permission_{i}")
             permissions.append(permission)
 
         # Get multiple permissions
@@ -175,11 +175,11 @@ class TestPermissionCRUD:
     def test_basic_delete_permission_direct(self, db_session: Session) -> None:
         """Test basic permission deletion using direct database operations."""
         # Set up context
-        user = create_test_user(db_session)
+        user = create_test_user()
         self._setup_context(db_session, user)
 
         # Create a test permission
-        permission = create_test_permission(db_session, creator_user_id=user.id)
+        permission = create_test_permission()
         permission_id = permission.id
 
         # Delete the permission directly from database (to avoid custom delete method issues)

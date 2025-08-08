@@ -39,7 +39,7 @@ class TestRoleCRUD:
         db_conn_ctx_var.set(db_session)
 
         # Create a test role
-        role = create_test_role(db_session, name="Get Test Role")
+        role = create_test_role(name="Get Test Role")
 
         # Get the role by ID
         retrieved_role = crud.crud_roles.get(id=role.id)
@@ -62,7 +62,7 @@ class TestRoleCRUD:
         db_conn_ctx_var.set(db_session)
 
         # Create a test role
-        role = create_test_role(db_session, name="Original Role")
+        role = create_test_role(name="Original Role")
 
         # Update the role
         update_data = schemas.RoleUpdate(name="Updated Role")
@@ -82,7 +82,7 @@ class TestRoleCRUD:
         db_conn_ctx_var.set(db_session)
 
         # Create a test role
-        role = create_test_role(db_session)
+        role = create_test_role()
 
         # Get the role using get_if_exist
         retrieved_role = crud.crud_roles.get_if_exist(id=role.id)
@@ -110,7 +110,7 @@ class TestRoleCRUD:
         # Create multiple test roles
         roles = []
         for i in range(total_roles):
-            role = create_test_role(db_session, name=f"Role {i}")
+            role = create_test_role(name=f"Role {i}")
             roles.append(role)
 
         # Get multiple roles
@@ -130,7 +130,7 @@ class TestRoleCRUD:
         db_conn_ctx_var.set(db_session)
 
         # Create test roles with different attributes
-        create_test_role(db_session, name="Active Role", is_active=True)
+        create_test_role(name="Active Role", is_active=True)
         create_test_role(db_session, name="Inactive Role", is_active=False)
 
         # Filter by is_active

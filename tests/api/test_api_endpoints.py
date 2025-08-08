@@ -76,7 +76,7 @@ class TestLoginEndpoints:
         db_conn_ctx_var.set(db_session)
 
         # Create a test user
-        create_test_user(db_session, email="test@example.com", password="testpassword123")
+        create_test_user(email="test@example.com", password="testpassword123")
 
         login_data = {
             "username": "test@example.com",
@@ -102,7 +102,7 @@ class TestLoginEndpoints:
         db_conn_ctx_var.set(db_session)
 
         # Create a test user and get a token
-        create_test_user(db_session, email="test@example.com", password="testpassword123")
+        create_test_user(email="test@example.com", password="testpassword123")
 
         # First, get a token by logging in
         login_data = {
@@ -174,7 +174,7 @@ class TestLoginEndpoints:
         db_conn_ctx_var.set(db_session)
 
         # Create a test user and get a token
-        create_test_user(db_session, email="test@example.com", password="testpassword123")
+        create_test_user(email="test@example.com", password="testpassword123")
 
         # Get a token by logging in
         login_data = {
@@ -266,7 +266,6 @@ class TestAPIIntegration:
 
         # Create a regular test user
         test_user = create_test_user(
-            db_session,
             name="Integration",
             surname="User",
             email="integration@example.com",
