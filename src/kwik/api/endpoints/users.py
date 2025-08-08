@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import kwik.typings
 from kwik.api.deps import Pagination, current_user, has_permission
 from kwik.core.enum import Permissions
-from kwik.crud import crud_roles, crud_users
+from kwik.crud import crud_users
 from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuditorRouter
 from kwik.schemas import (
@@ -140,36 +140,6 @@ def read_user_roles(user_id: int) -> list[Role]:
 def update_password(user_id: int, obj_in: UserPasswordChange) -> User:
     """Update user's password (admin operation)."""
     return crud_users.change_password(user_id=user_id, obj_in=obj_in)
-
-
-@users_router.post(
-    "/{user_id}/roles/{role_id}",
-    response_model=RoleProfile,
-    dependencies=(
-        has_permission(Permissions.users_management_update),
-        has_permission(Permissions.roles_management_update),
-    ),
-)
-def assign_role_to_user(user_id: int, role_id: int) -> User:
-    """Assign a role to a user."""
-    user = crud_users.get_if_exist(id=user_id)
-    role = crud_roles.get_if_exist(id=role_id)
-    return crud_users.assign_role(user=user, role=role)
-
-
-@users_router.delete(
-    "/{user_id}/roles/{role_id}",
-    response_model=UserProfile,
-    dependencies=(
-        has_permission(Permissions.users_management_update),
-        has_permission(Permissions.roles_management_delete),
-    ),
-)
-def remove_role_from_user(user_id: int, role_id: int) -> User:
-    """Remove a role from a user."""
-    user = crud_users.get_if_exist(id=user_id)
-    role = crud_roles.get_if_exist(id=role_id)
-    return crud_users.remove_role(user=user, role=role)
 
 
 __all__ = ["users_router"]
