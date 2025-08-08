@@ -42,14 +42,3 @@ def reset_session_locals() -> None:
     global _session_local, _alternate_session_local  # noqa: PLW0603
     _session_local = None
     _alternate_session_local = None
-
-
-# Backward compatibility: provide SessionLocal and AlternateSessionLocal as module-level attributes
-def __getattr__(name: str) -> sessionmaker | None:
-    """Provide backward compatibility for direct access to session factory attributes."""
-    if name == "SessionLocal":
-        return get_session_local()
-    if name == "AlternateSessionLocal":
-        return get_alternate_session_local()
-    msg = f"module '{__name__}' has no attribute '{name}'"
-    raise AttributeError(msg)
