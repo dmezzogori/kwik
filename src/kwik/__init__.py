@@ -6,8 +6,7 @@ Kwik is built on FastAPI and provides an opinionated, business-oriented API for 
 
 from __future__ import annotations
 
-from . import database as database
-from . import utils
+from . import database, utils
 from .api.api import api_router
 from .api.deps import (
     FilterQuery,

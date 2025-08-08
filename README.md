@@ -79,8 +79,8 @@ class MyAutoCRUD(AutoCRUD[MyModel, MyCreate, MyUpdate]):
 Pre-built mixins for common database patterns with automatic configuration.
 
 ```python
-from kwik.database.mixins import RecordInfoMixin
-from kwik.database.base import Base
+from kwik.mdoels import RecordInfoMixin
+from kwik.models import Base
 from sqlalchemy import Column, String
 
 class Product(Base, RecordInfoMixin):

@@ -6,8 +6,8 @@ from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from kwik.models.base import Base
-from kwik.models.mixins import RecordInfoMixin
+from .base import Base
+from .mixins import RecordInfoMixin
 
 
 class User(Base):
@@ -96,3 +96,6 @@ class RolePermission(Base, RecordInfoMixin):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
     permission_id: Mapped[int] = mapped_column(ForeignKey("permissions.id"), nullable=False)
+
+
+__all__ = ["Permission", "Role", "RolePermission", "User", "UserRole"]

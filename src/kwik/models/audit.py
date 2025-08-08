@@ -3,7 +3,7 @@
 from sqlalchemy import Float, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from kwik.models.base import Base
+from .base import Base
 
 
 class Audit(Base):
@@ -24,3 +24,6 @@ class Audit(Base):
     body: Mapped[str | None] = mapped_column(String)
     process_time: Mapped[float | None] = mapped_column(Float)
     status_code: Mapped[int | None] = mapped_column()
+
+
+__all__ = ["Audit"]

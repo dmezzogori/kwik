@@ -1,16 +1,11 @@
 """Database base configuration and declarative base."""
 
-from typing import Any
-
 from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
     """Modern SQLAlchemy 2.0 declarative base class for all database models."""
-
-    # Allow unmapped annotations during migration transition
-    __allow_unmapped__ = True
 
     # Configure naming convention for constraints
     metadata = MetaData(
@@ -23,7 +18,5 @@ class Base(DeclarativeBase):
         }
     )
 
-    # Common attributes that will be properly typed later
-    id: Any
-    __name__: str
-    __tablename__: str
+
+__all__ = ["Base"]
