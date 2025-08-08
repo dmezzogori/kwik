@@ -8,15 +8,12 @@ import pytest
 from testcontainers.postgres import PostgresContainer
 
 from kwik import configure_kwik
-from kwik.database.context_vars import db_conn_ctx_var
 from kwik.database.engine import get_engine, reset_engine
-from kwik.database.session_local import get_session_local, reset_session_local
+from kwik.database.session_local import reset_session_local
 from kwik.models.base import Base
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-
-    from sqlalchemy.orm import Session
 
 
 @pytest.fixture(scope="session")
@@ -47,16 +44,3 @@ def setup_test_database() -> Generator[None, None, None]:
         Base.metadata.create_all(bind=engine)
         yield
         Base.metadata.drop_all(bind=engine)
-
-
-@pytest.fixture(autouse=True)
-def db_session(setup_test_database: None) -> Generator[Session, None, None]:  # noqa: ARG001
-    """Create a test database session with transaction rollback."""
-    session_factory = get_session_local()
-    session = session_factory()
-    try:
-        db_conn_ctx_var.set(session)
-        yield session
-    finally:
-        session.rollback()
-        session.close()
