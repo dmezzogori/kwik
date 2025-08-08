@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from kwik.database.context_vars import db_conn_ctx_var
-from kwik.database.session_local import get_session_local
+from .context_vars import db_conn_ctx_var
+from .session_local import get_session_local
 
 if TYPE_CHECKING:
     from contextvars import Token
@@ -18,8 +18,8 @@ class DBContextManager:
     """
     DB Session Context Manager.
 
-    Implemented as a context manager,
-    automatically rollback a transaction if any exception is raised by the application.
+    Implemented as a context manager.
+    It automatically rollbacks a transaction if any exception is raised by the application.
     """
 
     def __init__(self) -> None:
