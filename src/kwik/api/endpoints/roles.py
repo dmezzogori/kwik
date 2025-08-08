@@ -7,10 +7,18 @@ from typing import TYPE_CHECKING
 import kwik.typings
 from kwik.api.deps import Pagination, has_permission
 from kwik.core.enum import Permissions
-from kwik.crud import crud_roles
+from kwik.crud import crud_permissions, crud_roles
 from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuditorRouter
-from kwik.schemas import Paginated, PermissionProfile, RoleDefinition, RoleProfile, RoleUpdate, UserProfile
+from kwik.schemas import (
+    Paginated,
+    PermissionProfile,
+    RoleDefinition,
+    RolePermissionAssignment,
+    RoleProfile,
+    RoleUpdate,
+    UserProfile,
+)
 
 if TYPE_CHECKING:
     from kwik.models import Permission, Role, User
@@ -136,6 +144,60 @@ def users_with_role(role_id: int) -> list[User]:
 def users_without_role(role_id: int) -> list[User]:
     """Get users not associated to a role."""
     return crud_roles.get_users_without(role_id=role_id)
+
+
+@roles_router.post(
+    "/{role_id}/permissions",
+    response_model=RoleProfile,
+    dependencies=(
+        has_permission(
+            Permissions.roles_management_update,
+            Permissions.permissions_management_update,
+        ),
+    ),
+)
+def assign_permission_to_role(role_id: int, assignment: RolePermissionAssignment) -> Role:
+    """
+    Assign a permission to a role.
+
+    Raises:
+        NotFound: If the provided role or permission does not exist
+
+    Permissions required:
+        * `roles_management_update`
+        * `permissions_management_update`
+
+    """
+    role = crud_roles.get_if_exist(id=role_id)
+    permission = crud_permissions.get_if_exist(id=assignment.permission_id)
+    return crud_roles.assign_permission(role=role, permission=permission)
+
+
+@roles_router.delete(
+    "/{role_id}/permissions/{permission_id}",
+    response_model=RoleProfile,
+    dependencies=(
+        has_permission(
+            Permissions.roles_management_update,
+            Permissions.permissions_management_update,
+        ),
+    ),
+)
+def remove_permission_from_role(role_id: int, permission_id: int) -> Role:
+    """
+    Remove a permission from a role.
+
+    Raises:
+        NotFound: If the provided role or permission does not exist
+
+    Permissions required:
+        * `roles_management_update`
+        * `permissions_management_update`
+
+    """
+    role = crud_roles.get_if_exist(id=role_id)
+    permission = crud_permissions.get_if_exist(id=permission_id)
+    return crud_roles.remove_permission(role=role, permission=permission)
 
 
 @roles_router.delete(

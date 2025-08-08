@@ -47,3 +47,9 @@ class RoleLookup(BaseModel):
     name: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class RolePermissionAssignment(BaseModel):
+    """Schema for assigning permissions to roles."""
+
+    permission_id: int

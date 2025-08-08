@@ -9,7 +9,7 @@ from kwik.core.enum import Permissions
 from kwik.crud import crud_permissions
 from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuditorRouter
-from kwik.schemas import Paginated, PermissionDefinition, PermissionProfile, PermissionRoleAssignment, PermissionUpdate
+from kwik.schemas import Paginated, PermissionDefinition, PermissionProfile, PermissionUpdate
 from kwik.typings import PaginatedResponse
 
 if TYPE_CHECKING:
@@ -64,25 +64,6 @@ def update_permission(permission_id: int, permission_in: PermissionUpdate) -> Pe
     return crud_permissions.update(db_obj=permission, obj_in=permission_in)
 
 
-@permissions_router.post(
-    "/{permission_id}/roles",
-    response_model=PermissionProfile,
-    dependencies=(has_permission(Permissions.permissions_management_update),),
-)
-def associate_permission_to_role(permission_id: int, assignment: PermissionRoleAssignment) -> Permission:
-    """
-    Associate a permission to a role.
-
-    Raises:
-        NotFound: If the provided permission or role does not exist
-
-    Permissions required:
-        * `permissions_management_update`
-
-    """
-    return crud_permissions.associate_role(permission_id=permission_id, role_id=assignment.role_id)
-
-
 @permissions_router.delete(
     "/{permission_id}/roles",
     response_model=PermissionProfile,
@@ -105,25 +86,6 @@ def purge_all_roles(permission_id: int) -> Permission:
 
 
 @permissions_router.delete(
-    "/{permission_id}/roles/{role_id}",
-    response_model=PermissionProfile,
-    dependencies=(has_permission(Permissions.permissions_management_delete),),
-)
-def purge_role_from_permission(permission_id: int, role_id: int) -> Permission:
-    """
-    Remove permission from role.
-
-    Raises:
-        NotFound: If the provided permission or role does not exist
-
-    Permissions required:
-        * `permissions_management_delete`
-
-    """
-    return crud_permissions.purge_role(permission_id=permission_id, role_id=role_id)
-
-
-@permissions_router.delete(
     "/{permission_id}",
     response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_delete),),
@@ -139,7 +101,7 @@ def delete_permission(permission_id: int) -> Permission:
         * `permissions_management_delete`
 
     """
-    return crud_permissions.delete(id=permission_id)
+    return crud_permissions.delete(permission_id=permission_id)
 
 
 __all__ = ["permissions_router"]
