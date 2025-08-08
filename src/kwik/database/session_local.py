@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from sqlalchemy.orm import sessionmaker
 
-from kwik.database.engine import get_alternate_engine, get_engine
+from .engine import get_engine
 
 # Cache for lazily initialized session factories
 _session_local: sessionmaker | None = None
-_alternate_session_local: sessionmaker | None = None
 
 
 def get_session_local() -> sessionmaker:
@@ -23,22 +22,7 @@ def get_session_local() -> sessionmaker:
     return _session_local
 
 
-def get_alternate_session_local() -> sessionmaker | None:
-    """Get the alternate session factory, creating it lazily on first access."""
-    global _alternate_session_local  # noqa: PLW0603
-    if _alternate_session_local is None:
-        alternate_engine = get_alternate_engine()
-        if alternate_engine is not None:
-            _alternate_session_local = sessionmaker(
-                bind=alternate_engine,
-                autoflush=False,
-                expire_on_commit=False,  # Modern default for better performance
-            )
-    return _alternate_session_local
-
-
-def reset_session_locals() -> None:
-    """Reset cached session factories to force recreation with new engines."""
-    global _session_local, _alternate_session_local  # noqa: PLW0603
+def reset_session_local() -> None:
+    """Reset cached session factory to force recreation with new engine."""
+    global _session_local  # noqa: PLW0603
     _session_local = None
-    _alternate_session_local = None

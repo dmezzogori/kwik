@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from kwik.database.context_vars import current_user_ctx_var
+from .context_vars import current_user_ctx_var
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 @contextmanager
-def override_current_user(user: User) -> Generator[None, Any, None]:
+def override_current_user(user: User) -> Generator[None, None, None]:
     """
     Context manager for setting and automatically cleaning up the current user context.
 

@@ -8,11 +8,6 @@ for the kwik web framework. It includes async PostgreSQL support via SQLAlchemy.
 from __future__ import annotations
 
 from .db_context_manager import DBContextManager
-from .db_context_switcher import DBContextSwitcher
 from .override_current_user import override_current_user
 
-__all__ = [
-    "DBContextManager",
-    "DBContextSwitcher",
-    "override_current_user",
-]
+__all__ = ["DBContextManager", "override_current_user"]

@@ -8,10 +8,10 @@ import pytest
 from testcontainers.postgres import PostgresContainer
 
 from kwik import configure_kwik
-from kwik.models.base import Base
 from kwik.database.context_vars import db_conn_ctx_var
-from kwik.database.engine import get_engine, reset_engines
-from kwik.database.session_local import get_session_local, reset_session_locals
+from kwik.database.engine import get_engine, reset_engine
+from kwik.database.session_local import get_session_local, reset_session_local
+from kwik.models.base import Base
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -40,8 +40,8 @@ def setup_test_database() -> Generator[None, None, None]:
             },
         )
         # Reset caches after configuration to ensure fresh instances with new settings
-        reset_engines()
-        reset_session_locals()
+        reset_engine()
+        reset_session_local()
 
         engine = get_engine()
         Base.metadata.create_all(bind=engine)
