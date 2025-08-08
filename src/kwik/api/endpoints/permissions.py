@@ -9,11 +9,11 @@ from kwik.core.enum import Permissions
 from kwik.crud import crud_permissions
 from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuditorRouter
-from kwik.schemas import Paginated, PermissionDefinition, PermissionProfile, PermissionUpdate
+from kwik.schemas import Paginated, PermissionDefinition, PermissionProfile, PermissionUpdate, RoleProfile
 from kwik.typings import PaginatedResponse
 
 if TYPE_CHECKING:
-    from kwik.models import Permission
+    from kwik.models import Permission, Role
 
 permissions_router = AuditorRouter(prefix="/permissions")
 
@@ -62,6 +62,38 @@ def update_permission(permission_id: int, permission_in: PermissionUpdate) -> Pe
     """Update a permission."""
     permission = crud_permissions.get_if_exist(id=permission_id)
     return crud_permissions.update(db_obj=permission, obj_in=permission_in)
+
+
+@permissions_router.get(
+    "/{permission_id}/roles",
+    response_model=list[RoleProfile],
+    dependencies=(
+        has_permission(
+            Permissions.permissions_management_read,
+            Permissions.roles_management_read,
+        ),
+    ),
+)
+def read_roles_by_permission(permission_id: int) -> list[Role]:
+    """Get roles associated to a permission."""
+    permission = crud_permissions.get_if_exist(id=permission_id)
+    return crud_permissions.get_roles_assigned_to(permission=permission)
+
+
+@permissions_router.get(
+    "/{permission_id}/available-roles",
+    response_model=list[RoleProfile],
+    dependencies=(
+        has_permission(
+            Permissions.permissions_management_read,
+            Permissions.roles_management_read,
+        ),
+    ),
+)
+def read_available_roles_for_permission(permission_id: int) -> list[Role]:
+    """Get all roles available to assign to the given permission."""
+    permission = crud_permissions.get_if_exist(id=permission_id)
+    return crud_permissions.get_roles_assignable_to(permission=permission)
 
 
 @permissions_router.delete(

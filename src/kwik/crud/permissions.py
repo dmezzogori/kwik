@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from kwik.models import Permission, RolePermission
+from sqlalchemy import select
+
+from kwik.models import Permission, Role, RolePermission
 from kwik.schemas import PermissionDefinition, PermissionUpdate
 
 from .autocrud import AutoCRUD
@@ -106,6 +108,15 @@ class CRUDPermission(AutoCRUD[Permission, PermissionDefinition, PermissionUpdate
         """
         self.purge_all_roles(permission_id=permission_id)
         return super().delete(id=permission_id)
+
+    def get_roles_assigned_to(self, *, permission: Permission) -> list[Role]:
+        """Get all roles that have been assigned to a specific permission."""
+        return permission.roles
+
+    def get_roles_assignable_to(self, *, permission: Permission) -> list[Role]:
+        """Get all roles not assigned to the specified permission."""
+        stmt = select(Role).join(RolePermission).filter(RolePermission.permission_id != permission.id)
+        return list(self.db.execute(stmt).scalars().all())
 
 
 crud_permissions = CRUDPermission()

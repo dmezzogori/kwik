@@ -13,7 +13,7 @@ from .mixins.orm import ORMMixin
 from .mixins.record_info import RecordInfoMixin
 from .pagination import Paginated
 from .permission import PermissionDefinition, PermissionProfile, PermissionRoleAssignment, PermissionUpdate
-from .role import RoleDefinition, RoleInDB, RolePermissionAssignment, RoleProfile, RoleUpdate
+from .role import RoleDefinition, RoleInDB, RolePermissionAssignment, RoleProfile, RoleUpdate, RoleUserAssignment
 from .token import Token, TokenPayload
 from .user import (
     UserAuthenticationInfo,
@@ -39,6 +39,7 @@ __all__ = [
     "RolePermissionAssignment",
     "RoleProfile",
     "RoleUpdate",
+    "RoleUserAssignment",
     "Token",
     "TokenPayload",
     "UserAuthenticationInfo",

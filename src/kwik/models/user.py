@@ -81,6 +81,12 @@ class Permission(Base, RecordInfoMixin):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String, index=True, nullable=False)
 
+    roles: Mapped[list[Role]] = relationship(
+        "Role",
+        secondary="roles_permissions",
+        viewonly=True,
+    )
+
 
 class RolePermission(Base, RecordInfoMixin):
     """Database model for role-permission associations with record tracking."""

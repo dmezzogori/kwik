@@ -107,6 +107,82 @@ class CRUDRole(AutoCRUD[Role, RoleDefinition, RoleUpdate]):
 
         return role
 
+    def assign_user(self, *, role: Role, user: User) -> Role:
+        """
+        Assign a user to a role. Idempotent operation.
+
+        Args:
+            role: The role to assign user to
+            user: The user to assign
+
+        Returns:
+            The updated role
+
+        """
+        # Check if association already exists
+        existing = (
+            self.db.query(UserRole)
+            .filter(
+                UserRole.role_id == role.id,
+                UserRole.user_id == user.id,
+            )
+            .one_or_none()
+        )
+
+        if existing is None:
+            # Create new user-role association
+            user_role = UserRole(role_id=role.id, user_id=user.id)
+            self.db.add(user_role)
+            self.db.flush()
+
+        return role
+
+    def remove_user(self, *, role: Role, user: User) -> Role:
+        """
+        Remove a user from a role. Idempotent operation.
+
+        Args:
+            role: The role to remove user from
+            user: The user to remove
+
+        Returns:
+            The updated role
+
+        """
+        # Find and remove the association
+        association = (
+            self.db.query(UserRole)
+            .filter(
+                UserRole.role_id == role.id,
+                UserRole.user_id == user.id,
+            )
+            .one_or_none()
+        )
+
+        if association is not None:
+            self.db.delete(association)
+            self.db.flush()
+
+        return role
+
+    def remove_all_permissions(self, *, role: Role) -> Role:
+        """
+        Remove all permission associations from a role.
+
+        Args:
+            role: The role to remove all permissions from
+
+        Returns:
+            The updated role
+
+        """
+        # Remove all role-permission associations for this role
+        permission_associations = self.db.query(RolePermission).filter(RolePermission.role_id == role.id).all()
+        for role_permission in permission_associations:
+            self.db.delete(role_permission)
+        self.db.flush()
+        return role
+
 
 crud_roles = CRUDRole()
 

@@ -53,3 +53,9 @@ class RolePermissionAssignment(BaseModel):
     """Schema for assigning permissions to roles."""
 
     permission_id: int
+
+
+class RoleUserAssignment(BaseModel):
+    """Schema for assigning users to roles."""
+
+    user_id: int
