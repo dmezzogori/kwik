@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from kwik.database.override_current_user import override_current_user
+from kwik.database import override_current_user
 from tests.utils import create_test_user
 
 if TYPE_CHECKING:
@@ -15,19 +15,14 @@ if TYPE_CHECKING:
     from kwik.models import User
 
 
-@pytest.fixture
-def test_user() -> User:
-    """Create a test user for CRUD operations."""
-    return create_test_user(
-        name="cruduser",
-        surname="crudsurname",
-        email="crud@example.com",
-        password="crudpassword123",
-    )
+@pytest.fixture(autouse=True)
+def admin_user() -> User:
+    """Create an admin user for CRUD operations."""
+    return create_test_user(name="admin", surname="admin", email="admin@example.com", password="kwikisthebest")
 
 
-@pytest.fixture
-def user_context(test_user: User) -> Generator[None, None, None]:
+@pytest.fixture(autouse=True)
+def current_user(admin_user: User) -> Generator[None, None, None]:
     """Set up user context for CRUD operations."""
-    with override_current_user(test_user):
+    with override_current_user(admin_user):
         yield
