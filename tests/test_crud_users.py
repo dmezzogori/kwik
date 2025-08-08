@@ -39,7 +39,7 @@ class TestUserCRUD:
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
 
-        created_user = crud.users.create(obj_in=user_data)
+        created_user = crud.crud_users.create(obj_in=user_data)
 
         assert created_user.name == "Test"
         assert created_user.surname == "User"
@@ -60,7 +60,7 @@ class TestUserCRUD:
             email="test@example.com",
             password="testpassword123",
         )
-        crud.users.create(obj_in=user_data)
+        crud.crud_users.create(obj_in=user_data)
 
         # Try to create second user with same email
         user_data2 = schemas.UserRegistration(
@@ -71,7 +71,7 @@ class TestUserCRUD:
         )
 
         with pytest.raises(IntegrityError):
-            crud.users.create(obj_in=user_data2)
+            crud.crud_users.create(obj_in=user_data2)
 
     def test_get_user_by_id(self, db_session: Session) -> None:
         """Test getting a user by ID."""
@@ -82,7 +82,7 @@ class TestUserCRUD:
         user = create_test_user(db_session, email="get_test@example.com")
 
         # Get the user by ID
-        retrieved_user = crud.users.get(id=user.id)
+        retrieved_user = crud.crud_users.get(id=user.id)
 
         assert retrieved_user is not None
         assert retrieved_user.id == user.id
@@ -93,7 +93,7 @@ class TestUserCRUD:
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
 
-        retrieved_user = crud.users.get(id=99999)
+        retrieved_user = crud.crud_users.get(id=99999)
         assert retrieved_user is None
 
     def test_get_user_by_email(self, db_session: Session) -> None:
@@ -105,7 +105,7 @@ class TestUserCRUD:
         user = create_test_user(db_session, email="email_test@example.com")
 
         # Get the user by email
-        retrieved_user = crud.users.get_by_email(email="email_test@example.com")
+        retrieved_user = crud.crud_users.get_by_email(email="email_test@example.com")
 
         assert retrieved_user is not None
         assert retrieved_user.id == user.id
@@ -116,23 +116,8 @@ class TestUserCRUD:
         # Set the database session in context
         db_conn_ctx_var.set(db_session)
 
-        retrieved_user = crud.users.get_by_email(email="nonexistent@example.com")
+        retrieved_user = crud.crud_users.get_by_email(email="nonexistent@example.com")
         assert retrieved_user is None
-
-    def test_get_user_by_name(self, db_session: Session) -> None:
-        """Test getting a user by name."""
-        # Set the database session in context
-        db_conn_ctx_var.set(db_session)
-
-        # Create a test user
-        user = create_test_user(db_session, name="uniquename")
-
-        # Get the user by name
-        retrieved_user = crud.users.get_by_name(name="uniquename")
-
-        assert retrieved_user is not None
-        assert retrieved_user.id == user.id
-        assert retrieved_user.name == "uniquename"
 
     def test_update_user(self, db_session: Session) -> None:
         """Test updating a user."""
@@ -144,7 +129,7 @@ class TestUserCRUD:
 
         # Update the user
         update_data = schemas.UserProfileUpdate(name="updated")
-        updated_user = crud.users.update(db_obj=user, obj_in=update_data)
+        updated_user = crud.crud_users.update(db_obj=user, obj_in=update_data)
 
         assert updated_user.id == user.id
         assert updated_user.name == "updated"
@@ -159,7 +144,7 @@ class TestUserCRUD:
         user = create_test_user(db_session)
 
         # Get the user using get_if_exist
-        retrieved_user = crud.users.get_if_exist(id=user.id)
+        retrieved_user = crud.crud_users.get_if_exist(id=user.id)
 
         assert retrieved_user.id == user.id
 
@@ -169,7 +154,7 @@ class TestUserCRUD:
         db_conn_ctx_var.set(db_session)
 
         with pytest.raises(EntityNotFoundError):
-            crud.users.get_if_exist(id=99999)
+            crud.crud_users.get_if_exist(id=99999)
 
     def test_get_multi_users(self, db_session: Session) -> None:
         """Test getting multiple users with pagination."""
@@ -188,13 +173,13 @@ class TestUserCRUD:
             users.append(user)
 
         # Get multiple users
-        count, retrieved_users = crud.users.get_multi(skip=0, limit=page_limit)
+        count, retrieved_users = crud.crud_users.get_multi(skip=0, limit=page_limit)
 
         assert count == total_users  # Total count
         assert len(retrieved_users) == page_limit  # Limited to 3
 
         # Test pagination
-        count, second_page = crud.users.get_multi(skip=page_limit, limit=page_limit)
+        count, second_page = crud.crud_users.get_multi(skip=page_limit, limit=page_limit)
         assert count == total_users
         assert len(second_page) == remaining_users  # Remaining users
 
@@ -208,11 +193,11 @@ class TestUserCRUD:
         create_test_user(db_session, email="inactive@example.com", is_active=False)
 
         # Filter by is_active
-        count, active_users = crud.users.get_multi(is_active=True)
+        count, active_users = crud.crud_users.get_multi(is_active=True)
         assert count == 1
         assert active_users[0].is_active is True
 
-        count, inactive_users = crud.users.get_multi(is_active=False)
+        count, inactive_users = crud.crud_users.get_multi(is_active=False)
         assert count == 1
         assert inactive_users[0].is_active is False
 
@@ -226,12 +211,12 @@ class TestUserCRUD:
         user_id = user.id
 
         # Delete the user
-        deleted_user = crud.users.delete(id=user_id)
+        deleted_user = crud.crud_users.delete(id=user_id)
 
         assert deleted_user.id == user_id
 
         # Verify user is deleted
-        retrieved_user = crud.users.get(id=user_id)
+        retrieved_user = crud.crud_users.get(id=user_id)
         assert retrieved_user is None
 
     def test_authenticate_with_valid_credentials(self, db_session: Session) -> None:
@@ -244,7 +229,7 @@ class TestUserCRUD:
         user = create_test_user(db_session, email="auth@example.com", password=password)
 
         # Authenticate with correct credentials
-        authenticated_user = crud.users.authenticate(email="auth@example.com", password=password)
+        authenticated_user = crud.crud_users.authenticate(email="auth@example.com", password=password)
 
         assert authenticated_user is not None
         assert authenticated_user.id == user.id
@@ -256,7 +241,7 @@ class TestUserCRUD:
         db_conn_ctx_var.set(db_session)
 
         with pytest.raises(AuthenticationFailedError):
-            crud.users.authenticate(email="nonexistent@example.com", password="anypassword")
+            crud.crud_users.authenticate(email="nonexistent@example.com", password="anypassword")
 
     def test_authenticate_with_invalid_password_raises_error(self, db_session: Session) -> None:
         """Test authenticating with invalid password raises AuthenticationFailedError."""
@@ -268,7 +253,7 @@ class TestUserCRUD:
 
         # Try to authenticate with wrong password
         with pytest.raises(AuthenticationFailedError):
-            crud.users.authenticate(email="auth@example.com", password="wrongpassword")
+            crud.crud_users.authenticate(email="auth@example.com", password="wrongpassword")
 
     def test_change_password_with_valid_old_password(self, db_session: Session) -> None:
         """Test changing password with valid old password."""
@@ -282,17 +267,17 @@ class TestUserCRUD:
 
         # Change password
         password_change = schemas.UserPasswordChange(old_password=old_password, new_password="newpassword456")
-        updated_user = crud.users.change_password(user_id=user.id, obj_in=password_change)
+        updated_user = crud.crud_users.change_password(user_id=user.id, obj_in=password_change)
 
         assert updated_user.id == user.id
         assert updated_user.hashed_password != original_hash  # Password should be changed
 
         # Verify old password no longer works
         with pytest.raises(AuthenticationFailedError):
-            crud.users.authenticate(email=user.email, password=old_password)
+            crud.crud_users.authenticate(email=user.email, password=old_password)
 
         # Verify new password works
-        authenticated_user = crud.users.authenticate(email=user.email, password="newpassword456")
+        authenticated_user = crud.crud_users.authenticate(email=user.email, password="newpassword456")
         assert authenticated_user.id == user.id
 
     def test_change_password_with_invalid_old_password_raises_error(self, db_session: Session) -> None:
@@ -308,7 +293,7 @@ class TestUserCRUD:
 
         # The authenticate method within change_password raises AuthenticationFailedError
         with pytest.raises(AuthenticationFailedError):
-            crud.users.change_password(user_id=user.id, obj_in=password_change)
+            crud.crud_users.change_password(user_id=user.id, obj_in=password_change)
 
     def test_change_password_with_nonexistent_user_raises_error(self, db_session: Session) -> None:
         """Test changing password for non-existent user raises HTTPException."""
@@ -319,7 +304,7 @@ class TestUserCRUD:
         password_change = schemas.UserPasswordChange(old_password="anypassword", new_password="newpassword456")
 
         with pytest.raises(UserNotFoundError):
-            crud.users.change_password(user_id=99999, obj_in=password_change)
+            crud.crud_users.change_password(user_id=99999, obj_in=password_change)
 
     def test_reset_password_with_valid_email(self, db_session: Session) -> None:
         """Test resetting password for existing active user."""
@@ -332,13 +317,13 @@ class TestUserCRUD:
 
         # Reset password
         new_password = "newresetpassword123"
-        reset_user = crud.users.reset_password(email="reset@example.com", password=new_password)
+        reset_user = crud.crud_users.reset_password(email="reset@example.com", password=new_password)
 
         assert reset_user.id == user.id
         assert reset_user.hashed_password != original_hash  # Password should be changed
 
         # Verify new password works
-        authenticated_user = crud.users.authenticate(email="reset@example.com", password=new_password)
+        authenticated_user = crud.crud_users.authenticate(email="reset@example.com", password=new_password)
         assert authenticated_user.id == user.id
 
     def test_reset_password_with_nonexistent_email_raises_error(self, db_session: Session) -> None:
@@ -347,7 +332,7 @@ class TestUserCRUD:
         db_conn_ctx_var.set(db_session)
 
         with pytest.raises(UserNotFoundError):
-            crud.users.reset_password(email="nonexistent@example.com", password="anypassword")
+            crud.crud_users.reset_password(email="nonexistent@example.com", password="anypassword")
 
     def test_reset_password_with_inactive_user_raises_error(self, db_session: Session) -> None:
         """Test resetting password for inactive user raises InactiveUserError."""
@@ -358,7 +343,7 @@ class TestUserCRUD:
         create_test_user(db_session, email="inactive@example.com", is_active=False)
 
         with pytest.raises(InactiveUserError):
-            crud.users.reset_password(email="inactive@example.com", password="anypassword")
+            crud.crud_users.reset_password(email="inactive@example.com", password="anypassword")
 
     def test_create_if_not_exist_creates_new_user(self, db_session: Session) -> None:
         """Test create_if_not_exist creates new user when not found."""
@@ -372,7 +357,7 @@ class TestUserCRUD:
 
         # Create user with filters that won't match existing users
         filters = {"email": "new@example.com"}
-        created_user = crud.users.create_if_not_exist(filters=filters, obj_in=user_data)
+        created_user = crud.crud_users.create_if_not_exist(filters=filters, obj_in=user_data)
 
         assert created_user.name == "New"
         assert created_user.email == "new@example.com"
@@ -395,7 +380,7 @@ class TestUserCRUD:
         )
         filters = {"email": "existing@example.com"}  # But filter matches existing
 
-        returned_user = crud.users.create_if_not_exist(filters=filters, obj_in=user_data)
+        returned_user = crud.crud_users.create_if_not_exist(filters=filters, obj_in=user_data)
 
         # Should return existing user (not create new one)
         assert returned_user.id == existing_user.id
@@ -411,7 +396,7 @@ class TestUserCRUD:
         user = create_test_user(db_session, is_active=True)
 
         # Check is_active
-        result = crud.users.is_active(user)
+        result = crud.crud_users.is_active(user)
         assert result.id == user.id
 
     def test_is_active_with_inactive_user_raises_error(self, db_session: Session) -> None:
@@ -424,7 +409,7 @@ class TestUserCRUD:
 
         # Check is_active should raise error
         with pytest.raises(InactiveUserError):
-            crud.users.is_active(user)
+            crud.crud_users.is_active(user)
 
     def test_assign_role_to_user(self, db_session: Session) -> None:
         """Test assigning a role to a user."""
@@ -436,12 +421,12 @@ class TestUserCRUD:
         role = create_test_role(db_session, name="test_role", creator_user_id=user.id)
 
         # Assign role to user
-        result_user = crud.users.assign_role(user_id=user.id, role_id=role.id)
+        result_user = crud.crud_users.assign_role(user=user, role=role)
 
         assert result_user.id == user.id
 
         # Verify user has the role
-        has_role = crud.users.has_roles(user=user, roles=["test_role"])
+        has_role = crud.crud_users.has_roles(user=user, roles=["test_role"])
         assert has_role is True
 
     def test_assign_role_idempotent_operation(self, crud_context: tuple[Session, models.User]) -> None:
@@ -453,23 +438,11 @@ class TestUserCRUD:
         role = create_test_role(db_session, name="test_role", creator_user_id=user.id)
 
         # Assign role twice
-        crud.users.assign_role(user_id=user.id, role_id=role.id)
-        result_user = crud.users.assign_role(user_id=user.id, role_id=role.id)
+        crud.crud_users.assign_role(user=user, role=role)
+        result_user = crud.crud_users.assign_role(user=user, role=role)
 
         assert result_user.id == user.id
         # Should still work without error (idempotent)
-
-    def test_assign_role_with_nonexistent_user_raises_error(self, db_session: Session) -> None:
-        """Test assigning role to non-existent user raises EntityNotFoundError."""
-        # Set the database session in context
-        db_conn_ctx_var.set(db_session)
-
-        # Create test role
-        user = create_test_user(db_session)  # Need user for role creation
-        role = create_test_role(db_session, creator_user_id=user.id)
-
-        with pytest.raises(EntityNotFoundError):
-            crud.users.assign_role(user_id=99999, role_id=role.id)
 
     def test_remove_role_from_user(self, crud_context: tuple[Session, models.User]) -> None:
         """Test removing a role from a user."""
@@ -480,13 +453,13 @@ class TestUserCRUD:
         role = create_test_role(db_session, name="test_role", creator_user_id=user.id)
 
         # Assign then remove role
-        crud.users.assign_role(user_id=user.id, role_id=role.id)
-        result_user = crud.users.remove_role(user_id=user.id, role_id=role.id)
+        crud.crud_users.assign_role(user=user, role=role)
+        result_user = crud.crud_users.remove_role(user=user, role=role)
 
         assert result_user.id == user.id
 
         # Verify user no longer has the role
-        has_role = crud.users.has_roles(user=result_user, roles=["test_role"])
+        has_role = crud.crud_users.has_roles(user=result_user, roles=["test_role"])
         assert has_role is False
 
     def test_remove_role_idempotent_operation(self, db_session: Session) -> None:
@@ -499,7 +472,7 @@ class TestUserCRUD:
         role = create_test_role(db_session, creator_user_id=user.id)
 
         # Remove role that was never assigned (should not raise error)
-        result_user = crud.users.remove_role(user_id=user.id, role_id=role.id)
+        result_user = crud.crud_users.remove_role(user=user, role=role)
         assert result_user.id == user.id
 
     def test_has_roles_with_assigned_roles(self, crud_context: tuple[Session, models.User]) -> None:
@@ -512,15 +485,15 @@ class TestUserCRUD:
         role2 = create_test_role(db_session, name="role2", creator_user_id=user.id)
 
         # Assign both roles
-        user = crud.users.assign_role(user_id=user.id, role_id=role1.id)
-        user = crud.users.assign_role(user_id=user.id, role_id=role2.id)
+        user = crud.crud_users.assign_role(user=user, role=role1)
+        user = crud.crud_users.assign_role(user=user, role=role2)
 
         # Check if user has both roles
-        has_both = crud.users.has_roles(user=user, roles=["role1", "role2"])
+        has_both = crud.crud_users.has_roles(user=user, roles=["role1", "role2"])
         assert has_both is True
 
         # Check if user has one role
-        has_one = crud.users.has_roles(user=user, roles=["role1"])
+        has_one = crud.crud_users.has_roles(user=user, roles=["role1"])
         assert has_one is True
 
     def test_has_roles_with_missing_roles(self, crud_context: tuple[Session, models.User]) -> None:
@@ -532,59 +505,11 @@ class TestUserCRUD:
         role1 = create_test_role(db_session, name="role1", creator_user_id=user.id)
 
         # Assign only one role
-        crud.users.assign_role(user_id=user.id, role_id=role1.id)
+        crud.crud_users.assign_role(user=user, role=role1)
 
         # Check if user has both roles (should be False)
-        has_both = crud.users.has_roles(user=user, roles=["role1", "nonexistent_role"])
+        has_both = crud.crud_users.has_roles(user=user, roles=["role1", "nonexistent_role"])
         assert has_both is False
-
-    def test_get_multi_by_role_name(self, crud_context: tuple[Session, models.User]) -> None:
-        """Test getting users by role name."""
-        db_session, current_user = crud_context
-
-        # Create test users and role
-        user1 = create_test_user(db_session, email="user1@example.com")
-        user2 = create_test_user(db_session, email="user2@example.com")
-        user3 = create_test_user(db_session, email="user3@example.com")
-        role = create_test_role(db_session, name="target_role", creator_user_id=user1.id)
-
-        # Assign role to only user1 and user2
-        crud.users.assign_role(user_id=user1.id, role_id=role.id)
-        crud.users.assign_role(user_id=user2.id, role_id=role.id)
-
-        # Get users by role name
-        users_with_role = crud.users.get_multi_by_role_name(role_name="target_role")
-
-        expected_number_of_users_with_role = 2
-        assert len(users_with_role) == expected_number_of_users_with_role
-        user_ids = {user.id for user in users_with_role}
-        assert user1.id in user_ids
-        assert user2.id in user_ids
-        assert user3.id not in user_ids
-
-    def test_get_multi_by_role_id(self, crud_context: tuple[Session, models.User]) -> None:
-        """Test getting users by role ID."""
-        db_session, current_user = crud_context
-
-        # Create test users and role (need unique emails)
-        user1 = create_test_user(db_session, email="role_id_user1@example.com")
-        user2 = create_test_user(db_session, email="role_id_user2@example.com")
-        user3 = create_test_user(db_session, email="role_id_user3@example.com")
-        role = create_test_role(db_session, name="target_role", creator_user_id=user1.id)
-
-        # Assign role to only user1 and user2
-        crud.users.assign_role(user_id=user1.id, role_id=role.id)
-        crud.users.assign_role(user_id=user2.id, role_id=role.id)
-
-        # Get users by role ID
-        users_with_role = crud.users.get_multi_by_role_id(role_id=role.id)
-
-        expected_number_of_users_with_role = 2
-        assert len(users_with_role) == expected_number_of_users_with_role
-        user_ids = {user.id for user in users_with_role}
-        assert user1.id in user_ids
-        assert user2.id in user_ids
-        assert user3.id not in user_ids
 
     def test_has_permissions_with_assigned_permissions(self, crud_context: tuple[Session, models.User]) -> None:
         """Test has_permissions returns True when user has all specified permissions through roles."""
@@ -604,14 +529,14 @@ class TestUserCRUD:
         db_session.commit()
 
         # Assign role to user
-        user = crud.users.assign_role(user_id=user.id, role_id=role.id)
+        user = crud.crud_users.assign_role(user=user, role=role)
 
         # Check if user has both permissions
-        has_both = crud.users.has_permissions(user=user, permissions=["permission1", "permission2"])
+        has_both = crud.crud_users.has_permissions(user=user, permissions=["permission1", "permission2"])
         assert has_both is True
 
         # Check if user has one permission
-        has_one = crud.users.has_permissions(user=user, permissions=["permission1"])
+        has_one = crud.crud_users.has_permissions(user=user, permissions=["permission1"])
         assert has_one is True
 
     def test_has_permissions_with_missing_permissions(self, crud_context: tuple[Session, models.User]) -> None:
@@ -629,10 +554,10 @@ class TestUserCRUD:
         db_session.commit()
 
         # Assign role to user
-        crud.users.assign_role(user_id=user.id, role_id=role.id)
+        crud.crud_users.assign_role(user=user, role=role)
 
         # Check if user has both permissions (should be False)
-        has_both = crud.users.has_permissions(user=user, permissions=["permission1", "nonexistent_permission"])
+        has_both = crud.crud_users.has_permissions(user=user, permissions=["permission1", "nonexistent_permission"])
         assert has_both is False
 
     def test_get_permissions_for_user(self, crud_context: tuple[Session, models.User]) -> None:
@@ -659,11 +584,11 @@ class TestUserCRUD:
         db_session.commit()
 
         # Assign both roles to user
-        crud.users.assign_role(user_id=user.id, role_id=role1.id)
-        crud.users.assign_role(user_id=user.id, role_id=role2.id)
+        crud.crud_users.assign_role(user=user, role=role1)
+        crud.crud_users.assign_role(user=user, role=role2)
 
         # Get all permissions for user
-        user_permissions = crud.users.get_permissions(user=user)
+        user_permissions = crud.crud_users.get_permissions(user=user)
 
         # Should get distinct permissions (perm2 should appear only once despite being in both roles)
         permission_names = {perm.name for perm in user_permissions}
@@ -682,5 +607,5 @@ class TestUserCRUD:
         user = create_test_user(db_session)
 
         # Get permissions (should be empty)
-        user_permissions = crud.users.get_permissions(user=user)
+        user_permissions = crud.crud_users.get_permissions(user=user)
         assert len(user_permissions) == 0

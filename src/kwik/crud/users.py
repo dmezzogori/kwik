@@ -7,44 +7,23 @@ from typing import TYPE_CHECKING
 from sqlalchemy import select
 
 from kwik.core.security import get_password_hash, verify_password
-from kwik.crud import roles as crud_roles
 from kwik.exceptions import AuthenticationFailedError, InactiveUserError, UserNotFoundError
 from kwik.models import Permission, Role, User, UserRole
 from kwik.schemas import UserPasswordChange, UserProfileUpdate, UserRegistration
 
-from .auto_crud import AutoCRUD
+from .autocrud import AutoCRUD
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-class AutoCRUDUser(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
+class CRUDUser(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
     """CRUD operations for users with authentication and authorization support."""
 
     def get_by_email(self, *, email: str) -> User | None:
         """Get user by email address."""
         stmt = select(User).where(User.email == email)
         return self.db.execute(stmt).scalar_one_or_none()
-
-    def get_by_name(self, *, name: str) -> User | None:
-        """Get user by name."""
-        stmt = select(User).where(User.name == name)
-        return self.db.execute(stmt).scalar_one_or_none()
-
-    def get_multi_by_role_name(self, *, role_name: str) -> list[User]:
-        """Get all users assigned to a role by role name."""
-        stmt = (
-            select(User)
-            .join(UserRole, User.id == UserRole.user_id)
-            .join(Role, Role.id == UserRole.role_id)
-            .where(Role.name == role_name)
-        )
-        return list(self.db.execute(stmt).scalars().all())
-
-    def get_multi_by_role_id(self, *, role_id: int) -> list[User]:
-        """Get all users assigned to a specific role."""
-        stmt = select(User).join(UserRole, User.id == UserRole.user_id).where(UserRole.role_id == role_id)
-        return list(self.db.execute(stmt).scalars().all())
 
     def create(self, *, obj_in: UserRegistration) -> User:
         """
@@ -81,13 +60,13 @@ class AutoCRUDUser(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
     def authenticate(self, *, email: str, password: str) -> User:
         """Authenticate a user with email and password."""
         # Retrieve the user from the database
-        user_db = self.get_by_email(email=email)
+        user = self.get_by_email(email=email)
 
         # Check if the user exists and the password is correct
-        if user_db is None or not verify_password(password, user_db.hashed_password):
+        if user is None or not verify_password(password, user.hashed_password):
             raise AuthenticationFailedError
 
-        return user_db
+        return user
 
     def change_password(self, *, user_id: int, obj_in: UserPasswordChange) -> User:
         """Change user password after validating old password."""
@@ -133,56 +112,51 @@ class AutoCRUDUser(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
         return all(role in user_role_names for role in roles)
 
     def get_permissions(self, *, user: User) -> list[Permission]:
-        """Get all permissions for a user through their roles."""
+        """Get all permissions given to the user."""
         return user.permissions
 
-    def _get_user_role_association(self, *, user_id: int, role_id: int) -> UserRole | None:
-        """Get user-role association by user ID and role ID."""
-        stmt = select(UserRole).where(UserRole.user_id == user_id, UserRole.role_id == role_id)
+    def get_roles(self, *, user: User) -> list[Role]:
+        """Get all roles associated to the user."""
+        return user.roles
+
+    def _get_user_role_association(self, *, user: User, role: Role) -> UserRole | None:
+        """Get user-role association record for a given user and role."""
+        stmt = select(UserRole).where(UserRole.user_id == user.id, UserRole.role_id == role.id)
         return self.db.execute(stmt).scalar_one_or_none()
 
-    def assign_role(self, *, user_id: int, role_id: int) -> User:
+    def assign_role(self, *, user: User, role: Role) -> User:
         """Assign a role to a user. Idempotent operation."""
-        # Verify user and role exist
-        user_db = self.get_if_exist(id=user_id)
-
-        crud_roles.get_if_exist(id=role_id)  # Verify role exists
-
         # Check if association already exists
-        user_role_db = self._get_user_role_association(user_id=user_id, role_id=role_id)
-        if user_role_db is None:
+        user_role = self._get_user_role_association(user=user, role=role)
+        if user_role is None:
             # Create new user-role association with proper creator_user_id
             user_role_kwargs = {
-                "user_id": user_id,
-                "role_id": role_id,
+                "user_id": user.id,
+                "role_id": role.id,
             }
 
             # Set creator_user_id if current user is available (handles RecordInfoMixin requirement)
+            # TODO: needs to be removed, the user must exist and not be None
             if self.user is not None:
                 user_role_kwargs["creator_user_id"] = self.user.id
 
-            user_role_db = UserRole(**user_role_kwargs)
-            self.db.add(user_role_db)
+            user_role = UserRole(**user_role_kwargs)
+            self.db.add(user_role)
             self.db.flush()
 
-        return user_db
+        return user
 
-    def remove_role(self, *, user_id: int, role_id: int) -> User:
+    def remove_role(self, *, user: User, role: Role) -> User:
         """Remove a role from a user. Idempotent operation."""
-        # Verify user and role exist
-        user_db = self.get_if_exist(id=user_id)
-
-        crud_roles.get_if_exist(id=role_id)  # Verify role exists
-
         # Find and delete association if it exists
-        user_role_db = self._get_user_role_association(user_id=user_id, role_id=role_id)
-        if user_role_db is not None:
-            self.db.delete(user_role_db)
+        user_role = self._get_user_role_association(user=user, role=role)
+        if user_role is not None:
+            self.db.delete(user_role)
             self.db.flush()
 
-        return user_db
+        return user
 
 
-users = AutoCRUDUser()
+crud_users = CRUDUser()
 
-__all__ = ["users"]
+__all__ = ["crud_users"]

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from kwik import crud
 from kwik.api.deps import Pagination, has_permission
 from kwik.core.enum import Permissions
+from kwik.crud import crud_permissions
 from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuditorRouter
 from kwik.schemas import Paginated, PermissionDefinition, PermissionProfile, PermissionRoleAssignment, PermissionUpdate
@@ -15,69 +15,56 @@ from kwik.typings import PaginatedResponse
 if TYPE_CHECKING:
     from kwik.models import Permission
 
-router = AuditorRouter(prefix="/permissions")
+permissions_router = AuditorRouter(prefix="/permissions")
 
 
-@router.get(
+@permissions_router.get(
     "/",
     response_model=Paginated[PermissionProfile],
     dependencies=(has_permission(Permissions.permissions_management_read),),
 )
-def get_many_permissions(paginated: Pagination) -> PaginatedResponse[Permission]:
-    """
-    Get all permissions, paginated.
-
-    Permissions required:
-
-     -  `permissions_management_read`
-    """
-    total, permissions = crud.permissions.get_multi(**paginated)
-    return PaginatedResponse(total=total, data=permissions)
+def read_permissions(paginated: Pagination) -> PaginatedResponse[Permission]:
+    """Retrieve permissions."""
+    total, data = crud_permissions.get_multi(**paginated)
+    return PaginatedResponse(total=total, data=data)
 
 
-@router.get(
-    "/{permission_id}",
-    response_model=PermissionProfile,
-    dependencies=(has_permission(Permissions.permissions_management_read),),
-)
-def get_single_permission(permission_id: int) -> Permission:
-    """
-    Get a single permission by id.
-
-    Permissions required:
-        * `permissions_management_read`
-
-    Raises:
-        NotFound: If the provided permission does not exist
-
-    """
-    return crud.permissions.get_if_exist(id=permission_id)
-
-
-@router.post(
-    "",
+@permissions_router.post(
+    "/",
     response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_create),),
 )
 def create_permission(permission_in: PermissionDefinition) -> Permission:
-    """
-    Create new permission.
-
-    Raises:
-        DuplicatedEntity: If the provided permission name already exists
-
-    Permissions required:
-        * `permissions_management_create`
-
-    """
-    permission = crud.permissions.get_by_name(name=permission_in.name)
+    """Create new permission."""
+    permission = crud_permissions.get_by_name(name=permission_in.name)
     if permission is not None:
         raise DuplicatedEntityError
 
-    return crud.permissions.create(obj_in=permission_in)
+    return crud_permissions.create(obj_in=permission_in)
 
 
-@router.post(
+@permissions_router.get(
+    "/{permission_id}",
+    response_model=PermissionProfile,
+    dependencies=(has_permission(Permissions.permissions_management_read),),
+)
+def read_permission_by_id(permission_id: int) -> Permission:
+    """Get a specific permission by id."""
+    return crud_permissions.get_if_exist(id=permission_id)
+
+
+@permissions_router.put(
+    "/{permission_id}",
+    response_model=PermissionProfile,
+    dependencies=(has_permission(Permissions.permissions_management_update),),
+)
+def update_permission(permission_id: int, permission_in: PermissionUpdate) -> Permission:
+    """Update a permission."""
+    permission = crud_permissions.get_if_exist(id=permission_id)
+    return crud_permissions.update(db_obj=permission, obj_in=permission_in)
+
+
+@permissions_router.post(
     "/{permission_id}/roles",
     response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_update),),
@@ -93,30 +80,10 @@ def associate_permission_to_role(permission_id: int, assignment: PermissionRoleA
         * `permissions_management_update`
 
     """
-    return crud.permissions.associate_role(permission_id=permission_id, role_id=assignment.role_id)
+    return crud_permissions.associate_role(permission_id=permission_id, role_id=assignment.role_id)
 
 
-@router.put(
-    "/{permission_id}",
-    response_model=PermissionProfile,
-    dependencies=(has_permission(Permissions.permissions_management_update),),
-)
-def update_permission(permission_id: int, permission_in: PermissionUpdate) -> Permission:
-    """
-    Update a permission.
-
-    Raises:
-        NotFound: If the provided permission does not exist
-
-    Permissions required:
-        * `permissions_management_update`
-
-    """
-    permission = crud.permissions.get_if_exist(id=permission_id)
-    return crud.permissions.update(db_obj=permission, obj_in=permission_in)
-
-
-@router.delete(
+@permissions_router.delete(
     "/{permission_id}/roles",
     response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_delete),),
@@ -134,10 +101,10 @@ def purge_all_roles(permission_id: int) -> Permission:
         * `permissions_management_delete`
 
     """
-    return crud.permissions.purge_all_roles(permission_id=permission_id)
+    return crud_permissions.purge_all_roles(permission_id=permission_id)
 
 
-@router.delete(
+@permissions_router.delete(
     "/{permission_id}/roles/{role_id}",
     response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_delete),),
@@ -153,10 +120,10 @@ def purge_role_from_permission(permission_id: int, role_id: int) -> Permission:
         * `permissions_management_delete`
 
     """
-    return crud.permissions.purge_role(permission_id=permission_id, role_id=role_id)
+    return crud_permissions.purge_role(permission_id=permission_id, role_id=role_id)
 
 
-@router.delete(
+@permissions_router.delete(
     "/{permission_id}",
     response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_delete),),
@@ -172,4 +139,7 @@ def delete_permission(permission_id: int) -> Permission:
         * `permissions_management_delete`
 
     """
-    return crud.permissions.delete(id=permission_id)
+    return crud_permissions.delete(id=permission_id)
+
+
+__all__ = ["permissions_router"]

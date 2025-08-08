@@ -49,7 +49,6 @@ def create_test_role(
     *,
     name: str = "test_role",
     is_active: bool = True,
-    is_locked: bool = False,
     creator_user_id: int | None = None,
 ) -> Role:
     """Create a test role with the specified parameters."""
@@ -62,7 +61,6 @@ def create_test_role(
     role_kwargs = {
         "name": name,
         "is_active": is_active,
-        "is_locked": is_locked,
     }
 
     # Only add creator_user_id if we have one (avoids NULL constraint error)

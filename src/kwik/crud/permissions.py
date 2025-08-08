@@ -2,34 +2,36 @@
 
 from __future__ import annotations
 
-from kwik import crud, models, schemas
+from kwik.models import Permission, RolePermission
+from kwik.schemas import PermissionDefinition, PermissionUpdate
 
-from .auto_crud import AutoCRUD
+from .autocrud import AutoCRUD
+from .roles import crud_roles
 
 
-class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionDefinition, schemas.PermissionUpdate]):
+class CRUDPermission(AutoCRUD[Permission, PermissionDefinition, PermissionUpdate]):
     """CRUD operations for permissions with role association management."""
 
-    def get_by_name(self, *, name: str) -> models.Permission | None:
+    def get_by_name(self, *, name: str) -> Permission | None:
         """Get a permission by name, if any."""
-        return self.db.query(models.Permission).filter(models.Permission.name == name).one_or_none()
+        return self.db.query(Permission).filter(Permission.name == name).one_or_none()
 
-    def _get_permission_role_association(self, *, permission_id: int, role_id: int) -> models.RolePermission | None:
+    def _get_permission_role_association(self, *, permission_id: int, role_id: int) -> RolePermission | None:
         """Get a single association between a permission and a role."""
         return (
-            self.db.query(models.RolePermission)
+            self.db.query(RolePermission)
             .filter(
-                models.RolePermission.permission_id == permission_id,
-                models.RolePermission.role_id == role_id,
+                RolePermission.permission_id == permission_id,
+                RolePermission.role_id == role_id,
             )
             .one_or_none()
         )
 
-    def _get_role_associations(self, *, permission_id: int) -> list[models.RolePermission]:
+    def _get_role_associations(self, *, permission_id: int) -> list[RolePermission]:
         """Get all associations of a permission."""
-        return self.db.query(models.RolePermission).filter(models.RolePermission.permission_id == permission_id).all()
+        return self.db.query(RolePermission).filter(RolePermission.permission_id == permission_id).all()
 
-    def associate_role(self, *, role_id: int, permission_id: int) -> models.Permission:
+    def associate_role(self, *, role_id: int, permission_id: int) -> Permission:
         """
         Associate a permission to a role. Idempotent operation.
 
@@ -38,7 +40,7 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionDefinition, s
 
         """
         permission = self.get_if_exist(id=permission_id)
-        role = crud.roles.get_if_exist(id=role_id)
+        role = crud_roles.get_if_exist(id=role_id)
 
         role_permission_db = self._get_permission_role_association(
             role_id=role.id,
@@ -46,13 +48,13 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionDefinition, s
         )
         if role_permission_db is None:
             # Create new role-permission association
-            role_permission_db = models.RolePermission(role_id=role.id, permission_id=permission.id)
+            role_permission_db = RolePermission(role_id=role.id, permission_id=permission.id)
             self.db.add(role_permission_db)
             self.db.flush()
 
         return permission
 
-    def purge_role(self, *, role_id: int, permission_id: int) -> models.Permission:
+    def purge_role(self, *, role_id: int, permission_id: int) -> Permission:
         """
         Remove the association between a permission and a role. Idempotent operation.
 
@@ -61,7 +63,7 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionDefinition, s
 
         """
         permission = self.get_if_exist(id=permission_id)
-        role = crud.roles.get_if_exist(id=role_id)
+        role = crud_roles.get_if_exist(id=role_id)
 
         role_permission_db = self._get_permission_role_association(
             role_id=role.id,
@@ -73,7 +75,7 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionDefinition, s
 
         return permission
 
-    def purge_all_roles(self, *, permission_id: int) -> models.Permission:
+    def purge_all_roles(self, *, permission_id: int) -> Permission:
         """
         Deprecate a permission by name.
 
@@ -82,7 +84,7 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionDefinition, s
 
         """
         # Retrieve the permission
-        permission: models.Permission = self.get_if_exist(id=permission_id)
+        permission: Permission = self.get_if_exist(id=permission_id)
 
         # Retrieve all the roles associated with the permission
         for role_permission_db in self._get_role_associations(permission_id=permission.id):
@@ -92,7 +94,7 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionDefinition, s
         self.db.flush()
         return permission
 
-    def delete(self, *, permission_id: int) -> models.Permission:
+    def delete(self, *, permission_id: int) -> Permission:
         """
         Delete a permission by id.
 
@@ -105,14 +107,8 @@ class CRUDPermission(AutoCRUD[models.Permission, schemas.PermissionDefinition, s
         self.purge_all_roles(permission_id=permission_id)
         return super().delete(id=permission_id)
 
-    def get_multi_by_role_id(self, *, role_id: int) -> list[models.Permission]:
-        """Get all permissions assigned to a specific role."""
-        return (
-            self.db.query(models.Permission)
-            .join(models.RolePermission)
-            .filter(models.RolePermission.role_id == role_id)
-            .all()
-        )
+
+crud_permissions = CRUDPermission()
 
 
-permissions = CRUDPermission()
+__all__ = ["crud_permissions"]

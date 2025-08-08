@@ -7,11 +7,9 @@ API routes within the kwik web framework.
 
 from __future__ import annotations
 
-from . import login, permissions, roles, users
+from .login import login_router
+from .permissions import permissions_router
+from .roles import roles_router
+from .users import users_router
 
-__all__ = [
-    "login",
-    "permissions",
-    "roles",
-    "users",
-]
+__all__ = ["login_router", "permissions_router", "roles_router", "users_router"]

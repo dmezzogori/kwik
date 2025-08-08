@@ -17,10 +17,10 @@ import kwik.typings
 import kwik.utils
 from kwik.exceptions.base import TokenValidationError
 
-router = APIRouter(prefix="/login", tags=["login"])
+login_router = APIRouter(prefix="/login", tags=["login"])
 
 
-@router.post("/access-token", response_model=kwik.typings.Token)
+@login_router.post("/access-token", response_model=kwik.typings.Token)
 def login_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> kwik.typings.Token:
     """
     OAuth2 compatible token login, get an access token for future requests.
@@ -29,17 +29,17 @@ def login_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()
         IncorrectCredentials: If the provided credentials are incorrect
 
     """
-    user = kwik.crud.users.authenticate(email=form_data.username, password=form_data.password)
+    user = kwik.crud.crud_users.authenticate(email=form_data.username, password=form_data.password)
     return kwik.core.security.create_token(user_id=user.id)
 
 
-@router.post("/test-token", response_model=kwik.schemas.UserProfile)
+@login_router.post("/test-token", response_model=kwik.schemas.UserProfile)
 def test_token(current_user: kwik.api.deps.current_user) -> kwik.models.User:
     """Test access token."""
     return current_user
 
 
-@router.post(
+@login_router.post(
     "/impersonate",
     response_model=kwik.typings.Token,
     dependencies=(kwik.api.deps.has_permission(kwik.core.enum.Permissions.impersonification),),
@@ -56,12 +56,12 @@ def impersonate(user_id: int, current_user: kwik.api.deps.current_user) -> kwik.
 
     """
     # Retrieve the user to impersonate
-    user = kwik.crud.users.get_if_exist(id=user_id)
+    user = kwik.crud.crud_users.get_if_exist(id=user_id)
 
     return kwik.core.security.create_token(user_id=user.id, impersonator_user_id=current_user.id)
 
 
-@router.post("/is_impersonating", response_model=bool)
+@login_router.post("/is_impersonating", response_model=bool)
 def is_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusable_oauth2)]) -> bool:
     """
     Check if the current token is impersonating another user.
@@ -74,7 +74,7 @@ def is_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusable_
     return token_data.kwik_impersonate != ""
 
 
-@router.post("/stop_impersonating", response_model=kwik.typings.Token)
+@login_router.post("/stop_impersonating", response_model=kwik.typings.Token)
 def stop_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusable_oauth2)]) -> kwik.typings.Token:
     """
     Stop impersonating and return the original token.
@@ -88,12 +88,15 @@ def stop_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusabl
     return kwik.core.security.create_token(user_id=original_user_id)
 
 
-@router.post("/reset-password")
+@login_router.post("/reset-password")
 def reset_password(token: Annotated[str, Body()], password: Annotated[str, Body()]) -> dict:
     """Reset password."""
     email = kwik.utils.verify_password_reset_token(token)
     if not email:
         raise TokenValidationError
 
-    kwik.crud.users.reset_password(email=email, password=password)
+    kwik.crud.crud_users.reset_password(email=email, password=password)
     return {"msg": "Password updated successfully"}
+
+
+__all__ = ["login_router"]

@@ -100,7 +100,7 @@ class _AuditedRoute(APIRoute):
                 process_time=process_time * 1_000,
                 status_code=response.status_code,
             )
-            crud.audit.create(obj_in=audit_in)
+            crud.crud_audit.create(obj_in=audit_in)
             return response
 
         return custom_route_handler

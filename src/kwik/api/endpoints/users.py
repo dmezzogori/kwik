@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import kwik.typings
 from kwik.api.deps import Pagination, current_user, has_permission
 from kwik.core.enum import Permissions
-from kwik.crud import roles, users
+from kwik.crud import crud_roles, crud_users
 from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuditorRouter
 from kwik.schemas import (
@@ -18,96 +18,105 @@ from kwik.schemas import (
     UserProfile,
     UserProfileUpdate,
     UserRegistration,
-    UserRoleAssignment,
 )
 
 if TYPE_CHECKING:
     from kwik.models import Permission, Role, User
 
-router = AuditorRouter(prefix="/users")
+users_router = AuditorRouter(prefix="/users")
 
 
-@router.get(
+@users_router.get(
     "/",
     response_model=Paginated[UserProfile],
     dependencies=(has_permission(Permissions.users_management_read),),
 )
 def read_users(pagination: Pagination) -> kwik.typings.PaginatedResponse[User]:
     """Retrieve users."""
-    total, data = users.get_multi(**pagination)
+    total, data = crud_users.get_multi(**pagination)
     return kwik.typings.PaginatedResponse(data=data, total=total)
 
 
-@router.get("/me", response_model=UserProfile)
-def read_user_me(user: current_user) -> User:
-    """Get current user."""
-    return user
-
-
-@router.put("/me/password", response_model=UserProfile)
-def update_my_password(user: current_user, obj_in: UserPasswordChange) -> User:
-    """Update current user's password."""
-    return users.change_password(user_id=user.id, obj_in=obj_in)
-
-
-@router.get(
-    "/{user_id}",
-    response_model=UserProfile,
-    dependencies=(has_permission(Permissions.users_management_read),),
-)
-def read_user_by_id(user_id: int) -> User:
-    """Get a specific user by id."""
-    return users.get_if_exist(id=user_id)
-
-
-@router.post(
+@users_router.post(
     "/",
     response_model=UserProfile,
     dependencies=(has_permission(Permissions.users_management_create),),
 )
 def create_user(user_in: UserRegistration) -> User:
     """Create new user."""
-    user = users.get_by_email(email=user_in.email)
+    user = crud_users.get_by_email(email=user_in.email)
     if user:
         raise DuplicatedEntityError
 
-    return users.create(obj_in=user_in)
+    return crud_users.create(obj_in=user_in)
 
 
-@router.put("/me", response_model=UserProfile)
+@users_router.get("/me", response_model=UserProfile)
+def read_user_me(user: current_user) -> User:
+    """Get current user."""
+    return user
+
+
+@users_router.put("/me", response_model=UserProfile)
 def update_myself(user: current_user, user_in: UserProfileUpdate) -> User:
     """Update details of the logged in user."""
-    return users.update(db_obj=user, obj_in=user_in)
+    return crud_users.update(db_obj=user, obj_in=user_in)
 
 
-@router.put(
+@users_router.get("/me/permissions", response_model=list[PermissionProfile])
+def read_permissions_of_current_user(user: current_user) -> list[Permission]:
+    """Get all effective permissions of the current logged-in user."""
+    return crud_users.get_permissions(user=user)
+
+
+@users_router.get("/me/roles", response_model=list[RoleProfile])
+def read_roles_of_current_user(user: current_user) -> list[Role]:
+    """Get roles of the current logged-in user."""
+    return crud_users.get_roles(user=user)
+
+
+@users_router.put("/me/password", response_model=UserProfile)
+def update_my_password(user: current_user, obj_in: UserPasswordChange) -> User:
+    """Update current user's password."""
+    return crud_users.change_password(user_id=user.id, obj_in=obj_in)
+
+
+@users_router.get(
+    "/{user_id}",
+    response_model=UserProfile,
+    dependencies=(has_permission(Permissions.users_management_read),),
+)
+def read_user_by_id(user_id: int) -> User:
+    """Get a specific user by id."""
+    return crud_users.get_if_exist(id=user_id)
+
+
+@users_router.put(
     "/{user_id}",
     response_model=UserProfile,
     dependencies=(has_permission(Permissions.users_management_update),),
 )
 def update_user(user_id: int, user_in: UserProfileUpdate) -> User:
     """Update a user."""
-    user = users.get_if_exist(id=user_id)
-    return users.update(db_obj=user, obj_in=user_in)
+    user = crud_users.get_if_exist(id=user_id)
+    return crud_users.update(db_obj=user, obj_in=user_in)
 
 
-@router.put(
-    "/{user_id}/password",
-    response_model=UserProfile,
-    dependencies=(has_permission(Permissions.password_management_update),),
+@users_router.get(
+    "/{user_id}/permissions",
+    response_model=list[PermissionProfile],
+    dependencies=(
+        has_permission(Permissions.users_management_read),
+        has_permission(Permissions.permissions_management_read),
+    ),
 )
-def update_password(user_id: int, obj_in: UserPasswordChange) -> User:
-    """Update user's password (admin operation)."""
-    return users.change_password(user_id=user_id, obj_in=obj_in)
+def read_user_permissions(user_id: int) -> list[Permission]:
+    """Get all effective permissions for a specific user."""
+    user = crud_users.get_if_exist(id=user_id)
+    return crud_users.get_permissions(user=user)
 
 
-@router.get("/me/roles", response_model=list[RoleProfile])
-def read_roles_of_current_user(user: current_user) -> list[Role]:
-    """Get roles of the current logged-in user."""
-    return roles.get_multi_by_user_id(user_id=user.id)
-
-
-@router.get(
+@users_router.get(
     "/{user_id}/roles",
     response_model=list[RoleProfile],
     dependencies=(
@@ -119,53 +128,48 @@ def read_roles_of_current_user(user: current_user) -> list[Role]:
 )
 def read_user_roles(user_id: int) -> list[Role]:
     """Get all roles assigned to a specific user."""
-    user = users.get_if_exist(id=user_id)
-    return roles.get_multi_by_user_id(user_id=user.id)
+    user = crud_users.get_if_exist(id=user_id)
+    return crud_users.get_roles(user=user)
 
 
-@router.post(
-    "/{user_id}/roles",
+@users_router.put(
+    "/{user_id}/password",
+    response_model=UserProfile,
+    dependencies=(has_permission(Permissions.password_management_update),),
+)
+def update_password(user_id: int, obj_in: UserPasswordChange) -> User:
+    """Update user's password (admin operation)."""
+    return crud_users.change_password(user_id=user_id, obj_in=obj_in)
+
+
+@users_router.post(
+    "/{user_id}/roles/{role_id}",
     response_model=RoleProfile,
     dependencies=(
         has_permission(Permissions.users_management_update),
         has_permission(Permissions.roles_management_update),
     ),
 )
-def assign_role_to_user(user_id: int, role_assignment: UserRoleAssignment) -> Role:
+def assign_role_to_user(user_id: int, role_id: int) -> User:
     """Assign a role to a user."""
-    users.assign_role(user_id=user_id, role_id=role_assignment.role_id)
-    return roles.get_if_exist(id=role_assignment.role_id)
+    user = crud_users.get_if_exist(id=user_id)
+    role = crud_roles.get_if_exist(id=role_id)
+    return crud_users.assign_role(user=user, role=role)
 
 
-@router.delete(
+@users_router.delete(
     "/{user_id}/roles/{role_id}",
-    response_model=RoleProfile,
+    response_model=UserProfile,
     dependencies=(
         has_permission(Permissions.users_management_update),
         has_permission(Permissions.roles_management_delete),
     ),
 )
-def remove_role_from_user(user_id: int, role_id: int) -> Role:
+def remove_role_from_user(user_id: int, role_id: int) -> User:
     """Remove a role from a user."""
-    users.remove_role(user_id=user_id, role_id=role_id)
-    return roles.get_if_exist(id=role_id)
+    user = crud_users.get_if_exist(id=user_id)
+    role = crud_roles.get_if_exist(id=role_id)
+    return crud_users.remove_role(user=user, role=role)
 
 
-@router.get("/me/permissions", response_model=list[PermissionProfile])
-def read_permissions_of_current_user(user: current_user) -> list[Permission]:
-    """Get all effective permissions of the current logged-in user."""
-    return users.get_permissions(user_id=user.id)
-
-
-@router.get(
-    "/{user_id}/permissions",
-    response_model=list[PermissionProfile],
-    dependencies=(
-        has_permission(Permissions.users_management_read),
-        has_permission(Permissions.permissions_management_read),
-    ),
-)
-def read_user_permissions(user_id: int) -> list[Permission]:
-    """Get all effective permissions for a specific user."""
-    user = users.get_if_exist(id=user_id)
-    return users.get_permissions(user_id=user.id)
+__all__ = ["users_router"]

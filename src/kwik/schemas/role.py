@@ -10,23 +10,11 @@ class RoleBase(BaseModel):
     is_active: bool | None = True
 
 
-class RoleDefinition(RoleBase):
+class RoleDefinition(BaseModel):
     """Schema for defining new roles."""
 
     name: str
     is_active: bool
-    is_locked: bool
-
-
-class UserRoleAssignment(BaseModel):
-    """Schema for assigning roles to users."""
-
-    user_id: int
-    role_id: int
-
-
-class UserRoleRevocation(UserRoleAssignment):
-    """Schema for revoking roles from users."""
 
 
 class RoleUpdate(RoleBase):

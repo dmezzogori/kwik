@@ -2,122 +2,151 @@
 
 from __future__ import annotations
 
-import kwik.api.deps
+from typing import TYPE_CHECKING
+
 import kwik.typings
-from kwik import crud, models, schemas
+from kwik.api.deps import Pagination, has_permission
 from kwik.core.enum import Permissions
+from kwik.crud import crud_roles
 from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuditorRouter
+from kwik.schemas import Paginated, PermissionProfile, RoleDefinition, RoleProfile, RoleUpdate, UserProfile
 
-router = AuditorRouter(prefix="/roles")
+if TYPE_CHECKING:
+    from kwik.models import Permission, Role, User
+
+roles_router = AuditorRouter(prefix="/roles")
 
 
-@router.get(
+@roles_router.get(
     "/",
-    response_model=schemas.Paginated[schemas.RoleProfile],
-    dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
+    response_model=Paginated[RoleProfile],
+    dependencies=(has_permission(Permissions.roles_management_read),),
 )
-def read_roles(paginated: kwik.api.deps.Pagination) -> kwik.typings.PaginatedResponse[models.Role]:
+def read_roles(paginated: Pagination) -> kwik.typings.PaginatedResponse[Role]:
     """Retrieve roles."""
-    count, roles = crud.roles.get_multi(**paginated)
-    return kwik.typings.PaginatedResponse(data=roles, total=count)
+    total, data = crud_roles.get_multi(**paginated)
+    return kwik.typings.PaginatedResponse(data=data, total=total)
 
 
-@router.get(
-    "/{role_id}/users",
-    response_model=schemas.Paginated[schemas.UserProfile],
-    dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
+@roles_router.post(
+    "/",
+    response_model=RoleProfile,
+    dependencies=(has_permission(Permissions.roles_management_create),),
 )
-def read_users_by_role(role_id: int) -> kwik.typings.PaginatedResponse[models.User]:
-    """Get users by role."""
-    users = crud.roles.get_users_by_role_id(role_id=role_id)
-    return kwik.typings.PaginatedResponse(data=users, total=len(users))
-
-
-@router.get(
-    "/{role_id}/assignable-users",
-    response_model=schemas.Paginated[schemas.UserProfile],
-    dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
-)
-def read_users_not_in_role(role_id: int) -> kwik.typings.PaginatedResponse[models.User]:
-    """Get all users not involved in the given role."""
-    users = crud.roles.get_users_not_in_role(role_id=role_id)
-    return kwik.typings.PaginatedResponse(data=users, total=len(users))
-
-
-@router.get(
-    "/{role_id}/permissions",
-    response_model=schemas.Paginated[schemas.PermissionProfile],
-    dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
-)
-def read_permissions_by_role(role_id: int) -> kwik.typings.PaginatedResponse[models.Permission]:
-    """Get permissions by role."""
-    permissions = crud.roles.get_permissions_by_role_id(role_id=role_id)
-    return kwik.typings.PaginatedResponse(data=permissions, total=len(permissions))
-
-
-@router.get(
-    "/{role_id}/assignable-permissions",
-    response_model=schemas.Paginated[schemas.PermissionProfile],
-    dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
-)
-def read_permissions_not_assigned_to_role(role_id: int) -> kwik.typings.PaginatedResponse[models.Permission]:
-    """Get all permissions not assigned to the given role."""
-    permissions = crud.roles.get_permissions_not_assigned_to_role(role_id=role_id)
-    return kwik.typings.PaginatedResponse(data=permissions, total=len(permissions))
-
-
-@router.get(
-    "/{role_id}",
-    response_model=schemas.RoleProfile,
-    dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_read),),
-)
-def read_role_by_id(role_id: int) -> models.Role:
-    """Get a specific role by id."""
-    return crud.roles.get(id=role_id)
-
-
-@router.put(
-    "/{role_id}",
-    response_model=schemas.RoleProfile,
-    dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_update),),
-)
-def update_role(role_id: int, role_in: schemas.RoleUpdate) -> models.Role:
-    """Update a role."""
-    role = crud.roles.get_if_exist(id=role_id)
-    return crud.roles.update(db_obj=role, obj_in=role_in)
-
-
-@router.post(
-    "",
-    response_model=schemas.RoleProfile,
-    dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_create),),
-)
-def create_role(role_in: schemas.RoleDefinition) -> models.Role:
+def create_role(role_in: RoleDefinition) -> Role:
     """Create new role."""
-    role = crud.roles.get_by_name(name=role_in.name)
+    role = crud_roles.get_by_name(name=role_in.name)
     if role is not None:
         raise DuplicatedEntityError
 
-    return crud.roles.create(obj_in=role_in)
+    return crud_roles.create(obj_in=role_in)
 
 
-@router.delete(
+@roles_router.get(
     "/{role_id}",
-    response_model=schemas.RoleProfile,
-    dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_delete),),
+    response_model=RoleProfile,
+    dependencies=(has_permission(Permissions.roles_management_read),),
 )
-def delete_role(role_id: int) -> models.Role:
+def read_role_by_id(role_id: int) -> Role:
+    """Get a specific role by id."""
+    return crud_roles.get_if_exist(id=role_id)
+
+
+@roles_router.put(
+    "/{role_id}",
+    response_model=RoleProfile,
+    dependencies=(has_permission(Permissions.roles_management_update),),
+)
+def update_role(role_id: int, role_in: RoleUpdate) -> Role:
+    """Update a role."""
+    role = crud_roles.get_if_exist(id=role_id)
+    return crud_roles.update(db_obj=role, obj_in=role_in)
+
+
+@roles_router.delete(
+    "/{role_id}",
+    response_model=RoleProfile,
+    dependencies=(has_permission(Permissions.roles_management_delete),),
+)
+def delete_role(role_id: int) -> Role:
     """Delete a role."""
-    crud.roles.get_if_exist(id=role_id)
-    return crud.roles.remove(id=role_id)
+    crud_roles.get_if_exist(id=role_id)
+    return crud_roles.delete(id=role_id)
 
 
-@router.delete(
-    "/{name}/deprecate",
-    response_model=schemas.RoleProfile,
-    dependencies=(kwik.api.deps.has_permission(Permissions.roles_management_delete),),
+@roles_router.get(
+    "/{role_id}/permissions/assigned",
+    response_model=list[PermissionProfile],
+    dependencies=(
+        has_permission(
+            Permissions.roles_management_read,
+            Permissions.permissions_management_read,
+        ),
+    ),
 )
-def deprecate_role_by_name(name: str) -> models.Role:
+def read_permissions_by_role(role_id: int) -> list[Permission]:
+    """Get permissions associated to a role."""
+    role = crud_roles.get_if_exist(id=role_id)
+    return crud_roles.get_permissions_assigned_to(role=role)
+
+
+@roles_router.get(
+    "/{role_id}/permissions/not-assigned",
+    response_model=list[PermissionProfile],
+    dependencies=(
+        has_permission(
+            Permissions.roles_management_read,
+            Permissions.permissions_management_read,
+        ),
+    ),
+)
+def read_permissions_not_assigned_to_role(role_id: int) -> list[Permission]:
+    """Get all permissions not assigned to the given role."""
+    role = crud_roles.get_if_exist(id=role_id)
+    return crud_roles.get_permissions_assignable_to(role=role)
+
+
+@roles_router.get(
+    "/{role_id}/users/assigned",
+    response_model=list[UserProfile],
+    dependencies=(
+        has_permission(
+            Permissions.users_management_read,
+            Permissions.roles_management_read,
+        ),
+    ),
+)
+def users_with_role(role_id: int) -> list[User]:
+    """Get users associated to a role."""
+    role = crud_roles.get_if_exist(id=role_id)
+    return crud_roles.get_users_with(role=role)
+
+
+@roles_router.get(
+    "/{role_id}/users/not-assigned",
+    response_model=list[UserProfile],
+    dependencies=(
+        has_permission(
+            Permissions.users_management_read,
+            Permissions.roles_management_read,
+        ),
+    ),
+)
+def users_without_role(role_id: int) -> list[User]:
+    """Get users not associated to a role."""
+    return crud_roles.get_users_without(role_id=role_id)
+
+
+@roles_router.delete(
+    "/{role_id}/deprecate",
+    response_model=RoleProfile,
+    dependencies=(has_permission(Permissions.roles_management_delete),),
+)
+def deprecate_role(role_id: int) -> Role:
     """Deprecate role. Remove all associated users."""
-    return crud.roles.deprecate(name=name)
+    role = crud_roles.get_if_exist(id=role_id)
+    return crud_roles.deprecate(role=role)
+
+
+__all__ = ["roles_router"]

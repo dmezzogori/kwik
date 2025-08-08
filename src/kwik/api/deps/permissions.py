@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from fastapi import Depends
 
-import kwik.crud
+from kwik.crud import crud_users
 from kwik.exceptions import AccessDeniedError
+
+from .users import current_user  # noqa: TC001
 
 
 def has_permission(*permissions: str) -> Depends:
@@ -19,8 +21,8 @@ def has_permission(*permissions: str) -> Depends:
 
     """
 
-    def check_permissions(current_user: kwik.api.deps.current_user) -> None:
-        if not kwik.crud.users.has_permissions(user_id=current_user.id, permissions=permissions):
+    def check_permissions(user: current_user) -> None:
+        if not crud_users.has_permissions(user=user, permissions=permissions):
             raise AccessDeniedError
 
     return Depends(check_permissions)

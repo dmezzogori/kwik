@@ -47,7 +47,14 @@ class Role(Base, RecordInfoMixin):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String, index=True, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    is_locked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    users: Mapped[list[User]] = relationship(
+        "User",
+        secondary="users_roles",
+        primaryjoin="Role.id==UserRole.role_id",
+        secondaryjoin="UserRole.user_id==User.id",
+        viewonly=True,
+    )
 
     permissions: Mapped[list[Permission]] = relationship(
         "Permission",

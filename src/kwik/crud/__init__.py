@@ -6,16 +6,10 @@ including automatic CRUD generation and specialized operations for user manageme
 auditing, and permissions.
 """
 
-from .audits import audit
-from .auto_crud import AutoCRUD
-from .permissions import permissions
-from .roles import roles
-from .users import users
+from .audits import crud_audit
+from .autocrud import AutoCRUD
+from .permissions import crud_permissions
+from .roles import crud_roles
+from .users import crud_users
 
-__all__ = [
-    "AutoCRUD",
-    "audit",
-    "permissions",
-    "roles",
-    "users",
-]
+__all__ = ["AutoCRUD", "crud_audit", "crud_permissions", "crud_roles", "crud_users"]
