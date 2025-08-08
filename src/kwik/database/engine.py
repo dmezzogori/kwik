@@ -51,15 +51,3 @@ def reset_engines() -> None:
     global _engine, _alternate_engine  # noqa: PLW0603
     _engine = None
     _alternate_engine = None
-
-
-# Backward compatibility: provide engine and alternate_engine as module-level attributes
-# These will be created lazily when first accessed
-def __getattr__(name: str) -> Engine | None:
-    """Provide backward compatibility for direct access to engine attributes."""
-    if name == "engine":
-        return get_engine()
-    if name == "alternate_engine":
-        return get_alternate_engine()
-    msg = f"module '{__name__}' has no attribute '{name}'"
-    raise AttributeError(msg)
