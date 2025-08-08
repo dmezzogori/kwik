@@ -6,11 +6,13 @@ functionality within the kwik web framework.
 """
 
 from .audit import Audit
+from .base import Base
 from .mixins import RecordInfoMixin, TimeStampsMixin, UserMixin
 from .user import Permission, Role, RolePermission, User, UserRole
 
 __all__ = [
     "Audit",
+    "Base",
     "Permission",
     "RecordInfoMixin",
     "Role",

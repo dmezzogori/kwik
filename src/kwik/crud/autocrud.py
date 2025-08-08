@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, get_args
 import pydantic
 from sqlalchemy import func, select
 
-from kwik.database.base import Base
+from kwik.models.base import Base
 from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
 from kwik.exceptions import DuplicatedEntityError, EntityNotFoundError
 from kwik.typings import ParsedSortingQuery  # noqa: TC001

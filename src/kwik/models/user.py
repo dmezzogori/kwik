@@ -6,7 +6,7 @@ from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from kwik.database.base import Base
+from kwik.models.base import Base
 from kwik.models.mixins import RecordInfoMixin
 
 

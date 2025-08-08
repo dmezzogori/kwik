@@ -8,7 +8,7 @@ import pytest
 from testcontainers.postgres import PostgresContainer
 
 from kwik import configure_kwik
-from kwik.database.base import Base
+from kwik.models.base import Base
 from kwik.database.context_vars import db_conn_ctx_var
 from kwik.database.engine import get_engine, reset_engines
 from kwik.database.session_local import get_session_local, reset_session_locals

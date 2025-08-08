@@ -3,7 +3,7 @@
 from sqlalchemy import Float, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from kwik.database.base import Base
+from kwik.models.base import Base
 
 
 class Audit(Base):
