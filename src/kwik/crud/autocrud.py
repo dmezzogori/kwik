@@ -2,21 +2,20 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, get_args
 
 from pydantic import BaseModel
 from sqlalchemy import func, select
 
 from kwik.exceptions import DuplicatedEntityError, EntityNotFoundError
-from kwik.models.base import Base
-from kwik.typings import ParsedSortingQuery  # noqa: TC001
+from kwik.models import Base
+
+from .context import Context
 
 if TYPE_CHECKING:
     from sqlalchemy import Select
-    from sqlalchemy.orm import Session
 
-    from kwik.models import User
+    from kwik.typings import ParsedSortingQuery
 
 
 def _sort_query[ModelType: Base](
@@ -35,18 +34,6 @@ def _sort_query[ModelType: Base](
 
 class NoDatabaseConnectionError(Exception):
     """Raised when no database connection is available."""
-
-
-@dataclass(slots=True, frozen=True)
-class Context[U: (None, User, User | None)]:
-    session: Session
-    user: U
-
-
-# Narrow, readable aliases for APIs
-type UserCtx = Context[User]
-type MaybeUserCtx = Context[User | None]
-type NoUserCtx = Context[None]
 
 
 # TODO: rename id methods' argument

@@ -3,7 +3,8 @@
 from kwik.models import Audit
 from kwik.schemas import AuditEntry, AuditProfile
 
-from .autocrud import AutoCRUD, MaybeUserCtx
+from .autocrud import AutoCRUD
+from .context import MaybeUserCtx
 
 
 class CRUDAudit(AutoCRUD[MaybeUserCtx, Audit, AuditEntry, AuditProfile]):

@@ -7,7 +7,8 @@ from sqlalchemy import select
 from kwik.models import Permission, Role, RolePermission
 from kwik.schemas import PermissionDefinition, PermissionUpdate
 
-from .autocrud import AutoCRUD, UserCtx
+from .autocrud import AutoCRUD
+from .context import UserCtx
 from .roles import crud_roles
 
 

@@ -11,7 +11,8 @@ from kwik.exceptions import AuthenticationFailedError, InactiveUserError, UserNo
 from kwik.models import Permission, Role, User
 from kwik.schemas import UserPasswordChange, UserProfileUpdate, UserRegistration
 
-from .autocrud import AutoCRUD, MaybeUserCtx
+from .autocrud import AutoCRUD
+from .context import MaybeUserCtx
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
