@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import contextlib
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.engine import Engine
@@ -118,22 +119,5 @@ def context_token_tracker():
 
     # Clean up any remaining tokens
     for ctx_var, token in tokens:
-        try:
-            ctx_var.reset(token)
-        except (LookupError, ValueError):
-            # Token might already be reset, ignore
-            pass
-
-
-@pytest.fixture
-def patch_create_engine():
-    """Patch sqlalchemy.create_engine for unit testing engine creation."""
-    with patch("kwik.database.engine.create_engine") as mock_create_engine:
-        yield mock_create_engine
-
-
-@pytest.fixture
-def patch_get_settings(mock_settings):
-    """Patch get_settings to return mock settings."""
-    with patch("kwik.database.engine.get_settings", return_value=mock_settings):
-        yield mock_settings
+        with contextlib.suppress(LookupError, ValueError):
+            ctx_var.reset(token)  # Token might already be reset, ignore

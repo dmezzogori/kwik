@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from sqlalchemy import Select
     from sqlalchemy.orm import Session
 
+    from kwik.models import User
+
 
 def _sort_query[ModelType: Base](
     *, model: type[ModelType], stmt: Select[tuple[ModelType]], sort: ParsedSortingQuery
@@ -36,30 +38,9 @@ class NoDatabaseConnectionError(Exception):
     """Raised when no database connection is available."""
 
 
-class DBSession:
-    """Descriptor for accessing database session from context variables."""
-
-    def __get__(self, obj: object, objtype: type | None = None) -> Session:
-        """Get the database session from context variables."""
-        if (db := db_conn_ctx_var.get()) is not None:
-            return db
-        msg = "No database connection available"
-        raise NoDatabaseConnectionError(msg)
-
-
-class CurrentUser:
-    """Descriptor for accessing current user from context variables."""
-
-    def __get__(self, obj: object, objtype: type | None = None) -> object:
-        """Get the current user from context variables."""
-        return current_user_ctx_var.get()
-
-
 class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSchemaType: pydantic.BaseModel]:
     """Complete CRUD implementation combining create, read, update, and delete operations."""
 
-    db = DBSession()
-    user = CurrentUser()
     model: type[ModelType]
 
     def __init__(self) -> None:
@@ -80,6 +61,20 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
         else:
             msg = "Model type must be specified via generic type parameters: AutoCRUD[Model, Create, Update]"
             raise ValueError(msg)
+
+    @property
+    def db(self) -> Session:
+        """Get the database session."""
+        if (db := db_conn_ctx_var.get()) is not None:
+            return db
+
+        msg = "No database connection available"
+        raise NoDatabaseConnectionError(msg)
+
+    @property
+    def user(self) -> User | None:
+        """Get the current user."""
+        return current_user_ctx_var.get()
 
     def get(self, *, id: int) -> ModelType | None:  # noqa: A002
         """Get single record by primary key ID."""
@@ -190,7 +185,4 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
         return obj
 
 
-__all__ = [
-    "AutoCRUD",
-    "NoDatabaseConnectionError",
-]
+__all__ = ["AutoCRUD", "NoDatabaseConnectionError"]

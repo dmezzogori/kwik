@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from unittest.mock import MagicMock, patch
+from typing import TYPE_CHECKING
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from sqlalchemy.engine import Engine
@@ -12,16 +13,28 @@ from sqlalchemy.exc import ArgumentError
 
 from kwik.database.engine import get_engine, reset_engine
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+
+@pytest.fixture
+def patch_create_engine() -> Generator[MagicMock | AsyncMock, None, None]:
+    """Patch sqlalchemy.create_engine for unit testing engine creation."""
+    with patch("kwik.database.engine.create_engine") as mock_create_engine:
+        yield mock_create_engine
+
+
+@pytest.fixture
+def patch_get_settings(mock_settings: MagicMock) -> Generator[MagicMock, None, None]:
+    """Patch get_settings to return mock settings."""
+    with patch("kwik.database.engine.get_settings", return_value=mock_settings):
+        yield mock_settings
+
 
 class TestEngineModule:
     """Test suite for engine.py module."""
 
-    def test_get_engine_lazy_initialization(
-        self,
-        isolated_test_environment,
-        patch_create_engine,
-        patch_get_settings,
-    ) -> None:
+    def test_get_engine_lazy_initialization(self, patch_create_engine) -> None:
         """Test that engine is created lazily on first access."""
         # Mock create_engine to return a mock engine
         mock_engine = MagicMock(spec=Engine)
@@ -38,9 +51,9 @@ class TestEngineModule:
 
     def test_get_engine_caching_behavior(
         self,
-        isolated_test_environment,
+        # isolated_test_environment,
         patch_create_engine,
-        patch_get_settings,
+        # patch_get_settings,
     ) -> None:
         """Test that subsequent calls return the same engine instance."""
         mock_engine = MagicMock(spec=Engine)
@@ -356,6 +369,7 @@ class TestEngineModule:
 
         # Check that the module global is clean
         import kwik.database.engine as engine_module
+
         assert engine_module._engine is None
 
         # Set the global state
