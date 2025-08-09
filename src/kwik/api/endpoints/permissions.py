@@ -8,14 +8,14 @@ from kwik.api.deps import Pagination, has_permission
 from kwik.core.enum import Permissions
 from kwik.crud import crud_permissions
 from kwik.exceptions import DuplicatedEntityError
-from kwik.routers import AuditorRouter
+from kwik.routers import AuthenticatedRouter
 from kwik.schemas import Paginated, PermissionDefinition, PermissionProfile, PermissionUpdate, RoleProfile
 from kwik.typings import PaginatedResponse
 
 if TYPE_CHECKING:
     from kwik.models import Permission, Role
 
-permissions_router = AuditorRouter(prefix="/permissions")
+permissions_router = AuthenticatedRouter(prefix="/permissions")
 
 
 @permissions_router.get(

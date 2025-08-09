@@ -2,11 +2,9 @@
 CRUD operations package for kwik framework.
 
 This package provides Create, Read, Update, Delete operations for database models,
-including automatic CRUD generation and specialized operations for user management,
-auditing, and permissions.
+including automatic CRUD generation and specialized operations for user management and permissions.
 """
 
-from .audits import crud_audit
 from .autocrud import AutoCRUD, NoDatabaseConnectionError
 from .context import Context, MaybeUserCtx, NoUserCtx, UserCtx
 from .permissions import crud_permissions
@@ -20,7 +18,6 @@ __all__ = [
     "NoDatabaseConnectionError",
     "NoUserCtx",
     "UserCtx",
-    "crud_audit",
     "crud_permissions",
     "crud_roles",
     "crud_users",

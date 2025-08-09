@@ -129,22 +129,6 @@ def get_products(skip: int = 0, limit: int = 10, sort: SortingQuery = None):
 # API usage: GET /products?sort=name:asc,created_at:desc
 ```
 
-### 🔍 Automatic Audit Logging
-
-Built-in request/response auditing with user tracking and performance monitoring.
-
-```python
-from kwik.routers.auditor import AuditorRouter
-
-# All routes automatically logged with user context, timing, and request details
-router = AuditorRouter(prefix="/api/v1/products")
-
-@router.get("/")
-def get_products():
-    # Automatically logged: user, request details, response time, etc.
-    return products
-```
-
 ## Acknowledgments
 
 Python 3.12+

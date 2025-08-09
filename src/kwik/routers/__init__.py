@@ -6,9 +6,9 @@ for organizing API endpoints within the kwik web framework.
 """
 
 from .api_router import APIRouter
-from .auditor import AuditorRouter
+from .authenticated_router import AuthenticatedRouter
 
 __all__ = [
     "APIRouter",
-    "AuditorRouter",
+    "AuthenticatedRouter",
 ]

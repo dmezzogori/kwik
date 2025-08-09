@@ -7,7 +7,6 @@ and API schema definitions across the kwik web framework.
 
 from __future__ import annotations
 
-from .audit import AuditEntry, AuditProfile
 from .login import PasswordRecoveryRequest
 from .mixins.orm import ORMMixin
 from .mixins.record_info import RecordInfoMixin
@@ -24,8 +23,6 @@ from .user import (
 )
 
 __all__ = [
-    "AuditEntry",
-    "AuditProfile",
     "ORMMixin",
     "Paginated",
     "PasswordRecoveryRequest",
