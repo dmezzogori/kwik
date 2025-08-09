@@ -10,8 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from testcontainers.postgres import PostgresContainer
 
-from kwik import configure_kwik
-from kwik.core.settings import get_settings
+from kwik import configure_kwik, get_settings
 from kwik.crud import Context, NoUserCtx, UserCtx
 from kwik.models import Base
 from tests.utils import create_test_user
