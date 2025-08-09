@@ -259,7 +259,6 @@ class BaseKwikSettings(BaseSettings):
     # User settings
     FIRST_SUPERUSER: EmailStr = "admin@example.com"
     FIRST_SUPERUSER_PASSWORD: str = "admin"  # noqa: S105
-    USERS_OPEN_REGISTRATION: bool = False
 
     # Feature flags
     WEBSERVICE_ENABLED: bool = False
