@@ -11,21 +11,21 @@ from kwik.exceptions import AuthenticationFailedError, InactiveUserError, UserNo
 from kwik.models import Permission, Role, User
 from kwik.schemas import UserPasswordChange, UserProfileUpdate, UserRegistration
 
-from .autocrud import AutoCRUD
+from .autocrud import AutoCRUD, MaybeUserCtx
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-class _CRUDUsers(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
+class _CRUDUsers(AutoCRUD[MaybeUserCtx, User, UserRegistration, UserProfileUpdate]):
     """CRUD operations for users with authentication and authorization support."""
 
-    def get_by_email(self, *, email: str) -> User | None:
+    def get_by_email(self, *, email: str, context: MaybeUserCtx) -> User | None:
         """Get user by email address."""
         stmt = select(User).where(User.email == email)
-        return self.db.execute(stmt).scalar_one_or_none()
+        return context.session.execute(stmt).scalar_one_or_none()
 
-    def create(self, *, obj_in: UserRegistration) -> User:
+    def create(self, *, obj_in: UserRegistration, context: MaybeUserCtx) -> User:
         """
         Create new user with hashed password.
 
@@ -41,26 +41,33 @@ class _CRUDUsers(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
             is_active=obj_in.is_active,
             hashed_password=get_password_hash(obj_in.password),
         )
-        self.db.add(db_obj)
-        self.db.flush()
-        self.db.refresh(db_obj)
+        context.session.add(db_obj)
+        context.session.flush()
+        context.session.refresh(db_obj)
+
         return db_obj
 
-    def create_if_not_exist(self, *, filters: dict, obj_in: UserRegistration) -> User:
+    def create_if_not_exist(
+        self,
+        *,
+        obj_in: UserRegistration,
+        context: MaybeUserCtx,
+        filters: dict[str, str],
+        raise_on_error: bool = False,  # noqa: ARG002
+    ) -> User:
         """Create user if it doesn't exist based on filters, otherwise return existing user."""
         stmt = select(User)
         for key, value in filters.items():
             stmt = stmt.where(getattr(User, key) == value)
 
-        obj_db = self.db.execute(stmt).scalar_one_or_none()
+        obj_db = context.session.execute(stmt).scalar_one_or_none()
         if obj_db is None:
-            obj_db = self.create(obj_in=obj_in)
+            obj_db = self.create(obj_in=obj_in, context=context)
         return obj_db
 
-    def authenticate(self, *, email: str, password: str) -> User:
+    def authenticate(self, *, email: str, password: str, context: MaybeUserCtx) -> User:
         """Authenticate a user with email and password."""
-        # Retrieve the user from the database
-        user = self.get_by_email(email=email)
+        user = self.get_by_email(email=email, context=context)
 
         # Check if the user exists and the password is correct
         if user is None or not verify_password(password, user.hashed_password):
@@ -68,21 +75,25 @@ class _CRUDUsers(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
 
         return user
 
-    def change_password(self, *, user_id: int, obj_in: UserPasswordChange) -> User:
+    def change_password(self, *, user_id: int, obj_in: UserPasswordChange, context: MaybeUserCtx) -> User:
         """Change user password after validating old password."""
-        user_db = self.get(id=user_id)
+        user_db = self.get(id=user_id, context=context)
+
         if not user_db:
             raise UserNotFoundError
-        if not self.authenticate(email=user_db.email, password=obj_in.old_password):
+
+        if not self.authenticate(email=user_db.email, password=obj_in.old_password, context=context):
             raise AuthenticationFailedError
 
         hashed_password = get_password_hash(obj_in.new_password)
         user_db.hashed_password = hashed_password
+
         return user_db
 
-    def reset_password(self, *, email: str, password: str) -> User:
+    def reset_password(self, *, email: str, password: str, context: MaybeUserCtx) -> User:
         """Reset user password by email."""
-        user_db = self.get_by_email(email=email)
+        user_db = self.get_by_email(email=email, context=context)
+
         if user_db is None:
             raise UserNotFoundError
 
@@ -90,8 +101,9 @@ class _CRUDUsers(AutoCRUD[User, UserRegistration, UserProfileUpdate]):
 
         hashed_password = get_password_hash(password)
         user_db.hashed_password = hashed_password
-        self.db.add(user_db)
-        self.db.flush()
+        context.session.add(user_db)
+        context.session.flush()
+
         return user_db
 
     @staticmethod

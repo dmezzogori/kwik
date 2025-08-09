@@ -2,46 +2,92 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from testcontainers.postgres import PostgresContainer
 
-from kwik.database import override_current_user
-from kwik.database.context_vars import db_conn_ctx_var
-from kwik.database.session_local import get_session_local
+from kwik import configure_kwik
+from kwik.core.settings import get_settings
+from kwik.crud import Context, NoUserCtx, UserCtx
+from kwik.database.engine import reset_engine
+from kwik.database.session_local import reset_session_local
+from kwik.models import Base
 from tests.utils import create_test_user
 
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from sqlalchemy.orm import Session
-if TYPE_CHECKING:
-    from collections.abc import Generator
-
-    from kwik.models import User
+    from sqlalchemy.engine import Engine
 
 
-@pytest.fixture(autouse=True)
-def db_session(setup_test_database: None) -> Generator[Session, None, None]:  # noqa: ARG001
+@pytest.fixture(scope="session")
+def postgres() -> Generator[PostgresContainer, None, None]:
+    """Set up a PostgreSQL container for testing."""
+    with PostgresContainer("postgres:15-alpine", username="postgres", password="root", dbname="kwik_test") as postgres:
+        yield postgres
+
+
+@pytest.fixture(scope="session")
+def engine(postgres: PostgresContainer) -> Generator[Engine, None, None]:
+    """Ensure test settings are properly configured. Create all database tables for testing."""
+    # TODO: see how to improve the configuration setup boilerplate
+    configure_kwik(
+        config_dict={
+            "POSTGRES_SERVER": postgres.get_container_host_ip(),
+            "POSTGRES_PORT": str(postgres.get_exposed_port(5432)),
+            "POSTGRES_DB": "kwik_test",
+            "POSTGRES_USER": "postgres",
+            "POSTGRES_PASSWORD": "root",
+        },
+    )
+    # Reset caches after configuration to ensure fresh instances with new settings
+    reset_engine()
+    reset_session_local()
+
+    settings = get_settings()
+    engine = create_engine(
+        url=settings.SQLALCHEMY_DATABASE_URI,
+        pool_pre_ping=True,
+        pool_size=settings.POSTGRES_MAX_CONNECTIONS // settings.BACKEND_WORKERS,
+        max_overflow=0,
+    )
+
+    Base.metadata.create_all(bind=engine)
+    yield engine
+    Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture
+def no_user_context(engine: Engine) -> Generator[NoUserCtx, None, None]:
     """Create a test database session with transaction rollback."""
-    session_factory = get_session_local()
-    session = session_factory()
+    session_maker = sessionmaker(bind=engine, autoflush=False)
+    session = session_maker()
     try:
-        db_conn_ctx_var.set(session)
-        yield session
+        yield Context(session=session, user=None)
     finally:
         session.rollback()
         session.close()
 
 
-@pytest.fixture(autouse=True)
-def admin_user() -> User:
-    """Create an admin user for CRUD operations."""
-    return create_test_user(name="admin", surname="admin", email="admin@example.com", password="kwikisthebest")
-
-
-@pytest.fixture(autouse=True)
-def current_user(admin_user: User) -> Generator[None, None, None]:
-    """Set up user context for CRUD operations."""
-    with override_current_user(admin_user):
-        yield
+@pytest.fixture
+def admin_context(engine: Engine) -> Generator[UserCtx, None, None]:
+    """Create a test database session with transaction rollback."""
+    session_maker = sessionmaker(bind=engine, autoflush=False)
+    session = session_maker()
+    try:
+        admin = create_test_user(
+            name="admin",
+            surname="surname",
+            email="admin@example.com",
+            password="password",
+            is_active=True,
+            context=Context(session=session, user=None),
+        )
+        yield Context(session=session, user=admin)
+    finally:
+        session.rollback()
+        session.close()

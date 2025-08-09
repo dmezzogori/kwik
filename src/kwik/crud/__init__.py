@@ -7,9 +7,20 @@ auditing, and permissions.
 """
 
 from .audits import crud_audit
-from .autocrud import AutoCRUD
+from .autocrud import AutoCRUD, Context, MaybeUserCtx, NoDatabaseConnectionError, NoUserCtx, UserCtx
 from .permissions import crud_permissions
 from .roles import crud_roles
 from .users import crud_users
 
-__all__ = ["AutoCRUD", "crud_audit", "crud_permissions", "crud_roles", "crud_users"]
+__all__ = [
+    "AutoCRUD",
+    "Context",
+    "MaybeUserCtx",
+    "NoDatabaseConnectionError",
+    "NoUserCtx",
+    "UserCtx",
+    "crud_audit",
+    "crud_permissions",
+    "crud_roles",
+    "crud_users",
+]

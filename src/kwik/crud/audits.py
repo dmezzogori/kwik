@@ -3,10 +3,10 @@
 from kwik.models import Audit
 from kwik.schemas import AuditEntry, AuditProfile
 
-from .autocrud import AutoCRUD
+from .autocrud import AutoCRUD, MaybeUserCtx
 
 
-class CRUDAudit(AutoCRUD[Audit, AuditEntry, AuditProfile]):
+class CRUDAudit(AutoCRUD[MaybeUserCtx, Audit, AuditEntry, AuditProfile]):
     """CRUD operations for audit log entries."""
 
 

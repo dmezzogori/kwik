@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import inspect
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, get_args
 
-import pydantic
+from pydantic import BaseModel
 from sqlalchemy import func, select
 
-from kwik.database.context_vars import current_user_ctx_var, db_conn_ctx_var
 from kwik.exceptions import DuplicatedEntityError, EntityNotFoundError
 from kwik.models.base import Base
 from kwik.typings import ParsedSortingQuery  # noqa: TC001
@@ -38,7 +37,20 @@ class NoDatabaseConnectionError(Exception):
     """Raised when no database connection is available."""
 
 
-class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSchemaType: pydantic.BaseModel]:
+@dataclass(slots=True, frozen=True)
+class Context[U: (None, User, User | None)]:
+    session: Session
+    user: U
+
+
+# Narrow, readable aliases for APIs
+type UserCtx = Context[User]
+type MaybeUserCtx = Context[User | None]
+type NoUserCtx = Context[None]
+
+
+# TODO: rename id methods' argument
+class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, UpdateSchemaType: BaseModel]:
     """Complete CRUD implementation combining create, read, update, and delete operations."""
 
     model: type[ModelType]
@@ -54,7 +66,7 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
         if bases is not None:
             args = get_args(bases[0])
             if args:
-                self.model = args[0]
+                self.model = args[1]
             else:
                 msg = "Model type must be specified via generic type parameters: AutoCRUD[Model, Create, Update]"
                 raise ValueError(msg)
@@ -62,23 +74,14 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
             msg = "Model type must be specified via generic type parameters: AutoCRUD[Model, Create, Update]"
             raise ValueError(msg)
 
-    @property
-    def db(self) -> Session:
-        """Get the database session."""
-        if (db := db_conn_ctx_var.get()) is not None:
-            return db
+        # TODO: check if hasattr works on SQLAlchemy attributes
+        # TODO: we can already check for consistency: if self.record_creator_user_id is True, then Ctx must be UserCtx, otherwise the subclass is wrongly setup
+        self.record_creator_user_id = hasattr(self.model, "creator_user_id")
+        self.record_modifier_user_id = hasattr(self.model, "last_modifier_user_id")
 
-        msg = "No database connection available"
-        raise NoDatabaseConnectionError(msg)
-
-    @property
-    def user(self) -> User | None:
-        """Get the current user."""
-        return current_user_ctx_var.get()
-
-    def get(self, *, id: int) -> ModelType | None:  # noqa: A002
+    def get(self, *, id: int, context: Ctx) -> ModelType | None:  # noqa: A002
         """Get single record by primary key ID."""
-        return self.db.get(self.model, id)
+        return context.session.get(self.model, id)
 
     def get_multi(
         self,
@@ -86,8 +89,9 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
         skip: int = 0,
         limit: int = 100,
         sort: ParsedSortingQuery | None = None,
-        **filters: object,
-    ) -> tuple[int, list[ModelType]]:
+        context: Ctx,
+        **filters: str | float | bool,
+    ) -> tuple[int | None, list[ModelType]]:
         """Get multiple records with pagination, filtering, and sorting."""
         # Build base select statement
         stmt = select(self.model)
@@ -99,7 +103,7 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
 
         # Get count for pagination
         count_stmt = select(func.count()).select_from(stmt.subquery())
-        count: int = self.db.execute(count_stmt).scalar()
+        count = context.session.execute(count_stmt).scalar()
 
         # Apply sorting if provided
         if sort is not None:
@@ -107,32 +111,29 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
 
         # Apply pagination and execute
         stmt = stmt.offset(skip).limit(limit)
-        result = self.db.execute(stmt).scalars().all()
+        result = context.session.execute(stmt).scalars().all()
 
         return count, list(result)
 
-    def get_if_exist(self, *, id: int) -> ModelType:  # noqa: A002
+    def get_if_exist(self, *, id: int, context: Ctx) -> ModelType:  # noqa: A002
         """Get record by ID or raise NotFound exception if it doesn't exist."""
-        r = self.get(id=id)
+        r = self.get(id=id, context=context)
         if r is None:
             raise EntityNotFoundError(detail=f"Entity [{self.model.__tablename__}] with id={id} does not exist")
         return r
 
-    def create(self, *, obj_in: CreateSchemaType) -> ModelType:
+    def create(self, *, obj_in: CreateSchemaType, context: Ctx) -> ModelType:
         """Create new record from schema data."""
-        obj_in_data = obj_in.model_dump() if hasattr(obj_in, "model_dump") else dict(obj_in)
+        obj_in_data = obj_in.model_dump()
 
-        # Import here to avoid circular import
-        from kwik.models.mixins import RecordInfoMixin  # noqa: PLC0415
-
-        if self.user is not None and inspect.isclass(self.model) and issubclass(self.model, RecordInfoMixin):
-            obj_in_data["creator_user_id"] = self.user.id
+        if context.user is not None and self.record_creator_user_id:
+            obj_in_data["creator_user_id"] = context.user.id
 
         db_obj = self.model(**obj_in_data)
 
-        self.db.add(db_obj)
-        self.db.flush()
-        self.db.refresh(db_obj)
+        context.session.add(db_obj)
+        context.session.flush()
+        context.session.refresh(db_obj)
 
         return db_obj
 
@@ -140,48 +141,46 @@ class AutoCRUD[ModelType: Base, CreateSchemaType: pydantic.BaseModel, UpdateSche
         self,
         *,
         obj_in: CreateSchemaType,
+        context: Ctx,
         filters: dict[str, str],
         raise_on_error: bool = False,
     ) -> ModelType:
         """Create record if it doesn't exist, or return existing record."""
-        # Build select statement with filters
         stmt = select(self.model)
         for key, value in filters.items():
             stmt = stmt.where(getattr(self.model, key) == value)
 
-        obj_db: ModelType | None = self.db.execute(stmt).scalar_one_or_none()
+        obj_db: ModelType | None = context.session.execute(stmt).scalar_one_or_none()
         if obj_db is None:
-            obj_db = self.create(obj_in=obj_in)
+            obj_db = self.create(obj_in=obj_in, context=context)
         elif raise_on_error:
             raise DuplicatedEntityError
         return obj_db
 
-    def update(self, *, db_obj: ModelType, obj_in: UpdateSchemaType) -> ModelType:
+    def update(self, *, db_obj: ModelType, obj_in: UpdateSchemaType, context: Ctx) -> ModelType:
         """Update existing record with new data."""
         update_data = obj_in.model_dump(exclude_unset=True)
 
-        # Import here to avoid circular import
-        from kwik.models.mixins import RecordInfoMixin  # noqa: PLC0415
-
-        if self.user is not None and inspect.isclass(self.model) and issubclass(self.model, RecordInfoMixin):
-            update_data["last_modifier_user_id"] = self.user.id
+        if context.user is not None and self.record_modifier_user_id:
+            update_data["last_modifier_user_id"] = context.user.id
 
         for field in update_data:
             if hasattr(db_obj, field):
                 setattr(db_obj, field, update_data[field])
 
-        self.db.add(db_obj)
-        self.db.flush()
-        self.db.refresh(db_obj)
+        context.session.add(db_obj)
+        context.session.flush()
+        context.session.refresh(db_obj)
 
         return db_obj
 
-    def delete(self, *, id: int) -> ModelType:  # noqa: A002
+    # TODO: dedice wheter to use id or db_obj in update and delete method, and use it consistently
+    def delete(self, *, id: int, context: Ctx) -> ModelType | None:  # noqa: A002
         """Delete record by ID and return the deleted object."""
-        obj: ModelType = self.db.get(self.model, id)
+        obj = self.get(id=id, context=context)
 
-        self.db.delete(obj)
-        self.db.flush()
+        context.session.delete(obj)
+        context.session.flush()
         return obj
 
 

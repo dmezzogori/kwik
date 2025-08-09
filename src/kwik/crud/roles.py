@@ -7,10 +7,10 @@ from sqlalchemy import or_, select
 from kwik.models import Permission, Role, RolePermission, User, UserRole
 from kwik.schemas import RoleDefinition, RoleUpdate
 
-from .autocrud import AutoCRUD
+from .autocrud import AutoCRUD, UserCtx
 
 
-class CRUDRole(AutoCRUD[Role, RoleDefinition, RoleUpdate]):
+class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate]):
     """CRUD operations for roles with user and permission management."""
 
     def get_by_name(self, *, name: str) -> Role | None:
