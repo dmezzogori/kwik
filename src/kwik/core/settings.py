@@ -259,12 +259,6 @@ class BaseKwikSettings(BaseSettings):
     FIRST_SUPERUSER: EmailStr = "admin@example.com"
     FIRST_SUPERUSER_PASSWORD: str = "admin"  # noqa: S105
 
-    # Feature flags
-    WEBSERVICE_ENABLED: bool = False
-    WEBSERVICE_URL: AnyHttpUrl | str = ""
-    WEBSERVICE_USER: str | None = None
-    WEBSERVICE_PASSWORD: str | None = None
-
     @field_validator("BACKEND_WORKERS", mode="before")
     @classmethod
     def get_number_of_workers(cls, v: int) -> int:
