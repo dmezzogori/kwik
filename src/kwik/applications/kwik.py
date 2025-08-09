@@ -13,7 +13,6 @@ import kwik.exceptions.handler
 import kwik.logger
 from kwik.core.settings import get_settings
 from kwik.exceptions import KwikError
-from kwik.websocket.deps import broadcast
 
 if TYPE_CHECKING:
     from fastapi import APIRouter
@@ -59,8 +58,6 @@ class Kwik:
             title=get_settings().PROJECT_NAME,
             openapi_url=f"{get_settings().API_V1_STR}/openapi.json",
             debug=get_settings().DEBUG,
-            on_startup=[broadcast.connect] if get_settings().WEBSOCKET_ENABLED else None,
-            on_shutdown=[broadcast.disconnect] if get_settings().WEBSOCKET_ENABLED else None,
             redirect_slashes=False,
         )
 
