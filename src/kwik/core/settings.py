@@ -13,7 +13,7 @@ import os
 import secrets
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any
 
 from pydantic import AnyHttpUrl, ConfigDict, EmailStr, field_validator, model_validator
 from pydantic_settings import BaseSettings
@@ -214,13 +214,6 @@ class SettingsRegistry:
         self._settings_class = BaseKwikSettings
 
 
-class AlternateDBSettings(BaseSettings):
-    """Alternate DB settings."""
-
-    ALTERNATE_SQLALCHEMY_DATABASE_URI: str | None = None
-    ENABLE_SOFT_DELETE: bool = False
-
-
 class BaseKwikSettings(BaseSettings):
     """
     Base settings class that users can extend with custom settings.
@@ -239,7 +232,7 @@ class BaseKwikSettings(BaseSettings):
 
     # Security settings
     SECRET_KEY: str = secrets.token_urlsafe(32)
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10_080  # 7 days
     SERVER_HOST: AnyHttpUrl = "http://localhost"
     BACKEND_CORS_ORIGINS: list[AnyHttpUrl] = []
 
@@ -269,20 +262,10 @@ class BaseKwikSettings(BaseSettings):
     USERS_OPEN_REGISTRATION: bool = False
 
     # Feature flags
-    DB_LOGGER: bool = True
-    TEST_ENV: bool = False
-    SENTRY_INTEGRATION_ENABLED: bool = False
-    SENTRY_DSN: str = ""
     WEBSERVICE_ENABLED: bool = False
     WEBSERVICE_URL: AnyHttpUrl | str = ""
     WEBSERVICE_USER: str | None = None
     WEBSERVICE_PASSWORD: str | None = None
-
-    # Nested settings
-    alternate_db: AlternateDBSettings = AlternateDBSettings()
-
-    # Class-level registry reference for advanced use cases
-    _registry: ClassVar[SettingsRegistry | None] = None
 
     @field_validator("BACKEND_WORKERS", mode="before")
     @classmethod

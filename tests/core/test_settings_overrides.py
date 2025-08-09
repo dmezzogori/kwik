@@ -226,14 +226,12 @@ class TestConvenienceFunctions:
         """Test the with_test_database convenience function."""
         with with_test_database() as settings:
             assert settings.POSTGRES_DB == "kwik_test"
-            assert settings.TEST_ENV is True
             assert "kwik_test" in settings.SQLALCHEMY_DATABASE_URI
 
     def test_with_test_database_additional_overrides(self) -> None:
         """Test with_test_database with additional overrides."""
         with with_test_database(ENABLE_SOFT_DELETE=True, POSTGRES_PORT="5433") as settings:
             assert settings.POSTGRES_DB == "kwik_test"
-            assert settings.TEST_ENV is True
             assert settings.ENABLE_SOFT_DELETE is True
             assert settings.POSTGRES_PORT == "5433"
 
@@ -292,7 +290,6 @@ class TestComplexScenarios:
         with with_test_database(PROJECT_NAME="test-with-db") as settings:
             assert settings.PROJECT_NAME == "test-with-db"
             assert settings.POSTGRES_DB == "kwik_test"
-            assert settings.TEST_ENV is True
 
     def test_override_with_secrets_configuration(self) -> None:
         """Test that overrides work with secrets-enabled configurations."""
