@@ -13,8 +13,6 @@ from testcontainers.postgres import PostgresContainer
 from kwik import configure_kwik
 from kwik.core.settings import get_settings
 from kwik.crud import Context, NoUserCtx, UserCtx
-from kwik.database.engine import reset_engine
-from kwik.database.session_local import reset_session_local
 from kwik.models import Base
 from tests.utils import create_test_user
 
@@ -44,9 +42,6 @@ def engine(postgres: PostgresContainer) -> Generator[Engine, None, None]:
             "POSTGRES_PASSWORD": "root",
         },
     )
-    # Reset caches after configuration to ensure fresh instances with new settings
-    reset_engine()
-    reset_session_local()
 
     settings = get_settings()
     engine = create_engine(
