@@ -250,7 +250,6 @@ class BaseKwikSettings(BaseSettings):
     POSTGRES_DB: str = "db"
     POSTGRES_PORT: str = "5432"
     POSTGRES_MAX_CONNECTIONS: int = 100
-    ENABLE_SOFT_DELETE: bool = False
     SQLALCHEMY_DATABASE_URI: str
 
     # Project settings

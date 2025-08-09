@@ -232,7 +232,6 @@ class TestConvenienceFunctions:
         """Test with_test_database with additional overrides."""
         with with_test_database(ENABLE_SOFT_DELETE=True, POSTGRES_PORT="5433") as settings:
             assert settings.POSTGRES_DB == "kwik_test"
-            assert settings.ENABLE_SOFT_DELETE is True
             assert settings.POSTGRES_PORT == "5433"
 
     def test_with_debug_mode(self) -> None:
