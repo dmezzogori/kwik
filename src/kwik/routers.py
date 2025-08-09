@@ -1,4 +1,4 @@
-"""Audit router for HTTP request logging."""
+"""API routers package for kwik framework."""
 
 from __future__ import annotations
 
@@ -35,13 +35,7 @@ class AuthenticatedRouter(APIRouter):
     """
 
     def __init__(self, prefix: str) -> None:
-        """
-        Initialize auditor router with token dependency and audited route class.
-
-        Sets up the router with:
-        - get_token dependency applied to all routes for JWT validation
-        - _AuditedRoute as the route class for automatic audit logging
-        """
+        """Initialize router with mandatory user authentication."""
         super().__init__(
             prefix=prefix,
             tags=[prefix.strip("/")],

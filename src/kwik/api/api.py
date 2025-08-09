@@ -4,7 +4,7 @@ Main API router configuration for the Kwik framework.
 This module sets up the main API router by including all endpoint routers from the endpoints package.
 """
 
-from kwik.routers import APIRouter
+from fastapi import APIRouter
 
 from .endpoints import login_router, permissions_router, roles_router, users_router
 
