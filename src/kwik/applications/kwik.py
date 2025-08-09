@@ -13,7 +13,6 @@ import kwik.exceptions.handler
 import kwik.logger
 from kwik.core.settings import get_settings
 from kwik.exceptions import KwikError
-from kwik.middlewares import DBSessionMiddleware, RequestContextMiddleware
 from kwik.websocket.deps import broadcast
 
 if TYPE_CHECKING:
@@ -82,8 +81,6 @@ class Kwik:
         """
         app.add_middleware(ProxyHeadersMiddleware)
         app.add_middleware(GZipMiddleware)
-        app.add_middleware(RequestContextMiddleware)
-        app.add_middleware(DBSessionMiddleware)
 
         if get_settings().BACKEND_CORS_ORIGINS:
             app.add_middleware(
