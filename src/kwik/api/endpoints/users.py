@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import kwik.typings
-from kwik.api.deps import Pagination, current_user, has_permission
+from kwik.dependencies import Pagination, current_user, has_permission
 from kwik.core.enum import Permissions
 from kwik.crud import crud_users
 from kwik.exceptions import DuplicatedEntityError

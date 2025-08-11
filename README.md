@@ -117,7 +117,7 @@ Ready-to-use pagination schemas and sorting dependencies for clean API endpoints
 ```python
 from fastapi import APIRouter
 from kwik.schemas.pagination import Paginated
-from kwik.api.deps.sorting_query import SortingQuery
+from kwik.dependencies.sorting_query import SortingQuery
 
 router = APIRouter()
 

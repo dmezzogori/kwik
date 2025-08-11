@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Depends
 from fastapi.security import OAuth2PasswordRequestForm  # noqa: TC002
 
-import kwik.api.deps
+import kwik.dependencies
 import kwik.core.enum
 import kwik.core.security
 import kwik.crud
@@ -34,7 +34,7 @@ def login_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()
 
 
 @login_router.post("/test-token", response_model=kwik.schemas.UserProfile)
-def test_token(current_user: kwik.api.deps.current_user) -> kwik.models.User:
+def test_token(current_user: kwik.dependencies.current_user) -> kwik.models.User:
     """Test access token."""
     return current_user
 
@@ -42,9 +42,9 @@ def test_token(current_user: kwik.api.deps.current_user) -> kwik.models.User:
 @login_router.post(
     "/impersonate",
     response_model=kwik.typings.Token,
-    dependencies=(kwik.api.deps.has_permission(kwik.core.enum.Permissions.impersonification),),
+    dependencies=(kwik.dependencies.has_permission(kwik.core.enum.Permissions.impersonification),),
 )
-def impersonate(user_id: int, current_user: kwik.api.deps.current_user) -> kwik.typings.Token:
+def impersonate(user_id: int, current_user: kwik.dependencies.current_user) -> kwik.typings.Token:
     """
     Impersonate a user.
 
@@ -62,7 +62,7 @@ def impersonate(user_id: int, current_user: kwik.api.deps.current_user) -> kwik.
 
 
 @login_router.post("/is_impersonating", response_model=bool)
-def is_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusable_oauth2)]) -> bool:
+def is_impersonating(token: Annotated[str, Depends(kwik.dependencies.token.reusable_oauth2)]) -> bool:
     """
     Check if the current token is impersonating another user.
 
@@ -75,7 +75,7 @@ def is_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusable_
 
 
 @login_router.post("/stop_impersonating", response_model=kwik.typings.Token)
-def stop_impersonating(token: Annotated[str, Depends(kwik.api.deps.token.reusable_oauth2)]) -> kwik.typings.Token:
+def stop_impersonating(token: Annotated[str, Depends(kwik.dependencies.token.reusable_oauth2)]) -> kwik.typings.Token:
     """
     Stop impersonating and return the original token.
 

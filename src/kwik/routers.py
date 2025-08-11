@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from kwik.api.deps.token import get_token
+from kwik.dependencies.token import get_token
 
 
 # TODO: controllare documentazione
