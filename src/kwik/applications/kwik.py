@@ -32,7 +32,6 @@ class Kwik:
         """Initialize Kwik application with API router."""
         self._app = self._init_fastapi_app(api_router=api_router)
 
-        kwik.logger.info("Kwik App ready")
         kwik.logger.info(
             f"Kwik App running on {get_settings().PROTOCOL}://{get_settings().BACKEND_HOST}:{get_settings().BACKEND_PORT}",
         )
