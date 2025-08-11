@@ -9,7 +9,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-from kwik import logger
+import kwik.logger
 from kwik.core.settings import get_settings
 from kwik.exceptions import KwikError
 from kwik.exceptions.handler import kwik_exception_handler
@@ -32,10 +32,10 @@ class Kwik:
         """Initialize Kwik application with API router."""
         self._app = self._init_fastapi_app(api_router=api_router)
 
-        logger.info(
+        kwik.logger.info(
             f"Kwik App running on {get_settings().PROTOCOL}://{get_settings().BACKEND_HOST}:{get_settings().BACKEND_PORT}",
         )
-        logger.info(
+        kwik.logger.info(
             f"Swagger available at {get_settings().PROTOCOL}://{get_settings().BACKEND_HOST}:{get_settings().BACKEND_PORT}/docs",
         )
 
