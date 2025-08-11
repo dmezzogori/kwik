@@ -13,7 +13,7 @@ import os
 import secrets
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import AnyHttpUrl, ConfigDict, EmailStr, field_validator, model_validator
 from pydantic_settings import BaseSettings
@@ -223,7 +223,7 @@ class BaseKwikSettings(BaseSettings):
     """
 
     # Framework core settings
-    APP_ENV: str = "development"
+    APP_ENV: Literal["production", "development"] = "development"
     SERVER_NAME: str = "backend"
     BACKEND_HOST: str = "localhost"
     BACKEND_PORT: int = 8080
