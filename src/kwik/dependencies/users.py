@@ -6,14 +6,14 @@ from typing import Annotated
 
 from fastapi import Depends
 
-import kwik.crud
-import kwik.exceptions
-import kwik.models
+from kwik.crud import crud_users
+from kwik.exceptions import AccessDeniedError
+from kwik.models import User
 
 from .token import current_token  # noqa: TC001
 
 
-def get_current_user(token: current_token) -> kwik.models.User:
+def _get_current_user(token: current_token) -> User:
     """
     Get the user associated with the token.
 
@@ -21,11 +21,13 @@ def get_current_user(token: current_token) -> kwik.models.User:
         Forbidden: if the user is not found
 
     """
-    user = kwik.crud.crud_users.get(id=token.sub)
+    user = crud_users.get(id=token.sub)
     if user is None:
-        raise kwik.exceptions.AccessDeniedError
+        raise AccessDeniedError
 
     return user
 
 
-current_user = Annotated[kwik.models.User, Depends(get_current_user)]
+current_user = Annotated[User, Depends(_get_current_user)]
+
+__all__ = ["current_user"]

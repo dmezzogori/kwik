@@ -7,10 +7,10 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Depends
 from fastapi.security import OAuth2PasswordRequestForm  # noqa: TC002
 
-import kwik.dependencies
 import kwik.core.enum
 import kwik.core.security
 import kwik.crud
+import kwik.dependencies
 import kwik.models
 import kwik.schemas
 import kwik.typings

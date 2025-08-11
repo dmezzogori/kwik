@@ -36,6 +36,4 @@ def _parse_sorting_query(sorting: str | None = None) -> ParsedSortingQuery:
 
 SortingQuery = Annotated[ParsedSortingQuery, Depends(_parse_sorting_query)]
 
-__all__ = [
-    "SortingQuery",
-]
+__all__ = ["SortingQuery"]

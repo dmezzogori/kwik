@@ -26,3 +26,6 @@ def has_permission(*permissions: str) -> Depends:
             raise AccessDeniedError
 
     return Depends(check_permissions)
+
+
+__all__ = ["has_permission"]
