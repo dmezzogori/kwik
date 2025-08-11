@@ -17,15 +17,16 @@ def run(kwik_app: str | Kwik) -> None:
     """Run Kwik application with appropriate server based on environment."""
     reload = get_settings().HOTRELOAD
     workers = get_settings().BACKEND_WORKERS
+
     if isinstance(kwik_app, str):
-        kwik_app = f"{kwik_app}.app"
+        fastapi_app = f"{kwik_app}.app"
     else:
-        kwik_app = kwik_app.app
+        fastapi_app = kwik_app.app
         reload = False
 
     if get_settings().APP_ENV == "development":
         uvicorn.run(
-            kwik_app,
+            fastapi_app,
             host=get_settings().BACKEND_HOST,
             port=get_settings().BACKEND_PORT,
             log_level=get_settings().LOG_LEVEL.lower(),
@@ -41,4 +42,4 @@ def run(kwik_app: str | Kwik) -> None:
             "workers": workers,
             "worker_class": "kwik.applications.uvicorn.KwikUvicornWorker",
         }
-        KwikGunicornApplication(kwik_app, options).run()
+        KwikGunicornApplication(fastapi_app, options).run()

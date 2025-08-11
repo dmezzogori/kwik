@@ -30,7 +30,7 @@ class Kwik:
 
     def __init__(self, api_router: APIRouter) -> None:
         """Initialize Kwik application with API router."""
-        self._app = self.init_fastapi_app(api_router=api_router)
+        self._app = self._init_fastapi_app(api_router=api_router)
 
         kwik.logger.info("Kwik App ready")
         kwik.logger.info(
@@ -45,7 +45,7 @@ class Kwik:
         """Get the FastAPI application instance."""
         return self._app
 
-    def init_fastapi_app(self, *, api_router: APIRouter) -> FastAPI:
+    def _init_fastapi_app(self, *, api_router: APIRouter) -> FastAPI:
         """
         Initialize the FastAPI application.
 
@@ -61,21 +61,6 @@ class Kwik:
             redirect_slashes=False,
         )
 
-        app = self.set_middlewares(app=app)
-
-        app.include_router(api_router, prefix=get_settings().API_V1_STR)
-
-        app.exception_handler(KwikError)(kwik.exceptions.handler.kwik_exception_handler)
-
-        return app
-
-    def set_middlewares(self, *, app: FastAPI) -> FastAPI:
-        """
-        Set the middlewares for the FastAPI application.
-
-        Add the GZipMiddleware, RequestContextMiddleware and DBSessionMiddleware.
-        If CORS is enabled, add the CORSMiddleware.
-        """
         app.add_middleware(ProxyHeadersMiddleware)
         app.add_middleware(GZipMiddleware)
 
@@ -88,4 +73,9 @@ class Kwik:
                 allow_headers=["*"],
                 expose_headers=["content-disposition"],
             )
+
+        app.include_router(api_router, prefix=get_settings().API_V1_STR)
+
+        app.exception_handler(KwikError)(kwik.exceptions.handler.kwik_exception_handler)
+
         return app
