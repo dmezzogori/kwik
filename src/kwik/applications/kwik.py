@@ -2,41 +2,76 @@
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+from pprint import pformat
 from typing import TYPE_CHECKING
 
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 from starlette.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 import kwik.logger
-from kwik.core.settings import get_settings
+from kwik.core.settings import BaseKwikSettings
 from kwik.exceptions import KwikError
 from kwik.exceptions.handler import kwik_exception_handler
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
+
     from fastapi import APIRouter
+
+
+def lifespan(settings: BaseKwikSettings):
+    @asynccontextmanager
+    async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+        engine = create_engine(settings.SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)  # TODO: check parameters
+        SessionLocal = sessionmaker(bind=engine, expire_on_commit=False, class_=Session)  # TODO: check parameters
+
+        # Store in app state for middleware access
+        app.state.settings = settings
+        app.state.engine = engine
+        app.state.SessionLocal = SessionLocal
+
+        try:
+            if settings.APP_ENV == "development":
+                kwik.logger.debug("Kwik application lifespan started.")
+                kwik.logger.debug(f"Initializing Kwik application with settings: {pformat(settings.model_dump())}")
+            yield
+        finally:
+            # Clean up app state
+            delattr(app.state, "settings")
+            delattr(app.state, "engine")
+            delattr(app.state, "SessionLocal")
+
+            engine.dispose()
+
+            if settings.APP_ENV == "development":
+                kwik.logger.debug("Kwik application lifespan ended.")
+
+    return _lifespan
 
 
 class Kwik:
     """
     Kwik Application is a thin and opinionated wrapper around FastAPI.
 
-    It instantiates the FastAPI application and adds some middlewares (CORS,
-    RequestContextMiddleware, DBSessionMiddleware).
+    It instantiates the FastAPI application and adds some middlewares.
     It automatically registers all the endpoints from the api_router.
-    It also patches the FastAPI docs endpoint to have collapsable sections in the swagger UI.
     """
 
-    def __init__(self, api_router: APIRouter) -> None:
+    def __init__(self, settings: BaseKwikSettings, api_router: APIRouter) -> None:
         """Initialize Kwik application with API router."""
+        self.settings = settings
         self._app = self._init_fastapi_app(api_router=api_router)
 
         kwik.logger.info(
-            f"Kwik App running on {get_settings().PROTOCOL}://{get_settings().BACKEND_HOST}:{get_settings().BACKEND_PORT}",
+            f"Kwik App running on {settings.PROTOCOL}://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}",
         )
         kwik.logger.info(
-            f"Swagger available at {get_settings().PROTOCOL}://{get_settings().BACKEND_HOST}:{get_settings().BACKEND_PORT}/docs",
+            f"Swagger available at {self.settings.PROTOCOL}://{self.settings.BACKEND_HOST}:{self.settings.BACKEND_PORT}/docs",
         )
 
     @property
@@ -54,26 +89,27 @@ class Kwik:
         Customize the swagger UI.
         """
         app = FastAPI(
-            title=get_settings().PROJECT_NAME,
-            openapi_url=f"{get_settings().API_V1_STR}/openapi.json",
-            debug=get_settings().DEBUG,
+            title=self.settings.PROJECT_NAME,
+            openapi_url=f"{self.settings.API_V1_STR}/openapi.json",
+            debug=self.settings.DEBUG,
             redirect_slashes=False,
+            lifespan=lifespan(self.settings),
         )
 
         app.add_middleware(ProxyHeadersMiddleware)
         app.add_middleware(GZipMiddleware)
 
-        if get_settings().BACKEND_CORS_ORIGINS:
+        if self.settings.BACKEND_CORS_ORIGINS:
             app.add_middleware(
                 CORSMiddleware,
-                allow_origins=tuple(str(origin) for origin in get_settings().BACKEND_CORS_ORIGINS),
+                allow_origins=tuple(str(origin) for origin in self.settings.BACKEND_CORS_ORIGINS),
                 allow_credentials=True,
                 allow_methods=["*"],
                 allow_headers=["*"],
                 expose_headers=["content-disposition"],
             )
 
-        app.include_router(api_router, prefix=get_settings().API_V1_STR)
+        app.include_router(api_router, prefix=self.settings.API_V1_STR)
 
         app.exception_handler(KwikError)(kwik_exception_handler)
 

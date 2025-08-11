@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import kwik.typings
-from kwik.dependencies import Pagination, has_permission
 from kwik.core.enum import Permissions
 from kwik.crud import crud_permissions, crud_roles, crud_users
+from kwik.dependencies import Pagination, UserContext, has_permission
 from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuthenticatedRouter
 from kwik.schemas import (
@@ -32,9 +32,9 @@ roles_router = AuthenticatedRouter(prefix="/roles")
     response_model=Paginated[RoleProfile],
     dependencies=(has_permission(Permissions.roles_management_read),),
 )
-def read_roles(paginated: Pagination) -> kwik.typings.PaginatedResponse[Role]:
+def read_roles(paginated: Pagination, context: UserContext) -> kwik.typings.PaginatedResponse[Role]:
     """Retrieve roles."""
-    total, data = crud_roles.get_multi(**paginated)
+    total, data = crud_roles.get_multi(context=context, **paginated)
     return kwik.typings.PaginatedResponse(data=data, total=total)
 
 
@@ -43,13 +43,13 @@ def read_roles(paginated: Pagination) -> kwik.typings.PaginatedResponse[Role]:
     response_model=RoleProfile,
     dependencies=(has_permission(Permissions.roles_management_create),),
 )
-def create_role(role_in: RoleDefinition) -> Role:
+def create_role(role_in: RoleDefinition, context: UserContext) -> Role:
     """Create new role."""
-    role = crud_roles.get_by_name(name=role_in.name)
+    role = crud_roles.get_by_name(name=role_in.name, context=context)
     if role is not None:
         raise DuplicatedEntityError
 
-    return crud_roles.create(obj_in=role_in)
+    return crud_roles.create(obj_in=role_in, context=context)
 
 
 @roles_router.get(
@@ -57,9 +57,9 @@ def create_role(role_in: RoleDefinition) -> Role:
     response_model=RoleProfile,
     dependencies=(has_permission(Permissions.roles_management_read),),
 )
-def read_role_by_id(role_id: int) -> Role:
+def read_role_by_id(role_id: int, context: UserContext) -> Role:
     """Get a specific role by id."""
-    return crud_roles.get_if_exist(id=role_id)
+    return crud_roles.get_if_exist(id=role_id, context=context)
 
 
 @roles_router.put(
@@ -67,10 +67,10 @@ def read_role_by_id(role_id: int) -> Role:
     response_model=RoleProfile,
     dependencies=(has_permission(Permissions.roles_management_update),),
 )
-def update_role(role_id: int, role_in: RoleUpdate) -> Role:
+def update_role(role_id: int, role_in: RoleUpdate, context: UserContext) -> Role:
     """Update a role."""
-    role = crud_roles.get_if_exist(id=role_id)
-    return crud_roles.update(db_obj=role, obj_in=role_in)
+    role = crud_roles.get_if_exist(id=role_id, context=context)
+    return crud_roles.update(db_obj=role, obj_in=role_in, context=context)
 
 
 @roles_router.delete(
@@ -78,10 +78,10 @@ def update_role(role_id: int, role_in: RoleUpdate) -> Role:
     response_model=RoleProfile,
     dependencies=(has_permission(Permissions.roles_management_delete),),
 )
-def delete_role(role_id: int) -> Role:
+def delete_role(role_id: int, context: UserContext) -> Role:
     """Delete a role."""
-    crud_roles.get_if_exist(id=role_id)
-    return crud_roles.delete(id=role_id)
+    role = crud_roles.get_if_exist(id=role_id, context=context)
+    return crud_roles.delete(id=role.id, context=context)
 
 
 @roles_router.get(
@@ -94,9 +94,9 @@ def delete_role(role_id: int) -> Role:
         ),
     ),
 )
-def read_permissions_by_role(role_id: int) -> list[Permission]:
+def read_permissions_by_role(role_id: int, context: UserContext) -> list[Permission]:
     """Get permissions associated to a role."""
-    role = crud_roles.get_if_exist(id=role_id)
+    role = crud_roles.get_if_exist(id=role_id, context=context)
     return crud_roles.get_permissions_assigned_to(role=role)
 
 
@@ -110,10 +110,10 @@ def read_permissions_by_role(role_id: int) -> list[Permission]:
         ),
     ),
 )
-def read_available_permissions_for_role(role_id: int) -> list[Permission]:
+def read_available_permissions_for_role(role_id: int, context: UserContext) -> list[Permission]:
     """Get all permissions available to assign to the given role."""
-    role = crud_roles.get_if_exist(id=role_id)
-    return crud_roles.get_permissions_assignable_to(role=role)
+    role = crud_roles.get_if_exist(id=role_id, context=context)
+    return crud_roles.get_permissions_assignable_to(role=role, context=context)
 
 
 @roles_router.get(
@@ -126,9 +126,9 @@ def read_available_permissions_for_role(role_id: int) -> list[Permission]:
         ),
     ),
 )
-def users_with_role(role_id: int) -> list[User]:
+def users_with_role(role_id: int, context: UserContext) -> list[User]:
     """Get users associated to a role."""
-    role = crud_roles.get_if_exist(id=role_id)
+    role = crud_roles.get_if_exist(id=role_id, context=context)
     return crud_roles.get_users_with(role=role)
 
 
@@ -142,9 +142,9 @@ def users_with_role(role_id: int) -> list[User]:
         ),
     ),
 )
-def available_users_for_role(role_id: int) -> list[User]:
+def available_users_for_role(role_id: int, context: UserContext) -> list[User]:
     """Get users available to assign to a role."""
-    return crud_roles.get_users_without(role_id=role_id)
+    return crud_roles.get_users_without(role_id=role_id, context=context)
 
 
 @roles_router.post(
@@ -157,7 +157,7 @@ def available_users_for_role(role_id: int) -> list[User]:
         ),
     ),
 )
-def assign_permission_to_role(role_id: int, assignment: RolePermissionAssignment) -> Role:
+def assign_permission_to_role(role_id: int, assignment: RolePermissionAssignment, context: UserContext) -> Role:
     """
     Assign a permission to a role.
 
@@ -169,9 +169,9 @@ def assign_permission_to_role(role_id: int, assignment: RolePermissionAssignment
         * `permissions_management_update`
 
     """
-    role = crud_roles.get_if_exist(id=role_id)
-    permission = crud_permissions.get_if_exist(id=assignment.permission_id)
-    return crud_roles.assign_permission(role=role, permission=permission)
+    role = crud_roles.get_if_exist(id=role_id, context=context)
+    permission = crud_permissions.get_if_exist(id=assignment.permission_id, context=context)
+    return crud_roles.assign_permission(role=role, permission=permission, context=context)
 
 
 @roles_router.delete(
@@ -184,7 +184,7 @@ def assign_permission_to_role(role_id: int, assignment: RolePermissionAssignment
         ),
     ),
 )
-def remove_permission_from_role(role_id: int, permission_id: int) -> Role:
+def remove_permission_from_role(role_id: int, permission_id: int, context: UserContext) -> Role:
     """
     Remove a permission from a role.
 
@@ -196,9 +196,9 @@ def remove_permission_from_role(role_id: int, permission_id: int) -> Role:
         * `permissions_management_update`
 
     """
-    role = crud_roles.get_if_exist(id=role_id)
-    permission = crud_permissions.get_if_exist(id=permission_id)
-    return crud_roles.remove_permission(role=role, permission=permission)
+    role = crud_roles.get_if_exist(id=role_id, context=context)
+    permission = crud_permissions.get_if_exist(id=permission_id, context=context)
+    return crud_roles.remove_permission(role=role, permission=permission, context=context)
 
 
 @roles_router.post(
@@ -211,7 +211,7 @@ def remove_permission_from_role(role_id: int, permission_id: int) -> Role:
         ),
     ),
 )
-def assign_user_to_role(role_id: int, assignment: RoleUserAssignment) -> Role:
+def assign_user_to_role(role_id: int, assignment: RoleUserAssignment, context: UserContext) -> Role:
     """
     Assign a user to a role.
 
@@ -223,9 +223,9 @@ def assign_user_to_role(role_id: int, assignment: RoleUserAssignment) -> Role:
         * `users_management_update`
 
     """
-    role = crud_roles.get_if_exist(id=role_id)
-    user = crud_users.get_if_exist(id=assignment.user_id)
-    return crud_roles.assign_user(role=role, user=user)
+    role = crud_roles.get_if_exist(id=role_id, context=context)
+    user = crud_users.get_if_exist(id=assignment.user_id, context=context)
+    return crud_roles.assign_user(role=role, user=user, context=context)
 
 
 @roles_router.delete(
@@ -238,7 +238,7 @@ def assign_user_to_role(role_id: int, assignment: RoleUserAssignment) -> Role:
         ),
     ),
 )
-def remove_user_from_role(role_id: int, user_id: int) -> Role:
+def remove_user_from_role(role_id: int, user_id: int, context: UserContext) -> Role:
     """
     Remove a user from a role.
 
@@ -250,9 +250,9 @@ def remove_user_from_role(role_id: int, user_id: int) -> Role:
         * `users_management_update`
 
     """
-    role = crud_roles.get_if_exist(id=role_id)
-    user = crud_users.get_if_exist(id=user_id)
-    return crud_roles.remove_user(role=role, user=user)
+    role = crud_roles.get_if_exist(id=role_id, context=context)
+    user = crud_users.get_if_exist(id=user_id, context=context)
+    return crud_roles.remove_user(role=role, user=user, context=context)
 
 
 @roles_router.delete(
@@ -265,7 +265,7 @@ def remove_user_from_role(role_id: int, user_id: int) -> Role:
         ),
     ),
 )
-def remove_all_permissions_from_role(role_id: int) -> Role:
+def remove_all_permissions_from_role(role_id: int, context: UserContext) -> Role:
     """
     Remove all permission associations from a role.
 
@@ -279,8 +279,8 @@ def remove_all_permissions_from_role(role_id: int) -> Role:
         * `permissions_management_delete`
 
     """
-    role = crud_roles.get_if_exist(id=role_id)
-    return crud_roles.remove_all_permissions(role=role)
+    role = crud_roles.get_if_exist(id=role_id, context=context)
+    return crud_roles.remove_all_permissions(role=role, context=context)
 
 
 @roles_router.delete(
@@ -293,7 +293,7 @@ def remove_all_permissions_from_role(role_id: int) -> Role:
         ),
     ),
 )
-def remove_all_users_from_role(role_id: int) -> Role:
+def remove_all_users_from_role(role_id: int, context: UserContext) -> Role:
     """
     Remove all user associations from a role.
 
@@ -307,8 +307,8 @@ def remove_all_users_from_role(role_id: int) -> Role:
         * `users_management_delete`
 
     """
-    role = crud_roles.get_if_exist(id=role_id)
-    return crud_roles.deprecate(role=role)
+    role = crud_roles.get_if_exist(id=role_id, context=context)
+    return crud_roles.deprecate(role=role, context=context)
 
 
 __all__ = ["roles_router"]

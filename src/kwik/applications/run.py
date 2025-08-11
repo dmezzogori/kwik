@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .kwik import Kwik
 
 
+# TODO: implement run function as a (class)method of Kwik class
 def run(kwik_app: str | Kwik) -> None:
     """Run Kwik application with appropriate server based on environment."""
     reload = get_settings().HOTRELOAD

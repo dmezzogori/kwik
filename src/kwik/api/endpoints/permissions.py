@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from kwik.dependencies import Pagination, has_permission
 from kwik.core.enum import Permissions
 from kwik.crud import crud_permissions
+from kwik.dependencies import Pagination, UserContext, has_permission
 from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuthenticatedRouter
 from kwik.schemas import Paginated, PermissionDefinition, PermissionProfile, PermissionUpdate, RoleProfile
@@ -23,9 +23,9 @@ permissions_router = AuthenticatedRouter(prefix="/permissions")
     response_model=Paginated[PermissionProfile],
     dependencies=(has_permission(Permissions.permissions_management_read),),
 )
-def read_permissions(paginated: Pagination) -> PaginatedResponse[Permission]:
+def read_permissions(paginated: Pagination, context: UserContext) -> PaginatedResponse[Permission]:
     """Retrieve permissions."""
-    total, data = crud_permissions.get_multi(**paginated)
+    total, data = crud_permissions.get_multi(**paginated, context=context)
     return PaginatedResponse(total=total, data=data)
 
 
@@ -34,13 +34,13 @@ def read_permissions(paginated: Pagination) -> PaginatedResponse[Permission]:
     response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_create),),
 )
-def create_permission(permission_in: PermissionDefinition) -> Permission:
+def create_permission(permission_in: PermissionDefinition, context: UserContext) -> Permission:
     """Create new permission."""
-    permission = crud_permissions.get_by_name(name=permission_in.name)
+    permission = crud_permissions.get_by_name(name=permission_in.name, context=context)
     if permission is not None:
         raise DuplicatedEntityError
 
-    return crud_permissions.create(obj_in=permission_in)
+    return crud_permissions.create(obj_in=permission_in, context=context)
 
 
 @permissions_router.get(
@@ -48,9 +48,9 @@ def create_permission(permission_in: PermissionDefinition) -> Permission:
     response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_read),),
 )
-def read_permission_by_id(permission_id: int) -> Permission:
+def read_permission_by_id(permission_id: int, context: UserContext) -> Permission:
     """Get a specific permission by id."""
-    return crud_permissions.get_if_exist(id=permission_id)
+    return crud_permissions.get_if_exist(id=permission_id, context=context)
 
 
 @permissions_router.put(
@@ -58,10 +58,10 @@ def read_permission_by_id(permission_id: int) -> Permission:
     response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_update),),
 )
-def update_permission(permission_id: int, permission_in: PermissionUpdate) -> Permission:
+def update_permission(permission_id: int, permission_in: PermissionUpdate, context: UserContext) -> Permission:
     """Update a permission."""
-    permission = crud_permissions.get_if_exist(id=permission_id)
-    return crud_permissions.update(db_obj=permission, obj_in=permission_in)
+    permission = crud_permissions.get_if_exist(id=permission_id, context=context)
+    return crud_permissions.update(db_obj=permission, obj_in=permission_in, context=context)
 
 
 @permissions_router.get(
@@ -74,9 +74,9 @@ def update_permission(permission_id: int, permission_in: PermissionUpdate) -> Pe
         ),
     ),
 )
-def read_roles_by_permission(permission_id: int) -> list[Role]:
+def read_roles_by_permission(permission_id: int, context: UserContext) -> list[Role]:
     """Get roles associated to a permission."""
-    permission = crud_permissions.get_if_exist(id=permission_id)
+    permission = crud_permissions.get_if_exist(id=permission_id, context=context)
     return crud_permissions.get_roles_assigned_to(permission=permission)
 
 
@@ -90,10 +90,10 @@ def read_roles_by_permission(permission_id: int) -> list[Role]:
         ),
     ),
 )
-def read_available_roles_for_permission(permission_id: int) -> list[Role]:
+def read_available_roles_for_permission(permission_id: int, context: UserContext) -> list[Role]:
     """Get all roles available to assign to the given permission."""
-    permission = crud_permissions.get_if_exist(id=permission_id)
-    return crud_permissions.get_roles_assignable_to(permission=permission)
+    permission = crud_permissions.get_if_exist(id=permission_id, context=context)
+    return crud_permissions.get_roles_assignable_to(permission=permission, context=context)
 
 
 @permissions_router.delete(
@@ -101,7 +101,7 @@ def read_available_roles_for_permission(permission_id: int) -> list[Role]:
     response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_delete),),
 )
-def purge_all_roles(permission_id: int) -> Permission:
+def purge_all_roles(permission_id: int, context: UserContext) -> Permission:
     """
     Remove all existing associations of a permission to any role.
 
@@ -114,7 +114,7 @@ def purge_all_roles(permission_id: int) -> Permission:
         * `permissions_management_delete`
 
     """
-    return crud_permissions.purge_all_roles(permission_id=permission_id)
+    return crud_permissions.purge_all_roles(permission_id=permission_id, context=context)
 
 
 @permissions_router.delete(
@@ -122,7 +122,7 @@ def purge_all_roles(permission_id: int) -> Permission:
     response_model=PermissionProfile,
     dependencies=(has_permission(Permissions.permissions_management_delete),),
 )
-def delete_permission(permission_id: int) -> Permission:
+def delete_permission(permission_id: int, context: UserContext) -> Permission:
     """
     Delete a permission and remove all existing associations of it to any role.
 
@@ -133,7 +133,7 @@ def delete_permission(permission_id: int) -> Permission:
         * `permissions_management_delete`
 
     """
-    return crud_permissions.delete(permission_id=permission_id)
+    return crud_permissions.delete(permission_id=permission_id, context=context)
 
 
 __all__ = ["permissions_router"]
