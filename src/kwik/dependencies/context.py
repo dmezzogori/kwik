@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 from typing import Annotated
 
-from sqlalchemy.orm import Session
+from fastapi import Depends
 
-from kwik.crud import Context, NoUserCtx, UserCtx
+from kwik.crud.context import Context, NoUserCtx, UserCtx
 
-from .users import current_user
+from .session import Session  # noqa: TC001
+from .users import current_user  # noqa: TC001
 
 
 def _get_no_user_context(session: Session) -> NoUserCtx:
@@ -17,8 +20,8 @@ def _get_user_context(session: Session, user: current_user) -> UserCtx:
     return Context(session=session, user=user)
 
 
-UserContext = Annotated[UserCtx, _get_user_context]
-NoUserContext = Annotated[NoUserCtx, _get_no_user_context]
+UserContext = Annotated[UserCtx, Depends(_get_user_context)]
+NoUserContext = Annotated[NoUserCtx, Depends(_get_no_user_context)]
 
 
 __all__ = ["NoUserContext", "UserContext"]
