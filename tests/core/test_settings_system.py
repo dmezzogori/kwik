@@ -356,14 +356,6 @@ class TestConfigureKwikFunction:
         assert settings2.PROJECT_NAME == "second"
 
 
-class TestBackwardCompatibility:
-    """Test backward compatibility with existing code."""
-
-    def teardown_method(self) -> None:
-        """Clean up after each test."""
-        reset_settings()
-
-
 class TestExtensibilityUseCases:
     """Test real-world extensibility use cases."""
 
