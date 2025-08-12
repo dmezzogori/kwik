@@ -120,6 +120,8 @@ class BaseKwikSettings(BaseSettings):
         # Allow extra fields to prevent validation errors from environment variables
         # that aren't defined as settings fields
         extra="allow",
+        env_prefix="KWIK_",
+        env_ignore_empty=True,
     )
 
 
