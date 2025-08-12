@@ -21,9 +21,9 @@ def _get_oauth2_scheme(settings: Settings) -> OAuth2PasswordBearer:
 RawToken = Annotated[str, Depends(_get_oauth2_scheme)]
 
 
-def get_token(raw_token: RawToken) -> TokenPayload:
+def get_token(raw_token: RawToken, settings: Settings) -> TokenPayload:
     """Get the decoded token payload."""
-    return decode_token(raw_token)
+    return decode_token(token=raw_token, settings=settings)
 
 
 current_token = Annotated[TokenPayload, Depends(get_token)]
