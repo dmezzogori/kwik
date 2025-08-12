@@ -13,8 +13,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from starlette.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-import kwik.logger
-from kwik.core.settings import BaseKwikSettings
+from kwik.logging import logger
 from kwik.exceptions import KwikError
 from kwik.exceptions.handler import kwik_exception_handler
 
@@ -22,6 +21,8 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
     from fastapi import APIRouter
+
+    from kwik.core.settings import BaseKwikSettings
 
 
 def lifespan(settings: BaseKwikSettings):
@@ -37,8 +38,8 @@ def lifespan(settings: BaseKwikSettings):
 
         try:
             if settings.APP_ENV == "development":
-                kwik.logger.debug("Kwik application lifespan started.")
-                kwik.logger.debug(f"Initializing Kwik application with settings: {pformat(settings.model_dump())}")
+                logger.debug("Kwik application lifespan started.")
+                logger.debug(f"Initializing Kwik application with settings: {pformat(settings.model_dump())}")
             yield
         finally:
             # Clean up app state
@@ -49,7 +50,7 @@ def lifespan(settings: BaseKwikSettings):
             engine.dispose()
 
             if settings.APP_ENV == "development":
-                kwik.logger.debug("Kwik application lifespan ended.")
+                logger.debug("Kwik application lifespan ended.")
 
     return _lifespan
 
@@ -67,10 +68,10 @@ class Kwik:
         self.settings = settings
         self._app = self._init_fastapi_app(api_router=api_router)
 
-        kwik.logger.info(
+        logger.info(
             f"Kwik App running on {settings.PROTOCOL}://{settings.BACKEND_HOST}:{settings.BACKEND_PORT}",
         )
-        kwik.logger.info(
+        logger.info(
             f"Swagger available at {self.settings.PROTOCOL}://{self.settings.BACKEND_HOST}:{self.settings.BACKEND_PORT}/docs",
         )
 

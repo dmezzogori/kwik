@@ -186,6 +186,9 @@ docker compose up
 - Database operations should use the established CRUD patterns
 - All new endpoints should include proper Pydantic schemas
 - Follow the existing project structure when adding new features
+- Always run tests to validate changes and that everything works correctly
+- Run linting and formatting checks
+- Run tests and linting and formatting until everything is green
 
 
 ## Recently Completed Migrations

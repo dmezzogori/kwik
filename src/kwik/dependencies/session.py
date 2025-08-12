@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import Depends, Request
 from sqlalchemy.orm import Session as _Session
 
-import kwik.logger
+from kwik.logging import logger
 
 
 def _get_session(request: Request) -> Generator[_Session, None, None]:
@@ -12,7 +12,7 @@ def _get_session(request: Request) -> Generator[_Session, None, None]:
     try:
         yield session
     except Exception as e:
-        kwik.logger.exception(f"Error occurred while processing request: {e}")
+        logger.exception(f"Error occurred while processing request: {e}")
         session.rollback()
         raise
     finally:
