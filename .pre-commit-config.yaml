@@ -8,20 +8,3 @@ repos:
       args: [ --fix ]
     # Run the formatter.
     - id: ruff-format
-
-- repo: local
-  hooks:
-    - id: sync-agents-files
-      name: Sync CLAUDE.md and GEMINI.md
-      language: system
-      additional_dependencies: []  # managed by uv
-      entry: >-
-        uv run python -c "import subprocess, pathlib;
-        staged = subprocess.check_output(['git', 'diff', '--cached', '--name-only'], text=True).splitlines();
-        claude = pathlib.Path('CLAUDE.md'); gemini = pathlib.Path('GEMINI.md');
-        claude_staged = str(claude) in staged; gemini_staged = str(gemini) in staged;
-        (claude_staged and not gemini_staged) and (gemini.write_text(claude.read_text()), subprocess.run(['git', 'add', str(gemini)]));
-        (gemini_staged and not claude_staged) and (claude.write_text(gemini.read_text()), subprocess.run(['git', 'add', str(claude)]))"
-      pass_filenames: false
-      files: ^CLAUDE\.md$|^GEMINI\.md$
-

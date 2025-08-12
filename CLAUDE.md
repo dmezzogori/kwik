@@ -32,7 +32,7 @@ src/kwik/
 # Install dependencies (using uv)
 uv sync
 
-# Run development server with hot reload
+# Run development server
 kwik
 ```
 
@@ -47,10 +47,10 @@ pytest
 pytest --cov=src/kwik --cov-report=term-missing
 
 # Run specific test file
-pytest tests/test_crud_users.py
+pytest tests/crud/test_crud_users.py
 
 # Run specific test method
-pytest tests/test_crud_users.py::TestUserCRUD::test_create_user
+pytest tests/crud/test_crud_users.py::TestUserCRUD::test_create_user
 
 # Run tests in parallel (faster)
 pytest -n auto
@@ -189,19 +189,8 @@ docker compose up
 - Always run tests to validate changes and that everything works correctly
 - Run linting and formatting checks
 - Run tests and linting and formatting until everything is green
-
-
-## Recently Completed Migrations
-
-### SQLAlchemy 2.0 Migration ✅
-- **Status**: Completed in feature/sqlalchemy-2.0-modernization branch
-- **Scope**: Full migration to SQLAlchemy 2.0 with modern syntax and type safety
-- **Updated Components**:
-  - Database models with SQLAlchemy 2.0 syntax
-  - CRUD operations with new query patterns
-  - Database engine and session management
-  - Enhanced database mixins
-- **Documentation**: See `SQLALCHEMY_MIGRATION_GUIDE.md` and `SQLALCHEMY_PLAN.md`
+- You cannot skip any of the steps related to running tests and linting and formatting
+- You cannot commit if there are any linting or formatting errors, there are pre-commit hooks in place to enforce this.
 
 ## Remaining Planned Migrations
 
