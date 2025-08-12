@@ -8,10 +8,9 @@ from fastapi import APIRouter, Body, Depends
 from fastapi.security import OAuth2PasswordRequestForm  # noqa: TC002
 
 from kwik.core.enum import Permissions
-from kwik.core.security import create_token, decode_token
+from kwik.core.security import create_token
 from kwik.crud import crud_users
-from kwik.dependencies import NoUserContext, UserContext, current_user, has_permission
-from kwik.dependencies.token import reusable_oauth2
+from kwik.dependencies import NoUserContext, UserContext, current_token, current_user, has_permission
 from kwik.exceptions.base import TokenValidationError
 from kwik.schemas import UserProfile
 from kwik.typings import Token
@@ -54,20 +53,12 @@ def impersonate(user_id: int, user: current_user, context: UserContext) -> Token
 
 
 @login_router.post("/is_impersonating", response_model=bool)
-def is_impersonating(token: Annotated[str, Depends(reusable_oauth2)]) -> bool:
-    """
-    Check if the current token is impersonating another user.
-
-    Raises:
-        InvalidToken: If the token is invalid
-
-    """
-    token_data = decode_token(token)
-    return token_data.kwik_impersonate != ""
+def is_impersonating(token: current_token) -> bool:
+    return token.kwik_impersonate != ""
 
 
 @login_router.post("/stop_impersonating", response_model=Token)
-def stop_impersonating(token: Annotated[str, Depends(reusable_oauth2)]) -> Token:
+def stop_impersonating(token: current_token) -> Token:
     """
     Stop impersonating and return the original token.
 
@@ -75,8 +66,7 @@ def stop_impersonating(token: Annotated[str, Depends(reusable_oauth2)]) -> Token
         InvalidToken: If the token is invalid
 
     """
-    token_data = decode_token(token)
-    original_user_id = int(token_data.kwik_impersonate)
+    original_user_id = int(token.kwik_impersonate)
     return create_token(user_id=original_user_id)
 
 
