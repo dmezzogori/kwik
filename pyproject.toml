@@ -27,6 +27,7 @@ dependencies = [
     "jinja2>=3.1.4",
     "pydantic-settings>=2.10.1",
     "watchdog>=5.0.0",
+    "loguru>=0.7.3",
 ]
 
 [project.scripts]
