@@ -57,6 +57,7 @@ class UserProfile(ORMMixin):
     is_active: bool
 
 
+# TODO: remove unused schemas, like UserAuthenticationInfo (look for others)
 class UserAuthenticationInfo(UserProfile):
     """Schema for user authentication and session data including roles and permissions."""
 
