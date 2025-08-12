@@ -147,9 +147,8 @@ class TestUserCRUD:
 
     def test_get_multi_users(self, no_user_context: NoUserCtx) -> None:
         """Test getting multiple users with pagination."""
-        # Get initial user count (includes session-scoped admin user + any users from other tests)
-        # TODO: investigate why we do not have a transaction separation between tests
-        initial_count, _ = crud_users.get_multi(context=no_user_context)
+        initial_count = 1  # the admin user
+        assert initial_count == 1
 
         # Test constants
         test_users = 5

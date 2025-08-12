@@ -10,13 +10,9 @@ from fastapi.testclient import TestClient
 
 from kwik.api.api import api_router
 from kwik.applications import Kwik
-from kwik.crud import Context
-from tests.utils import create_test_user
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-
-    from sqlalchemy.orm import Session
 
     from kwik.core.settings import BaseKwikSettings
     from kwik.models import User
@@ -58,20 +54,3 @@ def authenticated_client(client: TestClient, admin_token: str) -> TestClient:
         "Authorization": f"Bearer {admin_token}",
     }
     return client
-
-
-@pytest.fixture
-def regular_user(db_session: Session) -> User:
-    """Create a regular (non-admin) user in the database for API testing."""
-    context = Context(session=db_session, user=None)
-    user = create_test_user(
-        name="testuser",
-        surname="testuser",
-        email="user@example.com",
-        password="password",
-        is_active=True,
-        context=context,
-    )
-    # Commit the user to make it available to API endpoints
-    db_session.commit()
-    return user

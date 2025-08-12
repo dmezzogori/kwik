@@ -77,10 +77,3 @@ class TestAuthenticationFixtures:
         json_response = response.json()
         assert "access_token" in json_response
         assert json_response["token_type"] == "bearer"
-
-    def test_regular_user_created(self, regular_user: User) -> None:
-        """Test that regular user fixture creates a user with correct properties."""
-        assert regular_user.email == "user@example.com"
-        assert regular_user.name == "testuser"
-        assert regular_user.surname == "testuser"
-        assert regular_user.is_active is True

@@ -21,6 +21,6 @@ def no_user_context(db_session: Session) -> NoUserCtx:
 
 
 @pytest.fixture
-def admin_context(admin_user: User, db_session: Session) -> UserCtx:
+def admin_context(db_session: Session, admin_user: User) -> UserCtx:
     """Create a Context with shared admin user for CRUD operations."""
     return Context(session=db_session, user=admin_user)
