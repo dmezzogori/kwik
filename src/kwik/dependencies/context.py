@@ -1,3 +1,14 @@
+"""
+Kwik dependency injection for application CRUD contexts.
+
+This module provides dependency injection factories for creating CRUD context objects
+that encapsulate database sessions and user information for request handling.
+
+Exports:
+- NoUserContext: CRUD context dependency for unauthenticated requests
+- UserContext: CRUD context dependency for authenticated requests
+"""
+
 from __future__ import annotations
 
 from typing import Annotated
@@ -20,8 +31,8 @@ def _get_user_context(session: Session, user: current_user) -> UserCtx:
     return Context(session=session, user=user)
 
 
-UserContext = Annotated[UserCtx, Depends(_get_user_context)]
 NoUserContext = Annotated[NoUserCtx, Depends(_get_no_user_context)]
+UserContext = Annotated[UserCtx, Depends(_get_user_context)]
 
 
 __all__ = ["NoUserContext", "UserContext"]

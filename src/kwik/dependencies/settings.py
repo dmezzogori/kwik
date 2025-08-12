@@ -1,3 +1,10 @@
+"""
+Kwik dependency injection for application settings.
+
+This module provides:
+- Settings: Annotated dependency for injecting current settings into Kwik app routes
+"""
+
 from __future__ import annotations
 
 from typing import Annotated

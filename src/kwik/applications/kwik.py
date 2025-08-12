@@ -18,18 +18,41 @@ from kwik.exceptions.handler import kwik_exception_handler
 from kwik.logging import logger
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
+    from collections.abc import AsyncGenerator, Callable
+    from contextlib import AbstractAsyncContextManager
 
     from fastapi import APIRouter
 
     from kwik.settings import BaseKwikSettings
 
 
-def lifespan(settings: BaseKwikSettings):
+def lifespan(settings: BaseKwikSettings) -> Callable[[FastAPI], AbstractAsyncContextManager]:
+    """
+    Create a lifespan context manager for FastAPI application.
+
+    This function creates and returns an async context manager that handles
+    the application startup and shutdown lifecycle. During startup, it
+    initializes the database engine and session factory, storing them in
+    the app state. During shutdown, it cleans up resources and disposes
+    of the database engine.
+
+    Parameters
+    ----------
+    settings : BaseKwikSettings
+        Application settings containing database configuration and environment details.
+
+    Returns
+    -------
+    Callable[[FastAPI], AsyncGenerator[None, None]]
+        An async context manager function that can be used as FastAPI's lifespan parameter.
+
+    """
+
     @asynccontextmanager
     async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         engine = create_engine(settings.SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)  # TODO: check parameters
-        SessionLocal = sessionmaker(bind=engine, expire_on_commit=False, class_=Session)  # TODO: check parameters
+        # TODO: check parameters
+        SessionLocal = sessionmaker(bind=engine, expire_on_commit=False, class_=Session)  # noqa: N806
 
         # Store in app state for middleware access
         app.state.settings = settings

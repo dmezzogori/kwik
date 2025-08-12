@@ -1,3 +1,10 @@
+"""
+Kwik dependency injection for database sessions.
+
+This module provides:
+- Session: Annotated dependency type for injecting database sessions into Kwik endpoints
+"""
+
 from collections.abc import Generator
 from typing import Annotated
 
@@ -20,3 +27,5 @@ def _get_session(request: Request) -> Generator[_Session, None, None]:
 
 
 Session = Annotated[_Session, Depends(_get_session)]
+
+__all__ = ["Session"]

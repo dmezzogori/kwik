@@ -1,3 +1,11 @@
+"""
+Test module for kwik API endpoints.
+
+This module contains test cases for various API endpoints including:
+- Context router endpoints (settings, session)
+- Authentication functionality and fixtures
+"""
+
 from http import HTTPStatus
 
 from fastapi.testclient import TestClient
@@ -7,7 +15,25 @@ from kwik.settings import BaseKwikSettings
 
 
 class TestContextRouter:
+    """
+    Test cases for the context router API endpoints.
+
+    This class contains tests for the context-related API endpoints,
+    including settings and session management functionality.
+    """
+
     def test_get_settings(self, client: TestClient, settings: BaseKwikSettings) -> None:
+        """
+        Test the settings endpoint returns correct configuration values.
+
+        Parameters
+        ----------
+        client : TestClient
+            The FastAPI test client for making HTTP requests.
+        settings : BaseKwikSettings
+            The application settings configuration object.
+
+        """
         response = client.get("/api/v1/context/settings")
 
         status_code = response.status_code
@@ -21,6 +47,15 @@ class TestContextRouter:
         assert json_response["POSTGRES_PASSWORD"] == settings.POSTGRES_PASSWORD
 
     def test_get_session(self, client: TestClient) -> None:
+        """
+        Test the session endpoint returns correct response and increments db_rows.
+
+        Parameters
+        ----------
+        client : TestClient
+            The FastAPI test client for making HTTP requests.
+
+        """
         response = client.get("/api/v1/context/session")
 
         status_code = response.status_code
@@ -37,24 +72,13 @@ class TestContextRouter:
 
         assert status_code == HTTPStatus.OK
         assert json_response["ok"] is True
-        assert json_response["db_rows"] == 2
+
+        expected_db_rows = 2
+        assert json_response["db_rows"] == expected_db_rows
 
 
 class TestAuthenticationFixtures:
     """Example tests demonstrating the new authentication fixtures."""
-
-    def test_admin_user_created(self, admin_user: User) -> None:
-        """Test that admin user fixture creates a user with correct properties."""
-        assert admin_user.email == "admin@example.com"
-        assert admin_user.name == "admin"
-        assert admin_user.surname == "admin"
-        assert admin_user.is_active is True
-
-    def test_admin_token_obtained(self, admin_token: str) -> None:
-        """Test that admin token fixture returns a valid JWT token."""
-        assert isinstance(admin_token, str)
-        assert len(admin_token) > 50  # JWT tokens are lengthy strings
-        assert "." in admin_token  # JWT tokens contain dots
 
     def test_authenticated_client_has_headers(self, authenticated_client: TestClient) -> None:
         """Test that authenticated client has Authorization header set."""

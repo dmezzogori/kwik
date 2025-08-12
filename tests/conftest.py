@@ -1,3 +1,13 @@
+"""
+Test configuration and fixtures for the kwik project.
+
+This module provides pytest fixtures for:
+- PostgreSQL test container setup
+- Database engine and session management
+- Test settings configuration
+- Admin user creation for testing
+"""
+
 from __future__ import annotations
 
 from collections.abc import Generator
@@ -37,6 +47,20 @@ def postgres() -> Generator[PostgresContainer, None, None]:
 
 @pytest.fixture(scope="session")
 def settings(postgres: PostgresContainer) -> BaseKwikSettings:
+    """
+    Create and return BaseKwikSettings configured for the test PostgreSQL container.
+
+    Parameters
+    ----------
+    postgres : PostgresContainer
+        The test PostgreSQL container instance.
+
+    Returns
+    -------
+    BaseKwikSettings
+        Settings object configured for the test database.
+
+    """
     return BaseKwikSettings(
         POSTGRES_SERVER=postgres.get_container_host_ip(),
         POSTGRES_PORT=str(postgres.get_exposed_port(5432)),

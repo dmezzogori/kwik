@@ -108,7 +108,7 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["ALL"]
-ignore = ["D203", "D212", "COM812"]
+ignore = ["D203", "D212", "COM812", "TD002", "TD003"]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
