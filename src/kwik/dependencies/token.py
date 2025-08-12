@@ -9,19 +9,15 @@ from fastapi.security import OAuth2PasswordBearer
 
 from kwik.core.security import decode_token
 from kwik.schemas import TokenPayload
+from kwik.settings import BaseKwikSettings
 
 from .settings import Settings  # noqa: TC001
 
-
-def _get_oauth2_scheme(settings: Settings) -> OAuth2PasswordBearer:
-    token_url = f"{settings.API_V1_STR}/login/access-token"
-    return OAuth2PasswordBearer(tokenUrl=token_url)
+settings = BaseKwikSettings()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")
 
 
-RawToken = Annotated[str, Depends(_get_oauth2_scheme)]
-
-
-def get_token(raw_token: RawToken, settings: Settings) -> TokenPayload:
+def get_token(raw_token: Annotated[str, Depends(oauth2_scheme)], settings: Settings) -> TokenPayload:
     """Get the decoded token payload."""
     return decode_token(token=raw_token, settings=settings)
 
@@ -29,4 +25,4 @@ def get_token(raw_token: RawToken, settings: Settings) -> TokenPayload:
 current_token = Annotated[TokenPayload, Depends(get_token)]
 
 
-__all__ = ["RawToken", "current_token", "get_token"]
+__all__ = ["current_token", "get_token"]
