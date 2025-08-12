@@ -147,41 +147,49 @@ class TestUserCRUD:
 
     def test_get_multi_users(self, no_user_context: NoUserCtx) -> None:
         """Test getting multiple users with pagination."""
+        # Get initial user count (includes session-scoped admin user + any users from other tests)
+        # TODO: investigate why we do not have a transaction separation between tests
+        initial_count, _ = crud_users.get_multi(context=no_user_context)
+
         # Test constants
-        total_users = 5
+        test_users = 5
         page_limit = 3
-        remaining_users = 2
+        expected_total = initial_count + test_users
 
         # Create multiple test users
         users = []
-        for i in range(total_users):
+        for i in range(test_users):
             user = create_test_user(email=f"user{i}@example.com", name=f"User{i}", context=no_user_context)
             users.append(user)
 
         # Get multiple users
         count, retrieved_users = crud_users.get_multi(skip=0, limit=page_limit, context=no_user_context)
 
-        assert count == total_users  # Total count
+        assert count == expected_total  # Total count
         assert len(retrieved_users) == page_limit  # Limited to 3
 
-        # Test pagination
+        # Test pagination - second page should have remaining users up to page_limit
         count, second_page = crud_users.get_multi(skip=page_limit, limit=page_limit, context=no_user_context)
-        assert count == total_users
-        assert len(second_page) == remaining_users  # Remaining users
+        assert count == expected_total
+        expected_remaining = min(page_limit, expected_total - page_limit)
+        assert len(second_page) == expected_remaining  # Remaining users up to limit
 
     def test_get_multi_with_filters(self, no_user_context: NoUserCtx) -> None:
         """Test getting multiple users with filters."""
+        # Get initial active user count (includes session-scoped admin user who is active)
+        initial_active_count, _ = crud_users.get_multi(is_active=True, context=no_user_context)
+
         # Create test users with different attributes
         create_test_user(email="active@example.com", is_active=True, context=no_user_context)
         create_test_user(email="inactive@example.com", is_active=False, context=no_user_context)
 
         # Filter by is_active
         count, active_users = crud_users.get_multi(is_active=True, context=no_user_context)
-        assert count == 1
-        assert active_users[0].is_active is True
+        assert count == initial_active_count + 1  # Original active + new active user
+        assert all(user.is_active is True for user in active_users)
 
         count, inactive_users = crud_users.get_multi(is_active=False, context=no_user_context)
-        assert count == 1
+        assert count == 1  # Only the inactive user we just created
         assert inactive_users[0].is_active is False
 
     def test_delete_user(self, no_user_context: NoUserCtx) -> None:
