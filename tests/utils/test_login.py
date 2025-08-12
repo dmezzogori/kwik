@@ -11,7 +11,7 @@ import pytest
 from kwik.core.security import ALGORITHM, generate_password_reset_token, verify_password_reset_token
 
 if TYPE_CHECKING:
-    from kwik.core.settings import BaseKwikSettings
+    from kwik.settings import BaseKwikSettings
 
 EMAIL = "test@example.com"
 

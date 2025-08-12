@@ -32,7 +32,7 @@ from typing import TYPE_CHECKING
 
 import uvicorn
 
-from kwik.core.settings import BaseKwikSettings
+from kwik.settings import BaseKwikSettings
 
 from .gunicorn import KwikGunicornApplication
 

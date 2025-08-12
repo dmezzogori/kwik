@@ -8,9 +8,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from testcontainers.postgres import PostgresContainer
 
-from kwik.core.settings import BaseKwikSettings
 from kwik.crud import Context
 from kwik.models import Base
+from kwik.settings import BaseKwikSettings
 from tests.utils import create_test_user
 
 if TYPE_CHECKING:

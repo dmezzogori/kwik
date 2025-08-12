@@ -2,8 +2,8 @@ from http import HTTPStatus
 
 from fastapi.testclient import TestClient
 
-from kwik.core.settings import BaseKwikSettings
 from kwik.models import User
+from kwik.settings import BaseKwikSettings
 
 
 class TestContextRouter:

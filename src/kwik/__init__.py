@@ -8,6 +8,5 @@ from __future__ import annotations
 
 from .api.api import api_router
 from .applications import Kwik, run
-from .logging import logger
 
-__all__ = ["Kwik", "api_router", "logger", "run"]
+__all__ = ["Kwik", "api_router", "run"]

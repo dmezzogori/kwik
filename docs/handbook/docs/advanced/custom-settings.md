@@ -260,7 +260,7 @@ class ComputedSettings(BaseKwikSettings):
 ### Custom Configuration Sources
 
 ```python
-from kwik.core.settings import ConfigurationSource
+from kwik.settings import ConfigurationSource
 from typing import Any, Dict
 import requests
 

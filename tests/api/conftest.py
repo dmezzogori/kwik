@@ -14,8 +14,8 @@ from kwik.applications import Kwik
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from kwik.core.settings import BaseKwikSettings
     from kwik.models import User
+    from kwik.settings import BaseKwikSettings
 
 
 @pytest.fixture(scope="session")

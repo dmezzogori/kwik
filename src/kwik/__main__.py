@@ -30,7 +30,7 @@ import sys
 
 from kwik import Kwik, run
 from kwik.api.api import api_router
-from kwik.core.settings import BaseKwikSettings
+from kwik.settings import BaseKwikSettings
 
 
 def main() -> None:

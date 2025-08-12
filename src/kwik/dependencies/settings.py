@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from typing import Annotated
 
 from fastapi import Depends, Request
 
-from kwik.core.settings import BaseKwikSettings
+from kwik.settings import BaseKwikSettings
 
 
 def _get_settings(request: Request) -> BaseKwikSettings:

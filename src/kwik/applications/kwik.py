@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
     from fastapi import APIRouter
 
-    from kwik.core.settings import BaseKwikSettings
+    from kwik.settings import BaseKwikSettings
 
 
 def lifespan(settings: BaseKwikSettings):

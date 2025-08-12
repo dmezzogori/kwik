@@ -13,7 +13,7 @@ from kwik import schemas
 from kwik.exceptions.base import TokenValidationError
 
 if TYPE_CHECKING:
-    from kwik.core.settings import BaseKwikSettings
+    from kwik.settings import BaseKwikSettings
     from kwik.typings import Token
 
 ALGORITHM = "HS256"

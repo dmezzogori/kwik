@@ -27,7 +27,7 @@ Kwik is based on FastAPI, builds upon it and delivers an opinionated concise, bu
 Multi-source configuration system supporting environment variables, files, and programmatic configuration with automatic validation.
 
 ```python
-from kwik.core.settings import BaseKwikSettings, configure_kwik
+from kwik.settings import BaseKwikSettings, configure_kwik
 
 class MyAppSettings(BaseKwikSettings):
     CUSTOM_API_KEY: str = "default-key"
@@ -153,7 +153,7 @@ It will install Kwik and all its dependencies.
 
 ```python
 # main.py
-from kwik.core.settings import BaseKwikSettings, configure_kwik
+from kwik.settings import BaseKwikSettings, configure_kwik
 from kwik.crud.auto_crud import AutoCRUD
 from kwik.database.base import Base
 from kwik.database.mixins import RecordInfoMixin
