@@ -1,26 +1,13 @@
-"""Tests for the new settings system."""
+"""Tests for the simplified settings system."""
 
 from __future__ import annotations
 
-import json
 import os
-import tempfile
-from pathlib import Path
 
 import pytest
-from pydantic import ValidationInfo, field_validator
+from pydantic import field_validator
 
-from kwik.core.settings import (
-    BaseKwikSettings,
-    DictSource,
-    EnvironmentSource,
-    FileSource,
-    SettingsFactory,
-    SettingsRegistry,
-    configure_kwik,
-    get_settings,
-    reset_settings,
-)
+from kwik.core.settings import BaseKwikSettings, get_settings
 
 
 class CustomSettingsExample(BaseKwikSettings):
@@ -40,359 +27,194 @@ class CustomSettingsExample(BaseKwikSettings):
         return v.upper()
 
 
-class TestSettingsSources:
-    """Test configuration sources."""
+class TestBaseKwikSettings:
+    """Test BaseKwikSettings functionality."""
 
-    def test_environment_source_loads_from_env(self) -> None:
-        """Test EnvironmentSource loads from environment variables."""
-        # Set up environment variable
-        os.environ["TEST_SETTING"] = "test_value"
+    def test_default_settings_creation(self) -> None:
+        """Test creating settings with default values."""
+        settings = BaseKwikSettings()
+        
+        assert settings.PROJECT_NAME == "kwik"
+        assert settings.BACKEND_HOST == "localhost"
+        assert settings.BACKEND_PORT == 8080
+        assert settings.APP_ENV == "development"
+        assert settings.DEBUG is True  # Should be True in development
+        assert settings.HOTRELOAD is True  # Should be True in development
 
+    def test_settings_from_environment(self) -> None:
+        """Test loading settings from environment variables."""
+        os.environ["PROJECT_NAME"] = "test_project"
+        os.environ["BACKEND_PORT"] = "9000"
+        os.environ["DEBUG"] = "false"
+        
         try:
-            source = EnvironmentSource()
-            config = source.load()
-
-            assert "TEST_SETTING" in config
-            assert config["TEST_SETTING"] == "test_value"
-            assert source.priority == 1
+            settings = BaseKwikSettings()
+            
+            assert settings.PROJECT_NAME == "test_project"
+            assert settings.BACKEND_PORT == 9000
+            assert settings.DEBUG is False
         finally:
             # Clean up
-            os.environ.pop("TEST_SETTING", None)
+            os.environ.pop("PROJECT_NAME", None)
+            os.environ.pop("BACKEND_PORT", None)
+            os.environ.pop("DEBUG", None)
 
-    def test_environment_source_loads_from_env_file(self) -> None:
-        """Test EnvironmentSource loads from .env file."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".env", delete=False) as f:
-            f.write("TEST_SETTING=from_file\n")
-            f.write("ANOTHER_SETTING=another_value\n")
-            f.write("# Comment line\n")
-            f.write('QUOTED_SETTING="quoted value"\n')
-            env_file = f.name
+    def test_database_uri_construction(self) -> None:
+        """Test automatic database URI construction."""
+        settings = BaseKwikSettings()
+        
+        # Should construct URI from components
+        expected_uri = "postgresql://postgres:root@db:5432/db"
+        assert settings.SQLALCHEMY_DATABASE_URI == expected_uri
 
+    def test_database_uri_from_environment(self) -> None:
+        """Test database URI from environment override."""
+        os.environ["SQLALCHEMY_DATABASE_URI"] = "postgresql://custom:pass@host:5432/mydb"
+        
         try:
-            source = EnvironmentSource(env_file=env_file)
-            config = source.load()
-
-            assert config["TEST_SETTING"] == "from_file"
-            assert config["ANOTHER_SETTING"] == "another_value"
-            assert config["QUOTED_SETTING"] == "quoted value"
+            settings = BaseKwikSettings()
+            assert settings.SQLALCHEMY_DATABASE_URI == "postgresql://custom:pass@host:5432/mydb"
         finally:
-            Path(env_file).unlink()
+            os.environ.pop("SQLALCHEMY_DATABASE_URI", None)
 
-    def test_dict_source_loads_from_dict(self) -> None:
-        """Test DictSource loads from dictionary."""
-        test_dict = {
-            "TEST_SETTING": "dict_value",
-            "INT_SETTING": 123,
-        }
-
-        source = DictSource(test_dict)
-        config = source.load()
-
-        dict_source_priority = 2
-        assert config == test_dict
-        assert source.priority == dict_source_priority
-
-    def test_file_source_loads_json(self) -> None:
-        """Test FileSource loads from JSON file."""
-        test_config = {
-            "BACKEND_PORT": 9000,
-            "DEBUG": True,
-            "PROJECT_NAME": "test_project",
-        }
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump(test_config, f)
-            json_file = f.name
-
+    def test_cors_origins_parsing(self) -> None:
+        """Test CORS origins parsing from string."""
+        os.environ["BACKEND_CORS_ORIGINS"] = '["http://localhost:3000", "http://localhost:3001"]'
+        
         try:
-            source = FileSource(json_file)
-            config = source.load()
-
-            file_source_priority = 3
-            assert config == test_config
-            assert source.priority == file_source_priority
+            settings = BaseKwikSettings()
+            # Check that URLs are parsed correctly (as AnyHttpUrl objects)
+            assert len(settings.BACKEND_CORS_ORIGINS) == 2
+            assert str(settings.BACKEND_CORS_ORIGINS[0]) == "http://localhost:3000/"
+            assert str(settings.BACKEND_CORS_ORIGINS[1]) == "http://localhost:3001/"
         finally:
-            Path(json_file).unlink()
+            os.environ.pop("BACKEND_CORS_ORIGINS", None)
 
-    def test_file_source_handles_missing_file(self) -> None:
-        """Test FileSource handles missing files gracefully."""
-        source = FileSource("nonexistent.json")
-        config = source.load()
-
-        assert config == {}
-
-    def test_file_source_raises_for_unsupported_format(self) -> None:
-        """Test FileSource raises error for unsupported file formats."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
-            f.write("test content")
-            txt_file = f.name
-
+    def test_production_environment_disables_debug_and_hotreload(self) -> None:
+        """Test production environment automatically disables debug and hotreload."""
+        os.environ["APP_ENV"] = "production"
+        
         try:
-            source = FileSource(txt_file)
-            with pytest.raises(ValueError, match="Unsupported file format"):
-                source.load()
+            settings = BaseKwikSettings()
+            assert settings.APP_ENV == "production"
+            assert settings.DEBUG is False
+            assert settings.HOTRELOAD is False
         finally:
-            Path(txt_file).unlink()
+            os.environ.pop("APP_ENV", None)
+
+    def test_multiple_workers_disables_hotreload(self) -> None:
+        """Test multiple workers disables hotreload."""
+        os.environ["BACKEND_WORKERS"] = "4"
+        
+        try:
+            settings = BaseKwikSettings()
+            assert settings.BACKEND_WORKERS == 4
+            assert settings.HOTRELOAD is False
+        finally:
+            os.environ.pop("BACKEND_WORKERS", None)
 
 
-class TestSettingsRegistry:
-    """Test settings registry functionality."""
+class TestGetSettings:
+    """Test the get_settings function."""
 
-    def setup_method(self) -> None:
-        """Set up test registry."""
-        self.registry = SettingsRegistry()
-
-    def test_add_source_and_priority_ordering(self) -> None:
-        """Test adding sources and priority ordering."""
-        env_source = EnvironmentSource()
-        dict_source = DictSource({"TEST": "dict"})
-        file_source = FileSource("test.json")
-
-        # Add in random order
-        self.registry.add_source(file_source)
-        self.registry.add_source(env_source)
-        self.registry.add_source(dict_source)
-
-        # Should be sorted by priority (env=1, dict=2, file=3)
-        assert self.registry._sources[0] == env_source
-        assert self.registry._sources[1] == dict_source
-        assert self.registry._sources[2] == file_source
-
-    def test_set_settings_class(self) -> None:
-        """Test setting custom settings class."""
-        self.registry.set_settings_class(CustomSettingsExample)
-        assert self.registry._settings_class == CustomSettingsExample
-
-    def test_get_merged_config(self) -> None:
-        """Test configuration merging with priority."""
-        # Add sources with conflicting values
-        dict_source1 = DictSource({"SETTING": "low_priority", "UNIQUE1": "value1"})
-        dict_source2 = DictSource({"SETTING": "high_priority", "UNIQUE2": "value2"})
-
-        # Manually set priorities to test merging
-        dict_source1.priority = 3  # Lower priority
-        dict_source2.priority = 1  # Higher priority
-
-        self.registry.add_source(dict_source1)
-        self.registry.add_source(dict_source2)
-
-        config = self.registry.get_merged_config()
-
-        # High priority should win
-        assert config["SETTING"] == "high_priority"
-        # Both unique values should be present
-        assert config["UNIQUE1"] == "value1"
-        assert config["UNIQUE2"] == "value2"
-
-    def test_get_settings_instance_caching(self) -> None:
-        """Test settings instance caching."""
-        self.registry.add_source(DictSource({"PROJECT_NAME": "test"}))
-
-        instance1 = self.registry.get_settings_instance()
-        instance2 = self.registry.get_settings_instance()
-
-        assert instance1 is instance2  # Same instance
-        assert instance1.PROJECT_NAME == "test"
-
-    def test_reset_clears_state(self) -> None:
-        """Test reset clears registry state."""
-        self.registry.add_source(DictSource({"TEST": "value"}))
-        self.registry.set_settings_class(CustomSettingsExample)
-
-        # Get instance to cache it
-        instance = self.registry.get_settings_instance()
-        assert instance is not None
-
-        # Reset should clear everything
-        self.registry.reset()
-
-        assert len(self.registry._sources) == 0
-        assert self.registry._settings_instance is None
-        assert self.registry._settings_class == BaseKwikSettings
-
-
-class TestSettingsFactory:
-    """Test settings factory functionality."""
-
-    def setup_method(self) -> None:
-        """Set up test factory."""
-        self.factory = SettingsFactory()
-
-    def teardown_method(self) -> None:
-        """Clean up after each test."""
-        self.factory.reset()
-
-    def test_default_configuration(self) -> None:
-        """Test factory with default configuration."""
-        settings = self.factory.get_settings()
-
+    def test_get_settings_returns_instance(self) -> None:
+        """Test get_settings returns a BaseKwikSettings instance."""
+        settings = get_settings()
         assert isinstance(settings, BaseKwikSettings)
-        assert settings.PROJECT_NAME == "kwik"  # Default value
 
-    def test_configure_with_custom_class(self) -> None:
-        """Test configuring with custom settings class."""
-        self.factory.configure(settings_class=CustomSettingsExample)
-        settings = self.factory.get_settings()
+    def test_get_settings_returns_same_instance(self) -> None:
+        """Test get_settings returns the same cached instance."""
+        settings1 = get_settings()
+        settings2 = get_settings()
+        assert settings1 is settings2
 
-        assert isinstance(settings, CustomSettingsExample)
-        assert settings.CUSTOM_SETTING == "DEFAULT_VALUE"  # Validator uppercases
-        expected_int_value = 42
-        assert expected_int_value == settings.CUSTOM_INT_SETTING
-
-    def test_configure_with_dict(self) -> None:
-        """Test configuring with dictionary."""
-        config = {
-            "PROJECT_NAME": "test_project",
-            "BACKEND_PORT": 9000,
-            "DEBUG": True,
-        }
-
-        self.factory.configure(config_dict=config)
-        settings = self.factory.get_settings()
-
-        assert settings.PROJECT_NAME == "test_project"
-        expected_port = 9000
-        assert expected_port == settings.BACKEND_PORT
-        assert settings.DEBUG is True
-
-    def test_configure_with_file(self) -> None:
-        """Test configuring with file."""
-        config = {"PROJECT_NAME": "file_project", "BACKEND_PORT": 8888}
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump(config, f)
-            config_file = f.name
-
+    def test_get_settings_loads_from_environment(self) -> None:
+        """Test get_settings loads values from environment."""
+        os.environ["PROJECT_NAME"] = "from_env"
+        
         try:
-            self.factory.configure(config_file=config_file)
-            settings = self.factory.get_settings()
-
-            assert settings.PROJECT_NAME == "file_project"
-            expected_file_port = 8888
-            assert expected_file_port == settings.BACKEND_PORT
-        finally:
-            Path(config_file).unlink()
-
-    def test_priority_ordering(self) -> None:
-        """Test configuration source priority ordering."""
-        # Set up environment variable (highest priority)
-        os.environ["TEST_PRIORITY"] = "from_env"
-
-        try:
-            config_dict = {"TEST_PRIORITY": "from_dict"}
-            config_file_data = {"TEST_PRIORITY": "from_file"}
-
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-                json.dump(config_file_data, f)
-                config_file = f.name
-
-            try:
-                # Configure with all sources
-                self.factory.configure(
-                    config_dict=config_dict,
-                    config_file=config_file,
-                )
-
-                # Create a custom settings class to capture the TEST_PRIORITY value
-                class TestPrioritySettings(BaseKwikSettings):
-                    TEST_PRIORITY: str = "default"
-
-                self.factory._registry.set_settings_class(TestPrioritySettings)
-                settings = self.factory.get_settings()
-
-                # Environment should win (highest priority)
-                assert settings.TEST_PRIORITY == "from_env"
-            finally:
-                Path(config_file).unlink()
-        finally:
-            os.environ.pop("TEST_PRIORITY", None)
-
-
-class TestConfigureKwikFunction:
-    """Test the configure_kwik function."""
-
-    def teardown_method(self) -> None:
-        """Clean up after each test."""
-        reset_settings()
-
-    def test_configure_with_custom_settings(self) -> None:
-        """Test configure_kwik with custom settings class."""
-        configure_kwik(settings_class=CustomSettingsExample)
-        settings = get_settings()
-
-        assert isinstance(settings, CustomSettingsExample)
-        assert settings.CUSTOM_SETTING == "DEFAULT_VALUE"
-
-    def test_configure_with_dict(self) -> None:
-        """Test configure_kwik with dictionary."""
-        configure_kwik(config_dict={"PROJECT_NAME": "configured_project"})
-        settings = get_settings()
-
-        assert settings.PROJECT_NAME == "configured_project"
-
-    def test_configure_with_env_override(self) -> None:
-        """Test configure_kwik respects environment variable override."""
-        os.environ["PROJECT_NAME"] = "env_project"
-
-        try:
-            configure_kwik(config_dict={"PROJECT_NAME": "dict_project"})
-            settings = get_settings()
-
-            # Environment should override dictionary
-            assert settings.PROJECT_NAME == "env_project"
+            # Clear any cached instance by importing fresh
+            import importlib
+            from kwik.core import settings
+            importlib.reload(settings)
+            
+            settings_instance = settings.get_settings()
+            assert settings_instance.PROJECT_NAME == "from_env"
         finally:
             os.environ.pop("PROJECT_NAME", None)
 
-    def test_multiple_configure_calls(self) -> None:
-        """Test multiple configure_kwik calls."""
-        # First configuration
-        configure_kwik(config_dict={"PROJECT_NAME": "first"})
-        settings1 = get_settings()
-        assert settings1.PROJECT_NAME == "first"
 
-        # Second configuration should replace the first
-        configure_kwik(config_dict={"PROJECT_NAME": "second"})
-        settings2 = get_settings()
-        assert settings2.PROJECT_NAME == "second"
+class TestCustomSettings:
+    """Test extending BaseKwikSettings with custom settings."""
+
+    def test_custom_settings_class(self) -> None:
+        """Test creating custom settings class."""
+        settings = CustomSettingsExample()
+        
+        assert settings.CUSTOM_SETTING == "DEFAULT_VALUE"  # Validator uppercases
+        assert settings.CUSTOM_INT_SETTING == 42
+        assert settings.CUSTOM_BOOL_SETTING is True
+        # Should still have base settings
+        assert settings.PROJECT_NAME == "kwik"
+
+    def test_custom_settings_from_environment(self) -> None:
+        """Test custom settings loaded from environment."""
+        os.environ["CUSTOM_SETTING"] = "from_env"
+        os.environ["CUSTOM_INT_SETTING"] = "999"
+        
+        try:
+            settings = CustomSettingsExample()
+            
+            assert settings.CUSTOM_SETTING == "FROM_ENV"  # Uppercased by validator
+            assert settings.CUSTOM_INT_SETTING == 999
+        finally:
+            os.environ.pop("CUSTOM_SETTING", None)
+            os.environ.pop("CUSTOM_INT_SETTING", None)
+
+    def test_custom_settings_validation(self) -> None:
+        """Test custom validation in extended settings."""
+        os.environ["CUSTOM_SETTING"] = ""
+        
+        try:
+            with pytest.raises(ValueError, match="CUSTOM_SETTING cannot be empty"):
+                CustomSettingsExample()
+        finally:
+            os.environ.pop("CUSTOM_SETTING", None)
 
 
-class TestExtensibilityUseCases:
-    """Test real-world extensibility use cases."""
+class TestExtensibilityExamples:
+    """Test realistic extensibility examples."""
 
-    def teardown_method(self) -> None:
-        """Clean up after each test."""
-        reset_settings()
-
-    def test_custom_feature_flags(self) -> None:
-        """Test adding custom feature flags."""
-
+    def test_feature_flags_extension(self) -> None:
+        """Test adding feature flags to settings."""
+        
         class FeatureFlagSettings(BaseKwikSettings):
             FEATURE_X_ENABLED: bool = False
             FEATURE_Y_ENABLED: bool = True
-            FEATURE_Z_ROLLOUT_PERCENTAGE: int = 0
+            NEW_UI_ENABLED: bool = False
 
-        configure_kwik(
-            settings_class=FeatureFlagSettings,
-            config_dict={
-                "FEATURE_X_ENABLED": True,
-                "FEATURE_Z_ROLLOUT_PERCENTAGE": 50,
-            },
-        )
+        os.environ["FEATURE_X_ENABLED"] = "true"
+        os.environ["NEW_UI_ENABLED"] = "true"
+        
+        try:
+            settings = FeatureFlagSettings()
+            
+            assert settings.FEATURE_X_ENABLED is True
+            assert settings.FEATURE_Y_ENABLED is True  # Default
+            assert settings.NEW_UI_ENABLED is True
+            # Still has base framework settings
+            assert settings.PROJECT_NAME == "kwik"
+        finally:
+            os.environ.pop("FEATURE_X_ENABLED", None)
+            os.environ.pop("NEW_UI_ENABLED", None)
 
-        settings = get_settings()
-        assert settings.FEATURE_X_ENABLED is True
-        assert settings.FEATURE_Y_ENABLED is True  # Default
-        expected_rollout_percentage = 50
-        assert expected_rollout_percentage == settings.FEATURE_Z_ROLLOUT_PERCENTAGE
-
-    def test_custom_api_settings(self) -> None:
-        """Test adding custom API-related settings."""
-
+    def test_api_configuration_extension(self) -> None:
+        """Test adding API configuration settings."""
+        
         class APISettings(BaseKwikSettings):
             API_RATE_LIMIT: int = 1000
             API_TIMEOUT: int = 30
-            API_RETRIES: int = 3
-            CUSTOM_API_ENDPOINT: str = "https://api.example.com"
+            EXTERNAL_SERVICE_URL: str = "https://api.example.com"
 
             @field_validator("API_RATE_LIMIT")
             @classmethod
@@ -402,49 +224,15 @@ class TestExtensibilityUseCases:
                     raise ValueError(msg)
                 return v
 
-        configure_kwik(
-            settings_class=APISettings,
-            config_dict={"API_RATE_LIMIT": 5000},
-        )
-
-        settings = get_settings()
-        expected_rate_limit = 5000
-        expected_timeout = 30
-        assert expected_rate_limit == settings.API_RATE_LIMIT
-        assert expected_timeout == settings.API_TIMEOUT
-        assert settings.CUSTOM_API_ENDPOINT == "https://api.example.com"
-
-    def test_environment_specific_settings(self) -> None:
-        """Test environment-specific configuration."""
-
-        class EnvironmentSettings(BaseKwikSettings):
-            ENVIRONMENT: str = "development"
-            CACHE_TTL: int = 300
-            LOG_RETENTION_DAYS: int = 7
-
-            @field_validator("CACHE_TTL")
-            @classmethod
-            def adjust_cache_for_env(cls, v: int, info: ValidationInfo) -> int:
-                env = info.data.get("ENVIRONMENT", "development")
-                if env == "production":
-                    return max(v, 3600)  # Minimum 1 hour in production
-                return v
-
-        # Test development environment
-        configure_kwik(
-            settings_class=EnvironmentSettings,
-            config_dict={"ENVIRONMENT": "development", "CACHE_TTL": 60},
-        )
-        dev_settings = get_settings()
-        expected_dev_cache_ttl = 60
-        assert expected_dev_cache_ttl == dev_settings.CACHE_TTL
-
-        # Reset and test production environment
-        reset_settings()
-        configure_kwik(
-            settings_class=EnvironmentSettings,
-            config_dict={"ENVIRONMENT": "production", "CACHE_TTL": 60},
-        )
-        prod_settings = get_settings()
-        expected_prod_cache_ttl = 3600  # Adjusted by validator
-        assert expected_prod_cache_ttl == prod_settings.CACHE_TTL
+        os.environ["API_RATE_LIMIT"] = "5000"
+        os.environ["EXTERNAL_SERVICE_URL"] = "https://custom.api.com"
+        
+        try:
+            settings = APISettings()
+            
+            assert settings.API_RATE_LIMIT == 5000
+            assert settings.API_TIMEOUT == 30  # Default
+            assert settings.EXTERNAL_SERVICE_URL == "https://custom.api.com"
+        finally:
+            os.environ.pop("API_RATE_LIMIT", None)
+            os.environ.pop("EXTERNAL_SERVICE_URL", None)
