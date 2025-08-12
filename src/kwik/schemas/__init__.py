@@ -7,15 +7,13 @@ and API schema definitions across the kwik web framework.
 
 from __future__ import annotations
 
-from .login import PasswordRecoveryRequest
 from .mixins.orm import ORMMixin
 from .mixins.record_info import RecordInfoMixin
 from .pagination import Paginated
-from .permission import PermissionDefinition, PermissionProfile, PermissionRoleAssignment, PermissionUpdate
-from .role import RoleDefinition, RoleInDB, RolePermissionAssignment, RoleProfile, RoleUpdate, RoleUserAssignment
+from .permission import PermissionDefinition, PermissionProfile, PermissionUpdate
+from .role import RoleDefinition, RolePermissionAssignment, RoleProfile, RoleUpdate, RoleUserAssignment
 from .token import Token, TokenPayload
 from .user import (
-    UserAuthenticationInfo,
     UserPasswordChange,
     UserProfile,
     UserProfileUpdate,
@@ -25,21 +23,17 @@ from .user import (
 __all__ = [
     "ORMMixin",
     "Paginated",
-    "PasswordRecoveryRequest",
     "PermissionDefinition",
     "PermissionProfile",
-    "PermissionRoleAssignment",
     "PermissionUpdate",
     "RecordInfoMixin",
     "RoleDefinition",
-    "RoleInDB",
     "RolePermissionAssignment",
     "RoleProfile",
     "RoleUpdate",
     "RoleUserAssignment",
     "Token",
     "TokenPayload",
-    "UserAuthenticationInfo",
     "UserPasswordChange",
     "UserProfile",
     "UserProfileUpdate",

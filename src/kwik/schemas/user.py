@@ -2,15 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel, EmailStr, model_validator
 
 from .mixins import ORMMixin
-
-if TYPE_CHECKING:
-    from .permission import PermissionProfile
-    from .role import RoleProfile
 
 
 class UserRegistration(BaseModel):
@@ -55,11 +49,3 @@ class UserProfile(ORMMixin):
     surname: str
     email: EmailStr
     is_active: bool
-
-
-# TODO: remove unused schemas, like UserAuthenticationInfo (look for others)
-class UserAuthenticationInfo(UserProfile):
-    """Schema for user authentication and session data including roles and permissions."""
-
-    roles: list[RoleProfile]
-    permissions: list[PermissionProfile]

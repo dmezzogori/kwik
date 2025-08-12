@@ -36,19 +36,6 @@ class RoleProfile(RoleInDBBase):
     """Schema for role profile information."""
 
 
-class RoleInDB(RoleInDBBase):
-    """Role schema for internal database operations."""
-
-
-class RoleLookup(BaseModel):
-    """Schema for role lookup operations with ID and name."""
-
-    id: int
-    name: str
-
-    model_config = ConfigDict(from_attributes=True)
-
-
 class RolePermissionAssignment(BaseModel):
     """Schema for assigning permissions to roles."""
 
