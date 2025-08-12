@@ -1,5 +1,5 @@
 """
-Simplified configuration system for Kwik framework.
+Simplified and opinionated configuration system for Kwik framework.
 
 This module provides a simple settings system that loads configuration from environment variables.
 """
@@ -125,24 +125,3 @@ class BaseKwikSettings(BaseSettings):
         env_prefix="KWIK_",
         env_ignore_empty=True,
     )
-
-
-# Global settings instance cache
-_settings_instance: BaseKwikSettings | None = None
-
-
-def get_settings() -> BaseKwikSettings:
-    """
-    Get the current settings instance.
-
-    This function provides lazy loading of settings - they are only created
-    when first accessed.
-
-    Returns:
-        Current settings instance
-
-    """
-    global _settings_instance  # noqa: PLW0603
-    if _settings_instance is None:
-        _settings_instance = BaseKwikSettings()
-    return _settings_instance
