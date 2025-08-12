@@ -7,8 +7,7 @@ and API schema definitions across the kwik web framework.
 
 from __future__ import annotations
 
-from .mixins.orm import ORMMixin
-from .mixins.record_info import RecordInfoMixin
+from .mixins import ORMMixin, RecordInfoMixin
 from .pagination import Paginated
 from .permission import PermissionDefinition, PermissionProfile, PermissionUpdate
 from .role import RoleDefinition, RolePermissionAssignment, RoleProfile, RoleUpdate, RoleUserAssignment

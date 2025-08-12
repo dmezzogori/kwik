@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from kwik.schemas.mixins.orm import ORMMixin
+from .mixins import ORMMixin
 
 
 class _BaseSchema(BaseModel):
