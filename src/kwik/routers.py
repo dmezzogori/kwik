@@ -7,31 +7,21 @@ from fastapi import APIRouter, Depends
 from kwik.dependencies.token import get_token
 
 
-# TODO: controllare documentazione
 class AuthenticatedRouter(APIRouter):
     """
-    Router with built-in audit logging for all registered routes.
+    Router that requires JWT authentication for all registered routes.
 
-    This router automatically applies audit logging to all routes registered with it.
-    It extends FastAPI's APIRouter to provide comprehensive request/response tracking
-    including user context, timing, and request details.
+    This router extends FastAPI's APIRouter to automatically apply JWT token
+    validation to all routes registered with it, ensuring that only authenticated
+    users can access the endpoints.
 
     Features:
     - Automatic JWT token validation for all routes via get_token dependency
-    - Request/response audit logging through AuditedRoute class
-    - User context management with impersonation support
-    - Response time tracking with X-Response-Time header
-    - Request body caching for multiple reads
-    - Integration with Kwik's audit system for compliance and monitoring
+    - Consistent authentication enforcement across route groups
+    - Simplified router setup with built-in security requirements
 
-    The router uses AuditedRoute which logs:
-    - Client information (host, headers)
-    - Request details (method, URL, query params, path params, body)
-    - User context (user ID, impersonator ID if applicable)
-    - Response information (status code, processing time)
-    - Unique request ID for tracing
-
-    All audit records are stored using the crud.audit.create() method.
+    The router automatically adds the get_token dependency to all routes,
+    which validates JWT tokens and provides decoded token payload to handlers.
     """
 
     def __init__(self, prefix: str) -> None:
