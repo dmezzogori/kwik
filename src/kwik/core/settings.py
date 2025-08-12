@@ -12,6 +12,8 @@ from typing import Any, Literal
 from pydantic import AnyHttpUrl, EmailStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from kwik.logging import LOG_LEVELS  # noqa: TC001
+
 
 class BaseKwikSettings(BaseSettings):
     """
@@ -37,7 +39,7 @@ class BaseKwikSettings(BaseSettings):
     BACKEND_WORKERS: int = 1
     HOTRELOAD: bool = False
     DEBUG: bool = False
-    LOG_LEVEL: str = "INFO"
+    LOG_LEVEL: LOG_LEVELS = "INFO"
 
     # Database settings
     POSTGRES_SERVER: str = "db"

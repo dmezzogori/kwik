@@ -42,8 +42,12 @@ Examples:
 
 import os
 import sys
+from typing import Literal
 
 from loguru import logger as _logger
+
+# Valid log levels
+LOG_LEVELS = Literal["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
 
 # Default format similar to the original CustomFormatter
 DEFAULT_FORMAT = "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name} [{file.name}:{line}] | {message}"
@@ -67,7 +71,7 @@ logger = _logger
 
 
 def configure_logging(
-    level: str = "INFO",
+    level: LOG_LEVELS = "INFO",
     format_string: str | None = None,
     *,
     colorize: bool = True,

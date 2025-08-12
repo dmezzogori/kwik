@@ -13,9 +13,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from starlette.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-from kwik.logging import logger
 from kwik.exceptions import KwikError
 from kwik.exceptions.handler import kwik_exception_handler
+from kwik.logging import logger
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
