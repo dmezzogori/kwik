@@ -5,12 +5,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, get_args
 
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import func, inspect, select
 
 from kwik.exceptions import DuplicatedEntityError, EntityNotFoundError
 from kwik.models import Base
 
-from .context import Context
+from .context import Context, UserCtx
 
 if TYPE_CHECKING:
     from sqlalchemy import Select
@@ -61,10 +61,23 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
             msg = "Model type must be specified via generic type parameters: AutoCRUD[Model, Create, Update]"
             raise ValueError(msg)
 
-        # TODO: check if hasattr works on SQLAlchemy attributes
-        # TODO: we can already check for consistency: if self.record_creator_user_id is True, then Ctx must be UserCtx, otherwise the subclass is wrongly setup
-        self.record_creator_user_id = hasattr(self.model, "creator_user_id")
-        self.record_modifier_user_id = hasattr(self.model, "last_modifier_user_id")
+        # Check for audit trail fields using SQLAlchemy introspection
+        model_columns = inspect(self.model).columns
+        self.record_creator_user_id = "creator_user_id" in model_columns
+        self.record_modifier_user_id = "last_modifier_user_id" in model_columns
+
+        # Validate consistency: if model has audit fields, Context must be UserCtx
+        if (self.record_creator_user_id or self.record_modifier_user_id) and bases is not None:
+            # Extract Context type from generic parameters to validate it's UserCtx
+            ctx_type = get_args(bases[0])[0] if get_args(bases[0]) else None
+            if ctx_type is not UserCtx:
+                msg = (
+                    f"Model {self.model.__name__} has audit trail fields (creator_user_id/last_modifier_user_id) "
+                    f"but Context parameter is {ctx_type.__name__ if ctx_type else 'unknown'}. "
+                    f"Use UserCtx as the first generic parameter: AutoCRUD[UserCtx, {self.model.__name__}, ...] "
+                    f"to ensure user information is available for audit trail functionality."
+                )
+                raise ValueError(msg)
 
     def get(self, *, id: int, context: Ctx) -> ModelType | None:  # noqa: A002
         """Get single record by primary key ID."""
