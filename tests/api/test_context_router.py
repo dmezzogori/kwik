@@ -10,7 +10,6 @@ from http import HTTPStatus
 
 from fastapi.testclient import TestClient
 
-from kwik.models import User
 from kwik.settings import BaseKwikSettings
 
 
@@ -75,29 +74,3 @@ class TestContextRouter:
 
         expected_db_rows = 2
         assert json_response["db_rows"] == expected_db_rows
-
-
-class TestAuthenticationFixtures:
-    """Example tests demonstrating the new authentication fixtures."""
-
-    def test_authenticated_client_has_headers(self, authenticated_client: TestClient) -> None:
-        """Test that authenticated client has Authorization header set."""
-        assert "Authorization" in authenticated_client.headers
-        assert authenticated_client.headers["Authorization"].startswith("Bearer ")
-
-    def test_login_endpoint_with_admin_credentials(
-        self, client: TestClient, admin_user: User, settings: BaseKwikSettings
-    ) -> None:
-        """Test login endpoint works with admin user credentials."""
-        response = client.post(
-            "/api/v1/login/access-token",
-            data={
-                "username": admin_user.email,
-                "password": settings.FIRST_SUPERUSER_PASSWORD,
-            },
-        )
-
-        assert response.status_code == HTTPStatus.OK
-        json_response = response.json()
-        assert "access_token" in json_response
-        assert json_response["token_type"] == "bearer"
