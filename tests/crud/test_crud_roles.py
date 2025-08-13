@@ -436,3 +436,181 @@ class TestRoleCRUD:
         assert permission_to_remove.id not in permission_ids
         assert permission_to_keep1.id in permission_ids
         assert permission_to_keep2.id in permission_ids
+
+    def test_remove_user_from_role_with_user(self, admin_context: UserCtx, no_user_context: NoUserCtx) -> None:
+        """Test removing existing user from role."""
+        role = create_test_role(name="Role With User", context=admin_context)
+        user = create_test_user(name="User To Remove", email="remove@test.com", context=no_user_context)
+
+        crud_roles.assign_user(role=role, user=user, context=admin_context)
+
+        admin_context.session.refresh(role)
+        users_before_removal = crud_roles.get_users_with(role=role)
+        user_ids_before = {u.id for u in users_before_removal}
+        assert user.id in user_ids_before
+
+        updated_role = crud_roles.remove_user(role=role, user=user, context=admin_context)
+
+        assert updated_role.id == role.id
+        assert updated_role.name == "Role With User"
+
+        admin_context.session.refresh(updated_role)
+        users_after_removal = crud_roles.get_users_with(role=updated_role)
+        user_ids_after = {u.id for u in users_after_removal}
+        assert user.id not in user_ids_after
+
+    def test_remove_user_from_role_without_user_idempotent(
+        self, admin_context: UserCtx, no_user_context: NoUserCtx
+    ) -> None:
+        """Test removing user from role that doesn't have it (idempotent operation)."""
+        role = create_test_role(name="Role Without User", context=admin_context)
+        user = create_test_user(name="Unassigned User", email="unassigned@test.com", context=no_user_context)
+
+        users_before = crud_roles.get_users_with(role=role)
+        user_ids_before = {u.id for u in users_before}
+        assert user.id not in user_ids_before
+
+        updated_role = crud_roles.remove_user(role=role, user=user, context=admin_context)
+
+        assert updated_role.id == role.id
+        assert updated_role.name == "Role Without User"
+
+        admin_context.session.refresh(updated_role)
+        users_after = crud_roles.get_users_with(role=updated_role)
+        user_ids_after = {u.id for u in users_after}
+        assert user.id not in user_ids_after
+        assert len(users_after) == len(users_before)
+
+    def test_remove_user_user_still_exists_after_removal(
+        self, admin_context: UserCtx, no_user_context: NoUserCtx
+    ) -> None:
+        """Test that user still exists after removal from role."""
+        role = create_test_role(name="Role To Remove User From", context=admin_context)
+        user = create_test_user(name="User That Still Exists", email="still_exists@test.com", context=no_user_context)
+
+        crud_roles.assign_user(role=role, user=user, context=admin_context)
+
+        crud_roles.remove_user(role=role, user=user, context=admin_context)
+
+        retrieved_user = admin_context.session.get(type(user), user.id)
+        assert retrieved_user is not None
+        assert retrieved_user.id == user.id
+        assert retrieved_user.name == "User That Still Exists"
+
+    def test_remove_user_role_with_multiple_users(self, admin_context: UserCtx, no_user_context: NoUserCtx) -> None:
+        """Test removing one user from role that has multiple users."""
+        expected_remaining_users = 2
+        role = create_test_role(name="Role With Multiple Users", context=admin_context)
+
+        user_to_remove = create_test_user(name="User To Remove", email="remove@test.com", context=no_user_context)
+        user_to_keep1 = create_test_user(name="User To Keep 1", email="keep1@test.com", context=no_user_context)
+        user_to_keep2 = create_test_user(name="User To Keep 2", email="keep2@test.com", context=no_user_context)
+
+        crud_roles.assign_user(role=role, user=user_to_remove, context=admin_context)
+        crud_roles.assign_user(role=role, user=user_to_keep1, context=admin_context)
+        crud_roles.assign_user(role=role, user=user_to_keep2, context=admin_context)
+
+        updated_role = crud_roles.remove_user(role=role, user=user_to_remove, context=admin_context)
+
+        admin_context.session.refresh(updated_role)
+        remaining_users = crud_roles.get_users_with(role=updated_role)
+        assert len(remaining_users) == expected_remaining_users
+
+        user_ids = {u.id for u in remaining_users}
+        assert user_to_remove.id not in user_ids
+        assert user_to_keep1.id in user_ids
+        assert user_to_keep2.id in user_ids
+
+    def test_remove_all_permissions_from_role_with_permissions(self, admin_context: UserCtx) -> None:
+        """Test removing all permissions from role that has permissions."""
+        initial_permissions_count = 3
+        role = create_test_role(name="Role With Permissions", context=admin_context)
+
+        permission1 = create_test_permission(name="Permission 1", context=admin_context)
+        permission2 = create_test_permission(name="Permission 2", context=admin_context)
+        permission3 = create_test_permission(name="Permission 3", context=admin_context)
+
+        crud_roles.assign_permission(role=role, permission=permission1, context=admin_context)
+        crud_roles.assign_permission(role=role, permission=permission2, context=admin_context)
+        crud_roles.assign_permission(role=role, permission=permission3, context=admin_context)
+
+        admin_context.session.refresh(role)
+        permissions_before_removal = crud_roles.get_permissions_assigned_to(role=role)
+        assert len(permissions_before_removal) == initial_permissions_count
+
+        updated_role = crud_roles.remove_all_permissions(role=role, context=admin_context)
+
+        assert updated_role.id == role.id
+        assert updated_role.name == "Role With Permissions"
+
+        admin_context.session.refresh(updated_role)
+        permissions_after_removal = crud_roles.get_permissions_assigned_to(role=updated_role)
+        assert len(permissions_after_removal) == 0
+        assert permissions_after_removal == []
+
+    def test_remove_all_permissions_from_role_with_no_permissions(self, admin_context: UserCtx) -> None:
+        """Test removing all permissions from role that has no permissions (idempotent operation)."""
+        role = create_test_role(name="Role Without Permissions", context=admin_context)
+
+        permissions_before = crud_roles.get_permissions_assigned_to(role=role)
+        assert len(permissions_before) == 0
+
+        updated_role = crud_roles.remove_all_permissions(role=role, context=admin_context)
+
+        assert updated_role.id == role.id
+        assert updated_role.name == "Role Without Permissions"
+
+        admin_context.session.refresh(updated_role)
+        permissions_after = crud_roles.get_permissions_assigned_to(role=updated_role)
+        assert len(permissions_after) == 0
+        assert permissions_after == []
+
+    def test_remove_all_permissions_permissions_still_exist_after_removal(self, admin_context: UserCtx) -> None:
+        """Test that permissions still exist after removal from role."""
+        role = create_test_role(name="Role To Remove All Permissions From", context=admin_context)
+
+        permission1 = create_test_permission(name="Permission That Still Exists 1", context=admin_context)
+        permission2 = create_test_permission(name="Permission That Still Exists 2", context=admin_context)
+
+        crud_roles.assign_permission(role=role, permission=permission1, context=admin_context)
+        crud_roles.assign_permission(role=role, permission=permission2, context=admin_context)
+
+        crud_roles.remove_all_permissions(role=role, context=admin_context)
+
+        retrieved_permission1 = admin_context.session.get(type(permission1), permission1.id)
+        retrieved_permission2 = admin_context.session.get(type(permission2), permission2.id)
+        assert retrieved_permission1 is not None
+        assert retrieved_permission2 is not None
+        assert retrieved_permission1.id == permission1.id
+        assert retrieved_permission2.id == permission2.id
+        assert retrieved_permission1.name == "Permission That Still Exists 1"
+        assert retrieved_permission2.name == "Permission That Still Exists 2"
+
+    def test_remove_all_permissions_role_with_mixed_permissions(self, admin_context: UserCtx) -> None:
+        """Test removing all permissions from role with multiple different permissions."""
+        initial_permissions_count = 5
+        role = create_test_role(name="Role With Mixed Permissions", context=admin_context)
+
+        permissions = []
+        for i in range(initial_permissions_count):
+            permission = create_test_permission(name=f"Mixed Permission {i}", context=admin_context)
+            permissions.append(permission)
+            crud_roles.assign_permission(role=role, permission=permission, context=admin_context)
+
+        admin_context.session.refresh(role)
+        permissions_before_removal = crud_roles.get_permissions_assigned_to(role=role)
+        assert len(permissions_before_removal) == initial_permissions_count
+
+        permission_ids_before = {perm.id for perm in permissions_before_removal}
+        for permission in permissions:
+            assert permission.id in permission_ids_before
+
+        updated_role = crud_roles.remove_all_permissions(role=role, context=admin_context)
+
+        admin_context.session.refresh(updated_role)
+        permissions_after_removal = crud_roles.get_permissions_assigned_to(role=updated_role)
+        assert len(permissions_after_removal) == 0
+
+        for permission in permissions:
+            retrieved_permission = admin_context.session.get(type(permission), permission.id)
+            assert retrieved_permission is not None
