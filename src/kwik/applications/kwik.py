@@ -8,13 +8,11 @@ from typing import TYPE_CHECKING
 
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
 from starlette.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-from kwik.exceptions import KwikError
-from kwik.exceptions.handler import kwik_exception_handler
+from kwik.database import create_engine, create_session_factory
+from kwik.exceptions import KwikError, kwik_exception_handler
 from kwik.logging import logger
 
 if TYPE_CHECKING:
@@ -43,26 +41,24 @@ def lifespan(settings: BaseKwikSettings) -> Callable[[FastAPI], AbstractAsyncCon
 
     Returns
     -------
-    Callable[[FastAPI], AsyncGenerator[None, None]]
+    Callable[[FastAPI], AbstractAsyncContextManager]
         An async context manager function that can be used as FastAPI's lifespan parameter.
 
     """
 
     @asynccontextmanager
     async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-        engine = create_engine(settings.SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)  # TODO: check parameters
-        # TODO: check parameters
-        SessionLocal = sessionmaker(bind=engine, expire_on_commit=False, class_=Session)  # noqa: N806
+        _engine = create_engine(settings=settings)
+        _session_local = create_session_factory(engine=_engine)
 
         # Store in app state for middleware access
         app.state.settings = settings
-        app.state.engine = engine
-        app.state.SessionLocal = SessionLocal
+        app.state.engine = _engine
+        app.state.SessionLocal = _session_local
 
         try:
-            if settings.APP_ENV == "development":
-                logger.debug("Kwik application lifespan started.")
-                logger.debug(f"Initializing Kwik application with settings: {pformat(settings.model_dump())}")
+            logger.debug("Kwik application lifespan started.")
+            logger.debug(f"Initializing Kwik application with settings: {pformat(settings.model_dump())}")
             yield
         finally:
             # Clean up app state
@@ -70,10 +66,9 @@ def lifespan(settings: BaseKwikSettings) -> Callable[[FastAPI], AbstractAsyncCon
             delattr(app.state, "engine")
             delattr(app.state, "SessionLocal")
 
-            engine.dispose()
+            _engine.dispose()
 
-            if settings.APP_ENV == "development":
-                logger.debug("Kwik application lifespan ended.")
+            logger.debug("Kwik application lifespan ended.")
 
     return _lifespan
 

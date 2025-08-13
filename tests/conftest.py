@@ -14,11 +14,10 @@ from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from testcontainers.postgres import PostgresContainer
 
 from kwik.crud import Context
+from kwik.database import create_engine, create_session
 from kwik.models import Base
 from kwik.settings import BaseKwikSettings
 from tests.utils import create_test_user
@@ -73,12 +72,7 @@ def settings(postgres: PostgresContainer) -> BaseKwikSettings:
 @pytest.fixture(scope="session", autouse=True)
 def engine(settings: BaseKwikSettings) -> Generator[Engine, None, None]:
     """Set up the database engine for testing."""
-    engine = create_engine(
-        url=settings.SQLALCHEMY_DATABASE_URI,
-        pool_pre_ping=True,
-        pool_size=settings.POSTGRES_MAX_CONNECTIONS // settings.BACKEND_WORKERS,
-        max_overflow=0,
-    )
+    engine = create_engine(settings)
 
     Base.metadata.create_all(bind=engine)
     yield engine
@@ -89,8 +83,7 @@ def engine(settings: BaseKwikSettings) -> Generator[Engine, None, None]:
 @pytest.fixture(scope="session")
 def admin_user(settings: BaseKwikSettings, engine: Engine) -> User:
     """Create shared admin user using settings credentials for all test suites."""
-    session_maker = sessionmaker(bind=engine, autoflush=False)
-    session = session_maker()
+    session = create_session(engine=engine)
     try:
         context = Context(session=session, user=None)
         user = create_test_user(
@@ -113,8 +106,7 @@ def admin_user(settings: BaseKwikSettings, engine: Engine) -> User:
 @pytest.fixture
 def db_session(engine: Engine) -> Generator[Session, None, None]:
     """Create a database session with transaction rollback for test isolation."""
-    session_maker = sessionmaker(bind=engine, autoflush=False)
-    session = session_maker()
+    session = create_session(engine=engine)
     try:
         yield session
     finally:
