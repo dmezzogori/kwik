@@ -9,7 +9,6 @@ from kwik.schemas import PermissionDefinition, PermissionUpdate
 
 from .autocrud import AutoCRUD
 from .context import UserCtx
-from .roles import crud_roles
 
 
 class CRUDPermission(AutoCRUD[UserCtx, Permission, PermissionDefinition, PermissionUpdate, int]):
@@ -19,64 +18,9 @@ class CRUDPermission(AutoCRUD[UserCtx, Permission, PermissionDefinition, Permiss
         """Get a permission by name, if any."""
         return context.session.query(Permission).filter(Permission.name == name).one_or_none()
 
-    def _get_permission_role_association(
-        self, *, permission_id: int, role_id: int, context: UserCtx
-    ) -> RolePermission | None:
-        """Get a single association between a permission and a role."""
-        return (
-            context.session.query(RolePermission)
-            .filter(
-                RolePermission.permission_id == permission_id,
-                RolePermission.role_id == role_id,
-            )
-            .one_or_none()
-        )
-
     def _get_role_associations(self, *, permission_id: int, context: UserCtx) -> list[RolePermission]:
         """Get all associations of a permission."""
         return context.session.query(RolePermission).filter(RolePermission.permission_id == permission_id).all()
-
-    def associate_role(self, *, role_id: int, permission_id: int, context: UserCtx) -> Permission:
-        """
-        Associate a permission to a role. Idempotent operation.
-
-        Raises:
-            NotFound: If the provided permission or role does not exist
-
-        """
-        permission = self.get_if_exist(entity_id=permission_id, context=context)
-        role = crud_roles.get_if_exist(entity_id=role_id, context=context)
-
-        role_permission_db = self._get_permission_role_association(
-            role_id=role.id, permission_id=permission.id, context=context
-        )
-        if role_permission_db is None:
-            # Create new role-permission association
-            role_permission_db = RolePermission(role_id=role.id, permission_id=permission.id)
-            context.session.add(role_permission_db)
-            context.session.flush()
-
-        return permission
-
-    def purge_role(self, *, role_id: int, permission_id: int, context: UserCtx) -> Permission:
-        """
-        Remove the association between a permission and a role. Idempotent operation.
-
-        Raises:
-            NotFound: If the provided permission or role does not exist
-
-        """
-        permission = self.get_if_exist(entity_id=permission_id, context=context)
-        role = crud_roles.get_if_exist(entity_id=role_id, context=context)
-
-        role_permission_db = self._get_permission_role_association(
-            role_id=role.id, permission_id=permission.id, context=context
-        )
-        if role_permission_db is not None:
-            context.session.delete(role_permission_db)
-            context.session.flush()
-
-        return permission
 
     def purge_all_roles(self, *, permission_id: int, context: UserCtx) -> Permission:
         """
@@ -87,7 +31,7 @@ class CRUDPermission(AutoCRUD[UserCtx, Permission, PermissionDefinition, Permiss
 
         """
         # Retrieve the permission
-        permission: Permission = self.get_if_exist(entity_id=permission_id, context=context)
+        permission = self.get_if_exist(entity_id=permission_id, context=context)
 
         # Retrieve all the roles associated with the permission
         for role_permission_db in self._get_role_associations(permission_id=permission.id, context=context):
