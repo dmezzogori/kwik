@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import select
 
-from kwik.core.security import get_password_hash, verify_password
 from kwik.exceptions import AuthenticationFailedError, InactiveUserError, UserNotFoundError
 from kwik.models import Permission, Role, User
 from kwik.schemas import UserPasswordChange, UserProfileUpdate, UserRegistration
+from kwik.security import get_password_hash, verify_password
 
 from .autocrud import AutoCRUD
 from .context import MaybeUserCtx

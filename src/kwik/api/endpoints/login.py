@@ -8,11 +8,11 @@ from fastapi import APIRouter, Body, Depends
 from fastapi.security import OAuth2PasswordRequestForm  # noqa: TC002
 
 from kwik.core.enum import Permissions
-from kwik.core.security import create_token, verify_password_reset_token
 from kwik.crud import crud_users
 from kwik.dependencies import NoUserContext, Settings, UserContext, current_token, current_user, has_permission
 from kwik.exceptions.base import TokenValidationError
 from kwik.schemas import UserProfile
+from kwik.security import create_token, verify_password_reset_token
 from kwik.typings import Token
 
 if TYPE_CHECKING:

@@ -7,8 +7,8 @@ from typing import Annotated
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
-from kwik.core.security import decode_token
 from kwik.schemas import TokenPayload
+from kwik.security import decode_token
 from kwik.settings import BaseKwikSettings
 
 from .settings import Settings  # noqa: TC001

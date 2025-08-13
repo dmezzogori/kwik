@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import jwt
 import pytest
 
-from kwik.core.security import ALGORITHM, generate_password_reset_token, verify_password_reset_token
+from kwik.security import ALGORITHM, generate_password_reset_token, verify_password_reset_token
 
 if TYPE_CHECKING:
     from kwik.settings import BaseKwikSettings
