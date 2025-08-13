@@ -188,3 +188,111 @@ class TestPermissionCRUD:
         assert "assignable_role" in assignable_role_names
         assert "assigned_role_1" not in assignable_role_names
         assert "assigned_role_2" not in assignable_role_names
+
+    def test_purge_all_roles(self, admin_context: UserCtx) -> None:
+        """Test purging all role associations from a permission."""
+        # Test constants
+        initial_role_count = 3
+        expected_roles_after_purge = 0
+
+        # Create test permission
+        permission = create_test_permission(name="test_permission_purge", context=admin_context)
+
+        # Create test roles
+        role1 = create_test_role(name="role_to_purge_1", context=admin_context)
+        role2 = create_test_role(name="role_to_purge_2", context=admin_context)
+        role3 = create_test_role(name="role_to_purge_3", context=admin_context)
+
+        # Assign all roles to permission
+        crud_roles.assign_permission(role=role1, permission=permission, context=admin_context)
+        crud_roles.assign_permission(role=role2, permission=permission, context=admin_context)
+        crud_roles.assign_permission(role=role3, permission=permission, context=admin_context)
+
+        # Verify initial state - permission has roles assigned
+        initial_assigned_roles = crud_permissions.get_roles_assigned_to(permission=permission)
+        assert len(initial_assigned_roles) == initial_role_count
+
+        # Purge all roles from permission
+        purged_permission = crud_permissions.purge_all_roles(permission_id=permission.id, context=admin_context)
+
+        # Assert permission is returned and still exists
+        assert purged_permission.id == permission.id
+        assert purged_permission.name == "test_permission_purge"
+
+        # Assert all role associations are removed
+        # Refresh the permission to get updated relationships
+        admin_context.session.refresh(purged_permission)
+        remaining_roles = crud_permissions.get_roles_assigned_to(permission=purged_permission)
+        assert len(remaining_roles) == expected_roles_after_purge
+
+        # Assert original roles still exist but are not associated
+        retrieved_role1 = crud_roles.get(entity_id=role1.id, context=admin_context)
+        retrieved_role2 = crud_roles.get(entity_id=role2.id, context=admin_context)
+        retrieved_role3 = crud_roles.get(entity_id=role3.id, context=admin_context)
+        assert retrieved_role1 is not None
+        assert retrieved_role2 is not None
+        assert retrieved_role3 is not None
+
+        # Verify all roles are now assignable to the permission
+        assignable_roles = crud_permissions.get_roles_assignable_to(permission=purged_permission, context=admin_context)
+        assignable_role_ids = {role.id for role in assignable_roles}
+        assert role1.id in assignable_role_ids
+        assert role2.id in assignable_role_ids
+        assert role3.id in assignable_role_ids
+
+    def test_purge_all_roles_nonexistent_permission_raises_error(self, admin_context: UserCtx) -> None:
+        """Test purging roles from non-existent permission raises EntityNotFoundError."""
+        nonexistent_permission_id = 99999
+
+        with pytest.raises(EntityNotFoundError):
+            crud_permissions.purge_all_roles(permission_id=nonexistent_permission_id, context=admin_context)
+
+    def test_delete_permission(self, admin_context: UserCtx) -> None:
+        """Test deleting a permission with role associations."""
+        # Test constants
+        initial_role_count = 2
+
+        # Create test permission
+        permission = create_test_permission(name="permission_to_delete", context=admin_context)
+
+        # Create test roles
+        role1 = create_test_role(name="role_with_deleted_permission_1", context=admin_context)
+        role2 = create_test_role(name="role_with_deleted_permission_2", context=admin_context)
+
+        # Assign roles to permission
+        crud_roles.assign_permission(role=role1, permission=permission, context=admin_context)
+        crud_roles.assign_permission(role=role2, permission=permission, context=admin_context)
+
+        # Verify initial state - permission exists and has roles
+        initial_assigned_roles = crud_permissions.get_roles_assigned_to(permission=permission)
+        assert len(initial_assigned_roles) == initial_role_count
+
+        # Delete the permission
+        deleted_permission = crud_permissions.delete(entity_id=permission.id, context=admin_context)
+
+        # Assert deleted permission is returned with correct data
+        assert deleted_permission.id == permission.id
+        assert deleted_permission.name == "permission_to_delete"
+
+        # Assert permission is completely removed from database
+        retrieved_permission = crud_permissions.get(entity_id=permission.id, context=admin_context)
+        assert retrieved_permission is None
+
+        # Assert original roles still exist
+        retrieved_role1 = crud_roles.get(entity_id=role1.id, context=admin_context)
+        retrieved_role2 = crud_roles.get(entity_id=role2.id, context=admin_context)
+        assert retrieved_role1 is not None
+        assert retrieved_role2 is not None
+
+        # Verify roles no longer have the deleted permission assigned
+        role1_permissions = crud_roles.get_permissions_assigned_to(role=retrieved_role1)
+        role2_permissions = crud_roles.get_permissions_assigned_to(role=retrieved_role2)
+        permission_ids = {perm.id for perm in role1_permissions + role2_permissions}
+        assert permission.id not in permission_ids
+
+    def test_delete_nonexistent_permission_raises_error(self, admin_context: UserCtx) -> None:
+        """Test deleting non-existent permission raises EntityNotFoundError."""
+        nonexistent_permission_id = 99999
+
+        with pytest.raises(EntityNotFoundError):
+            crud_permissions.delete(entity_id=nonexistent_permission_id, context=admin_context)
