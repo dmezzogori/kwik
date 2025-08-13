@@ -59,7 +59,7 @@ def main() -> None:
         settings = BaseKwikSettings()
 
         # Initialize Kwik application with default settings and standard API router
-        kwik_app = Kwik(settings, api_router)
+        kwik_app = Kwik(settings=settings, api_router=api_router)
         # Run the application (uvicorn will be used in development mode)
         run(kwik_app)
     else:

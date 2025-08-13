@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from kwik.settings import BaseKwikSettings
 
 
-def lifespan(settings: BaseKwikSettings) -> Callable[[FastAPI], AbstractAsyncContextManager]:
+def _make_lifespan(settings: BaseKwikSettings) -> Callable[[FastAPI], AbstractAsyncContextManager]:
     """
     Create a lifespan context manager for FastAPI application.
 
@@ -53,7 +53,6 @@ def lifespan(settings: BaseKwikSettings) -> Callable[[FastAPI], AbstractAsyncCon
 
         # Store in app state for middleware access
         app.state.settings = settings
-        app.state.engine = _engine
         app.state.SessionLocal = _session_local
 
         try:
@@ -63,7 +62,6 @@ def lifespan(settings: BaseKwikSettings) -> Callable[[FastAPI], AbstractAsyncCon
         finally:
             # Clean up app state
             delattr(app.state, "settings")
-            delattr(app.state, "engine")
             delattr(app.state, "SessionLocal")
 
             _engine.dispose()
@@ -81,7 +79,7 @@ class Kwik:
     It automatically registers all the endpoints from the api_router.
     """
 
-    def __init__(self, settings: BaseKwikSettings, api_router: APIRouter) -> None:
+    def __init__(self, *, settings: BaseKwikSettings, api_router: APIRouter) -> None:
         """Initialize Kwik application with API router."""
         self.settings = settings
         self._app = self._init_fastapi_app(api_router=api_router)
@@ -112,7 +110,7 @@ class Kwik:
             openapi_url=f"{self.settings.API_V1_STR}/openapi.json",
             debug=self.settings.DEBUG,
             redirect_slashes=False,
-            lifespan=lifespan(self.settings),
+            lifespan=_make_lifespan(self.settings),
         )
 
         app.add_middleware(ProxyHeadersMiddleware)
@@ -133,3 +131,6 @@ class Kwik:
         app.exception_handler(KwikError)(kwik_exception_handler)
 
         return app
+
+
+__all__ = ["Kwik"]
