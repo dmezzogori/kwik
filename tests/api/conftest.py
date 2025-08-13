@@ -5,23 +5,35 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
-from fastapi import status
+from fastapi import Request, status
 from fastapi.testclient import TestClient
 
 from kwik.api.api import api_router
 from kwik.applications import Kwik
+from kwik.database import session_scope
+from kwik.dependencies.session import _get_session
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+    from sqlalchemy.orm import Session as _Session
 
     from kwik.models import User
     from kwik.settings import BaseKwikSettings
 
 
+def _non_committing_get_session(request: Request) -> Generator[_Session, None, None]:
+    session: _Session = request.app.state.SessionLocal()
+    with session_scope(session=session, commit=False) as session:
+        yield session
+
+
 @pytest.fixture(scope="session")
 def kwik_app(settings: BaseKwikSettings) -> Kwik:
     """Set up the Kwik application for testing."""
-    return Kwik(settings, api_router)
+    kwik = Kwik(settings, api_router)
+    kwik.app.dependency_overrides[_get_session] = _non_committing_get_session
+    return kwik
 
 
 @pytest.fixture
