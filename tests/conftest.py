@@ -26,7 +26,6 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
     from sqlalchemy.engine import Engine
-    from sqlalchemy.orm import Session
 
     from kwik.models import User
 
@@ -100,15 +99,4 @@ def admin_user(settings: BaseKwikSettings, engine: Engine) -> User:
         _ = (user.id, user.name, user.surname, user.email, user.is_active, user.hashed_password)
         return user
     finally:
-        session.close()
-
-
-@pytest.fixture
-def db_session(engine: Engine) -> Generator[Session, None, None]:
-    """Create a database session with transaction rollback for test isolation."""
-    session = create_session(engine=engine)
-    try:
-        yield session
-    finally:
-        session.rollback()
         session.close()
