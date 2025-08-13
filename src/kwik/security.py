@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 import bcrypt
 import jwt
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from kwik.settings import BaseKwikSettings
     from kwik.typings import Token
 
-ALGORITHM = "HS256"
+ALGORITHM: Final[str] = "HS256"
 
 
 def create_token(
