@@ -60,7 +60,9 @@ class CRUDPermission(AutoCRUD[UserCtx, Permission, PermissionDefinition, Permiss
 
     def get_roles_assignable_to(self, *, permission: Permission, context: UserCtx) -> list[Role]:
         """Get all roles not assigned to the specified permission."""
-        stmt = select(Role).join(RolePermission).filter(RolePermission.permission_id != permission.id)
+        # Get all roles that do not have a role-permission association with this permission
+        assigned_role_ids_subq = select(RolePermission.role_id).where(RolePermission.permission_id == permission.id)
+        stmt = select(Role).where(Role.id.notin_(assigned_role_ids_subq))
         return list(context.session.execute(stmt).scalars().all())
 
 

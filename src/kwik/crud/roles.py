@@ -64,7 +64,11 @@ class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
 
         if existing is None:
             # Create new role-permission association
-            role_permission = RolePermission(role_id=role.id, permission_id=permission.id)
+            role_permission = RolePermission(
+                role_id=role.id,
+                permission_id=permission.id,
+                creator_user_id=context.user.id,
+            )
             context.session.add(role_permission)
             context.session.flush()
 
@@ -102,7 +106,11 @@ class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
 
         if existing is None:
             # Create new user-role association
-            user_role = UserRole(role_id=role.id, user_id=user.id)
+            user_role = UserRole(
+                role_id=role.id,
+                user_id=user.id,
+                creator_user_id=context.user.id,
+            )
             context.session.add(user_role)
             context.session.flush()
 

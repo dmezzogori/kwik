@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from kwik.crud import UserCtx, crud_permissions
+from kwik.crud import UserCtx, crud_permissions, crud_roles
 from kwik.exceptions import EntityNotFoundError
 from kwik.schemas import PermissionDefinition, PermissionUpdate
-from tests.utils import create_test_permission
+from tests.utils import create_test_permission, create_test_role
 
 
 class TestPermissionCRUD:
@@ -120,3 +120,71 @@ class TestPermissionCRUD:
         count, second_page = crud_permissions.get_multi(skip=page_limit, limit=page_limit, context=admin_context)
         assert count == total_permissions
         assert len(second_page) == remaining_permissions  # Remaining permissions
+
+    def test_get_roles_assigned_to(self, admin_context: UserCtx) -> None:
+        """Test getting roles assigned to a specific permission."""
+        # Test constants
+        expected_assigned_count = 2
+
+        # Create test permission
+        permission = create_test_permission(name="test_permission", context=admin_context)
+
+        # Create test roles
+        role1 = create_test_role(name="assigned_role_1", context=admin_context)
+        role2 = create_test_role(name="assigned_role_2", context=admin_context)
+        role3 = create_test_role(name="unassigned_role", context=admin_context)
+
+        # Assign roles to permission
+        crud_roles.assign_permission(role=role1, permission=permission, context=admin_context)
+        crud_roles.assign_permission(role=role2, permission=permission, context=admin_context)
+        # role3 is intentionally not assigned
+
+        # Get roles assigned to the permission
+        assigned_roles = crud_permissions.get_roles_assigned_to(permission=permission)
+
+        # Assert that only assigned roles are returned
+        assert len(assigned_roles) == expected_assigned_count
+        assigned_role_ids = {role.id for role in assigned_roles}
+        assert role1.id in assigned_role_ids
+        assert role2.id in assigned_role_ids
+        assert role3.id not in assigned_role_ids
+
+        # Verify role names for clarity
+        assigned_role_names = {role.name for role in assigned_roles}
+        assert "assigned_role_1" in assigned_role_names
+        assert "assigned_role_2" in assigned_role_names
+        assert "unassigned_role" not in assigned_role_names
+
+    def test_get_roles_assignable_to(self, admin_context: UserCtx) -> None:
+        """Test getting roles assignable to a specific permission."""
+        # Test constants
+        expected_assignable_count = 1
+
+        # Create test permission
+        permission = create_test_permission(name="test_permission", context=admin_context)
+
+        # Create test roles
+        role1 = create_test_role(name="assigned_role_1", context=admin_context)
+        role2 = create_test_role(name="assigned_role_2", context=admin_context)
+        role3 = create_test_role(name="assignable_role", context=admin_context)
+
+        # Assign some roles to permission
+        crud_roles.assign_permission(role=role1, permission=permission, context=admin_context)
+        crud_roles.assign_permission(role=role2, permission=permission, context=admin_context)
+        # role3 is intentionally not assigned
+
+        # Get roles assignable to the permission
+        assignable_roles = crud_permissions.get_roles_assignable_to(permission=permission, context=admin_context)
+
+        # Assert that only unassigned roles are returned
+        assert len(assignable_roles) == expected_assignable_count
+        assignable_role_ids = {role.id for role in assignable_roles}
+        assert role3.id in assignable_role_ids
+        assert role1.id not in assignable_role_ids
+        assert role2.id not in assignable_role_ids
+
+        # Verify role names for clarity
+        assignable_role_names = {role.name for role in assignable_roles}
+        assert "assignable_role" in assignable_role_names
+        assert "assigned_role_1" not in assignable_role_names
+        assert "assigned_role_2" not in assignable_role_names
