@@ -157,8 +157,9 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
             raise DuplicatedEntityError
         return obj_db
 
-    def update(self, *, db_obj: ModelType, obj_in: UpdateSchemaType, context: Ctx) -> ModelType:
-        """Update existing record with new data."""
+    def update(self, *, id: int, obj_in: UpdateSchemaType, context: Ctx) -> ModelType:  # noqa: A002
+        """Update existing record by ID with new data."""
+        db_obj = self.get_if_exist(id=id, context=context)
         update_data = obj_in.model_dump(exclude_unset=True)
 
         if context.user is not None and self.record_modifier_user_id:
@@ -174,10 +175,9 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
 
         return db_obj
 
-    # TODO: dedice wheter to use id or db_obj in update and delete method, and use it consistently
-    def delete(self, *, id: int, context: Ctx) -> ModelType | None:  # noqa: A002
+    def delete(self, *, id: int, context: Ctx) -> ModelType:  # noqa: A002
         """Delete record by ID and return the deleted object."""
-        obj = self.get(id=id, context=context)
+        obj = self.get_if_exist(id=id, context=context)
 
         context.session.delete(obj)
         context.session.flush()

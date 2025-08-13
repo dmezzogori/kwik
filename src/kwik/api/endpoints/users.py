@@ -60,7 +60,7 @@ def read_user_me(user: current_user) -> User:
 @users_router.put("/me", response_model=UserProfile)
 def update_myself(user: current_user, user_in: UserProfileUpdate, context: UserContext) -> User:
     """Update details of the logged in user."""
-    return crud_users.update(db_obj=user, obj_in=user_in, context=context)
+    return crud_users.update(id=user.id, obj_in=user_in, context=context)
 
 
 @users_router.get("/me/permissions", response_model=list[PermissionProfile])
@@ -98,8 +98,7 @@ def read_user_by_id(user_id: int, context: UserContext) -> User:
 )
 def update_user(user_id: int, user_in: UserProfileUpdate, context: UserContext) -> User:
     """Update a user."""
-    user = crud_users.get_if_exist(id=user_id, context=context)
-    return crud_users.update(db_obj=user, obj_in=user_in, context=context)
+    return crud_users.update(id=user_id, obj_in=user_in, context=context)
 
 
 @users_router.get(

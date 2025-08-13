@@ -60,8 +60,7 @@ def read_permission_by_id(permission_id: int, context: UserContext) -> Permissio
 )
 def update_permission(permission_id: int, permission_in: PermissionUpdate, context: UserContext) -> Permission:
     """Update a permission."""
-    permission = crud_permissions.get_if_exist(id=permission_id, context=context)
-    return crud_permissions.update(db_obj=permission, obj_in=permission_in, context=context)
+    return crud_permissions.update(id=permission_id, obj_in=permission_in, context=context)
 
 
 @permissions_router.get(

@@ -69,8 +69,7 @@ def read_role_by_id(role_id: int, context: UserContext) -> Role:
 )
 def update_role(role_id: int, role_in: RoleUpdate, context: UserContext) -> Role:
     """Update a role."""
-    role = crud_roles.get_if_exist(id=role_id, context=context)
-    return crud_roles.update(db_obj=role, obj_in=role_in, context=context)
+    return crud_roles.update(id=role_id, obj_in=role_in, context=context)
 
 
 @roles_router.delete(

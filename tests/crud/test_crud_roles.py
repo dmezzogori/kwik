@@ -47,7 +47,7 @@ class TestRoleCRUD:
 
         # Update the role
         update_data = RoleUpdate(name="Updated Role")
-        updated_role = crud_roles.update(db_obj=role, obj_in=update_data, context=admin_context)
+        updated_role = crud_roles.update(id=role.id, obj_in=update_data, context=admin_context)
 
         assert updated_role.id == role.id
         assert updated_role.name == "Updated Role"

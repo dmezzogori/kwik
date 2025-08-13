@@ -77,7 +77,7 @@ class TestPermissionCRUD:
 
         # Update the permission
         update_data = PermissionUpdate(name="updated_permission")
-        updated_permission = crud_permissions.update(db_obj=permission, obj_in=update_data, context=admin_context)
+        updated_permission = crud_permissions.update(id=permission.id, obj_in=update_data, context=admin_context)
 
         assert updated_permission.id == permission.id
         assert updated_permission.name == "updated_permission"

@@ -122,7 +122,7 @@ class TestUserCRUD:
             email="updated@example.com",
             is_active=False,
         )
-        updated_user = crud_users.update(db_obj=user, obj_in=update_data, context=no_user_context)
+        updated_user = crud_users.update(id=user.id, obj_in=update_data, context=no_user_context)
 
         assert updated_user.id == user.id
         assert updated_user.name == "updated_name"
