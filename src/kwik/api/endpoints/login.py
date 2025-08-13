@@ -56,7 +56,7 @@ def impersonate(
     context: UserContext,
 ) -> Token:
     """Impersonate a user."""
-    user_to_impersonate = crud_users.get_if_exist(id=user_id, context=context)
+    user_to_impersonate = crud_users.get_if_exist(entity_id=user_id, context=context)
     return create_token(user_id=user_to_impersonate.id, impersonator_user_id=user.id, settings=settings)
 
 

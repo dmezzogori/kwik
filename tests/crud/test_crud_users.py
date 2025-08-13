@@ -79,7 +79,7 @@ class TestUserCRUD:
         user = create_test_user(context=no_user_context)
 
         # Get the user by ID
-        retrieved_user = crud_users.get(id=user.id, context=no_user_context)
+        retrieved_user = crud_users.get(entity_id=user.id, context=no_user_context)
 
         assert retrieved_user is not None
         assert retrieved_user.id == user.id
@@ -87,11 +87,11 @@ class TestUserCRUD:
 
     def test_get_user_by_nonexistent_id_returns_none(self, no_user_context: NoUserCtx) -> None:
         """Test getting a user by non-existent ID returns None."""
-        retrieved_user = crud_users.get(id=99999, context=no_user_context)
+        retrieved_user = crud_users.get(entity_id=99999, context=no_user_context)
         assert retrieved_user is None
 
         with pytest.raises(EntityNotFoundError):
-            crud_users.get_if_exist(id=99999, context=no_user_context)
+            crud_users.get_if_exist(entity_id=99999, context=no_user_context)
 
     def test_get_user_by_email(self, no_user_context: NoUserCtx) -> None:
         """Test getting a user by email."""
@@ -122,7 +122,7 @@ class TestUserCRUD:
             email="updated@example.com",
             is_active=False,
         )
-        updated_user = crud_users.update(id=user.id, obj_in=update_data, context=no_user_context)
+        updated_user = crud_users.update(entity_id=user.id, obj_in=update_data, context=no_user_context)
 
         assert updated_user.id == user.id
         assert updated_user.name == "updated_name"
@@ -136,14 +136,14 @@ class TestUserCRUD:
         user = create_test_user(context=no_user_context)
 
         # Get the user using get_if_exist
-        retrieved_user = crud_users.get_if_exist(id=user.id, context=no_user_context)
+        retrieved_user = crud_users.get_if_exist(entity_id=user.id, context=no_user_context)
 
         assert retrieved_user.id == user.id
 
     def test_get_if_exist_with_nonexistent_user_raises_error(self, no_user_context: NoUserCtx) -> None:
         """Test get_if_exist with non-existent user raises NotFound."""
         with pytest.raises(EntityNotFoundError):
-            crud_users.get_if_exist(id=99999, context=no_user_context)
+            crud_users.get_if_exist(entity_id=99999, context=no_user_context)
 
     def test_get_multi_users(self, no_user_context: NoUserCtx) -> None:
         """Test getting multiple users with pagination."""
@@ -198,13 +198,13 @@ class TestUserCRUD:
         user_id = user.id
 
         # Delete the user
-        deleted_user = crud_users.delete(id=user_id, context=no_user_context)
+        deleted_user = crud_users.delete(entity_id=user_id, context=no_user_context)
 
         assert deleted_user is not None
         assert deleted_user.id == user_id
 
         # Verify user is deleted
-        retrieved_user = crud_users.get(id=user_id, context=no_user_context)
+        retrieved_user = crud_users.get(entity_id=user_id, context=no_user_context)
         assert retrieved_user is None
 
     def test_authenticate_with_valid_credentials(self, no_user_context: NoUserCtx) -> None:

@@ -11,7 +11,7 @@ from .autocrud import AutoCRUD
 from .context import UserCtx
 
 
-class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate]):
+class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
     """CRUD operations for roles with user and permission management."""
 
     def get_by_name(self, *, name: str, context: UserCtx) -> Role | None:

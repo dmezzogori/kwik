@@ -12,7 +12,7 @@ from .context import UserCtx
 from .roles import crud_roles
 
 
-class CRUDPermission(AutoCRUD[UserCtx, Permission, PermissionDefinition, PermissionUpdate]):
+class CRUDPermission(AutoCRUD[UserCtx, Permission, PermissionDefinition, PermissionUpdate, int]):
     """CRUD operations for permissions with role association management."""
 
     def get_by_name(self, *, name: str, context: UserCtx) -> Permission | None:
@@ -44,8 +44,8 @@ class CRUDPermission(AutoCRUD[UserCtx, Permission, PermissionDefinition, Permiss
             NotFound: If the provided permission or role does not exist
 
         """
-        permission = self.get_if_exist(id=permission_id, context=context)
-        role = crud_roles.get_if_exist(id=role_id, context=context)
+        permission = self.get_if_exist(entity_id=permission_id, context=context)
+        role = crud_roles.get_if_exist(entity_id=role_id, context=context)
 
         role_permission_db = self._get_permission_role_association(
             role_id=role.id, permission_id=permission.id, context=context
@@ -66,8 +66,8 @@ class CRUDPermission(AutoCRUD[UserCtx, Permission, PermissionDefinition, Permiss
             NotFound: If the provided permission or role does not exist
 
         """
-        permission = self.get_if_exist(id=permission_id, context=context)
-        role = crud_roles.get_if_exist(id=role_id, context=context)
+        permission = self.get_if_exist(entity_id=permission_id, context=context)
+        role = crud_roles.get_if_exist(entity_id=role_id, context=context)
 
         role_permission_db = self._get_permission_role_association(
             role_id=role.id, permission_id=permission.id, context=context
@@ -87,7 +87,7 @@ class CRUDPermission(AutoCRUD[UserCtx, Permission, PermissionDefinition, Permiss
 
         """
         # Retrieve the permission
-        permission: Permission = self.get_if_exist(id=permission_id, context=context)
+        permission: Permission = self.get_if_exist(entity_id=permission_id, context=context)
 
         # Retrieve all the roles associated with the permission
         for role_permission_db in self._get_role_associations(permission_id=permission.id, context=context):
@@ -97,7 +97,7 @@ class CRUDPermission(AutoCRUD[UserCtx, Permission, PermissionDefinition, Permiss
         context.session.flush()
         return permission
 
-    def delete(self, *, permission_id: int, context: UserCtx) -> Permission | None:
+    def delete(self, *, entity_id: int, context: UserCtx) -> Permission:
         """
         Delete a permission by id.
 
@@ -107,8 +107,8 @@ class CRUDPermission(AutoCRUD[UserCtx, Permission, PermissionDefinition, Permiss
             NotFound: If the provided permission does not exist
 
         """
-        self.purge_all_roles(permission_id=permission_id, context=context)
-        return super().delete(id=permission_id, context=context)
+        self.purge_all_roles(permission_id=entity_id, context=context)
+        return super().delete(entity_id=entity_id, context=context)
 
     def get_roles_assigned_to(self, *, permission: Permission) -> list[Role]:
         """Get all roles that have been assigned to a specific permission."""

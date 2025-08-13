@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-class _CRUDUsers(AutoCRUD[MaybeUserCtx, User, UserRegistration, UserProfileUpdate]):
+class _CRUDUsers(AutoCRUD[MaybeUserCtx, User, UserRegistration, UserProfileUpdate, int]):
     """CRUD operations for users with authentication and authorization support."""
 
     def get_by_email(self, *, email: str, context: MaybeUserCtx) -> User | None:
@@ -78,7 +78,7 @@ class _CRUDUsers(AutoCRUD[MaybeUserCtx, User, UserRegistration, UserProfileUpdat
 
     def change_password(self, *, user_id: int, obj_in: UserPasswordChange, context: MaybeUserCtx) -> User:
         """Change user password after validating old password."""
-        user_db = self.get(id=user_id, context=context)
+        user_db = self.get(entity_id=user_id, context=context)
 
         if not user_db:
             raise UserNotFoundError

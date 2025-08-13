@@ -47,7 +47,7 @@ class TestAutoCRUDValidation:
     def test_autocrud_with_audit_fields_and_userctx_succeeds(self) -> None:
         """Test that models with audit fields work with UserCtx."""
 
-        class ValidCRUD(AutoCRUD[UserCtx, ModelWithAuditFields, _CreateSchema, _UpdateSchema]):
+        class ValidCRUD(AutoCRUD[UserCtx, ModelWithAuditFields, _CreateSchema, _UpdateSchema, int]):
             pass
 
         # Should not raise any exception
@@ -62,7 +62,7 @@ class TestAutoCRUDValidation:
             match=r"Model ModelWithAuditFields has audit trail fields.*but Context parameter is NoUserCtx",
         ):
 
-            class InvalidCRUD(AutoCRUD[NoUserCtx, ModelWithAuditFields, _CreateSchema, _UpdateSchema]):
+            class InvalidCRUD(AutoCRUD[NoUserCtx, ModelWithAuditFields, _CreateSchema, _UpdateSchema, int]):
                 pass
 
             InvalidCRUD()
@@ -70,7 +70,7 @@ class TestAutoCRUDValidation:
     def test_autocrud_without_audit_fields_and_nouserctx_succeeds(self) -> None:
         """Test that models without audit fields work with NoUserCtx."""
 
-        class ValidCRUD(AutoCRUD[NoUserCtx, ModelWithoutAuditFields, _CreateSchema, _UpdateSchema]):
+        class ValidCRUD(AutoCRUD[NoUserCtx, ModelWithoutAuditFields, _CreateSchema, _UpdateSchema, int]):
             pass
 
         # Should not raise any exception
@@ -81,7 +81,7 @@ class TestAutoCRUDValidation:
     def test_autocrud_without_audit_fields_and_userctx_succeeds(self) -> None:
         """Test that models without audit fields also work with UserCtx."""
 
-        class ValidCRUD(AutoCRUD[UserCtx, ModelWithoutAuditFields, _CreateSchema, _UpdateSchema]):
+        class ValidCRUD(AutoCRUD[UserCtx, ModelWithoutAuditFields, _CreateSchema, _UpdateSchema, int]):
             pass
 
         # Should not raise any exception
@@ -104,7 +104,7 @@ class TestAutoCRUDValidation:
             match=r"Model ModelWithOnlyCreator has audit trail fields.*but Context parameter is NoUserCtx",
         ):
 
-            class InvalidCRUD(AutoCRUD[NoUserCtx, ModelWithOnlyCreator, _CreateSchema, _UpdateSchema]):
+            class InvalidCRUD(AutoCRUD[NoUserCtx, ModelWithOnlyCreator, _CreateSchema, _UpdateSchema, int]):
                 pass
 
             InvalidCRUD()
@@ -124,7 +124,7 @@ class TestAutoCRUDValidation:
             match=r"Model ModelWithOnlyModifier has audit trail fields.*but Context parameter is NoUserCtx",
         ):
 
-            class InvalidCRUD(AutoCRUD[NoUserCtx, ModelWithOnlyModifier, _CreateSchema, _UpdateSchema]):
+            class InvalidCRUD(AutoCRUD[NoUserCtx, ModelWithOnlyModifier, _CreateSchema, _UpdateSchema, int]):
                 pass
 
             InvalidCRUD()

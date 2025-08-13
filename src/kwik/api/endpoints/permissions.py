@@ -50,7 +50,7 @@ def create_permission(permission_in: PermissionDefinition, context: UserContext)
 )
 def read_permission_by_id(permission_id: int, context: UserContext) -> Permission:
     """Get a specific permission by id."""
-    return crud_permissions.get_if_exist(id=permission_id, context=context)
+    return crud_permissions.get_if_exist(entity_id=permission_id, context=context)
 
 
 @permissions_router.put(
@@ -60,7 +60,7 @@ def read_permission_by_id(permission_id: int, context: UserContext) -> Permissio
 )
 def update_permission(permission_id: int, permission_in: PermissionUpdate, context: UserContext) -> Permission:
     """Update a permission."""
-    return crud_permissions.update(id=permission_id, obj_in=permission_in, context=context)
+    return crud_permissions.update(entity_id=permission_id, obj_in=permission_in, context=context)
 
 
 @permissions_router.get(
@@ -75,7 +75,7 @@ def update_permission(permission_id: int, permission_in: PermissionUpdate, conte
 )
 def read_roles_by_permission(permission_id: int, context: UserContext) -> list[Role]:
     """Get roles associated to a permission."""
-    permission = crud_permissions.get_if_exist(id=permission_id, context=context)
+    permission = crud_permissions.get_if_exist(entity_id=permission_id, context=context)
     return crud_permissions.get_roles_assigned_to(permission=permission)
 
 
@@ -91,7 +91,7 @@ def read_roles_by_permission(permission_id: int, context: UserContext) -> list[R
 )
 def read_available_roles_for_permission(permission_id: int, context: UserContext) -> list[Role]:
     """Get all roles available to assign to the given permission."""
-    permission = crud_permissions.get_if_exist(id=permission_id, context=context)
+    permission = crud_permissions.get_if_exist(entity_id=permission_id, context=context)
     return crud_permissions.get_roles_assignable_to(permission=permission, context=context)
 
 
@@ -132,7 +132,7 @@ def delete_permission(permission_id: int, context: UserContext) -> Permission:
         * `permissions_management_delete`
 
     """
-    return crud_permissions.delete(permission_id=permission_id, context=context)
+    return crud_permissions.delete(entity_id=permission_id, context=context)
 
 
 __all__ = ["permissions_router"]

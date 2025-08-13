@@ -36,8 +36,7 @@ class NoDatabaseConnectionError(Exception):
     """Raised when no database connection is available."""
 
 
-# TODO: rename id methods' argument
-class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, UpdateSchemaType: BaseModel]:
+class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, UpdateSchemaType: BaseModel, PkType]:
     """Complete CRUD implementation combining create, read, update, and delete operations."""
 
     model: type[ModelType]
@@ -79,9 +78,9 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
                 )
                 raise ValueError(msg)
 
-    def get(self, *, id: int, context: Ctx) -> ModelType | None:  # noqa: A002
-        """Get single record by primary key ID."""
-        return context.session.get(self.model, id)
+    def get(self, *, entity_id: PkType, context: Ctx) -> ModelType | None:
+        """Get single record by primary key entity ID."""
+        return context.session.get(self.model, entity_id)
 
     def get_multi(
         self,
@@ -91,7 +90,7 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
         sort: ParsedSortingQuery | None = None,
         context: Ctx,
         **filters: str | float | bool,
-    ) -> tuple[int | None, list[ModelType]]:
+    ) -> tuple[int, list[ModelType]]:
         """Get multiple records with pagination, filtering, and sorting."""
         # Build base select statement
         stmt = select(self.model)
@@ -103,7 +102,7 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
 
         # Get count for pagination
         count_stmt = select(func.count()).select_from(stmt.subquery())
-        count = context.session.execute(count_stmt).scalar()
+        count = context.session.execute(count_stmt).scalar() or 0
 
         # Apply sorting if provided
         if sort is not None:
@@ -115,11 +114,11 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
 
         return count, list(result)
 
-    def get_if_exist(self, *, id: int, context: Ctx) -> ModelType:  # noqa: A002
-        """Get record by ID or raise NotFound exception if it doesn't exist."""
-        r = self.get(id=id, context=context)
+    def get_if_exist(self, *, entity_id: PkType, context: Ctx) -> ModelType:
+        """Get record by entity ID or raise NotFound exception if it doesn't exist."""
+        r = self.get(entity_id=entity_id, context=context)
         if r is None:
-            raise EntityNotFoundError(detail=f"Entity [{self.model.__tablename__}] with id={id} does not exist")
+            raise EntityNotFoundError(detail=f"Entity [{self.model.__tablename__}] with id={entity_id} does not exist")
         return r
 
     def create(self, *, obj_in: CreateSchemaType, context: Ctx) -> ModelType:
@@ -157,9 +156,9 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
             raise DuplicatedEntityError
         return obj_db
 
-    def update(self, *, id: int, obj_in: UpdateSchemaType, context: Ctx) -> ModelType:  # noqa: A002
-        """Update existing record by ID with new data."""
-        db_obj = self.get_if_exist(id=id, context=context)
+    def update(self, *, entity_id: PkType, obj_in: UpdateSchemaType, context: Ctx) -> ModelType:
+        """Update existing record by entity ID with new data."""
+        db_obj = self.get_if_exist(entity_id=entity_id, context=context)
         update_data = obj_in.model_dump(exclude_unset=True)
 
         if context.user is not None and self.record_modifier_user_id:
@@ -175,9 +174,9 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
 
         return db_obj
 
-    def delete(self, *, id: int, context: Ctx) -> ModelType:  # noqa: A002
-        """Delete record by ID and return the deleted object."""
-        obj = self.get_if_exist(id=id, context=context)
+    def delete(self, *, entity_id: PkType, context: Ctx) -> ModelType:
+        """Delete record by entity ID and return the deleted object."""
+        obj = self.get_if_exist(entity_id=entity_id, context=context)
 
         context.session.delete(obj)
         context.session.flush()

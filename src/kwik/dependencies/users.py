@@ -27,7 +27,7 @@ def _get_current_user(token: current_token, session: Session) -> User:
         raise AccessDeniedError
 
     context = Context(session=session, user=None)
-    user = crud_users.get(id=token.sub, context=context)
+    user = crud_users.get(entity_id=token.sub, context=context)
     if user is None:
         raise AccessDeniedError
 

@@ -60,7 +60,7 @@ def read_user_me(user: current_user) -> User:
 @users_router.put("/me", response_model=UserProfile)
 def update_myself(user: current_user, user_in: UserProfileUpdate, context: UserContext) -> User:
     """Update details of the logged in user."""
-    return crud_users.update(id=user.id, obj_in=user_in, context=context)
+    return crud_users.update(entity_id=user.id, obj_in=user_in, context=context)
 
 
 @users_router.get("/me/permissions", response_model=list[PermissionProfile])
@@ -88,7 +88,7 @@ def update_my_password(user: current_user, obj_in: UserPasswordChange, context: 
 )
 def read_user_by_id(user_id: int, context: UserContext) -> User:
     """Get a specific user by id."""
-    return crud_users.get_if_exist(id=user_id, context=context)
+    return crud_users.get_if_exist(entity_id=user_id, context=context)
 
 
 @users_router.put(
@@ -98,7 +98,7 @@ def read_user_by_id(user_id: int, context: UserContext) -> User:
 )
 def update_user(user_id: int, user_in: UserProfileUpdate, context: UserContext) -> User:
     """Update a user."""
-    return crud_users.update(id=user_id, obj_in=user_in, context=context)
+    return crud_users.update(entity_id=user_id, obj_in=user_in, context=context)
 
 
 @users_router.get(
@@ -111,7 +111,7 @@ def update_user(user_id: int, user_in: UserProfileUpdate, context: UserContext) 
 )
 def read_user_permissions(user_id: int, context: UserContext) -> list[Permission]:
     """Get all effective permissions for a specific user."""
-    user = crud_users.get_if_exist(id=user_id, context=context)
+    user = crud_users.get_if_exist(entity_id=user_id, context=context)
     return crud_users.get_permissions(user=user)
 
 
@@ -127,7 +127,7 @@ def read_user_permissions(user_id: int, context: UserContext) -> list[Permission
 )
 def read_user_roles(user_id: int, context: UserContext) -> list[Role]:
     """Get all roles assigned to a specific user."""
-    user = crud_users.get_if_exist(id=user_id, context=context)
+    user = crud_users.get_if_exist(entity_id=user_id, context=context)
     return crud_users.get_roles(user=user)
 
 

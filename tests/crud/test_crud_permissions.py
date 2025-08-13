@@ -42,7 +42,7 @@ class TestPermissionCRUD:
         permission = create_test_permission(name="get_test_permission", context=admin_context)
 
         # Get the permission by ID
-        retrieved_permission = crud_permissions.get(id=permission.id, context=admin_context)
+        retrieved_permission = crud_permissions.get(entity_id=permission.id, context=admin_context)
 
         assert retrieved_permission is not None
         assert retrieved_permission.id == permission.id
@@ -50,7 +50,7 @@ class TestPermissionCRUD:
 
     def test_get_permission_by_nonexistent_id_returns_none(self, admin_context: UserCtx) -> None:
         """Test getting a permission by non-existent ID returns None."""
-        retrieved_permission = crud_permissions.get(id=99999, context=admin_context)
+        retrieved_permission = crud_permissions.get(entity_id=99999, context=admin_context)
         assert retrieved_permission is None
 
     def test_get_permission_by_name(self, admin_context: UserCtx) -> None:
@@ -77,7 +77,7 @@ class TestPermissionCRUD:
 
         # Update the permission
         update_data = PermissionUpdate(name="updated_permission")
-        updated_permission = crud_permissions.update(id=permission.id, obj_in=update_data, context=admin_context)
+        updated_permission = crud_permissions.update(entity_id=permission.id, obj_in=update_data, context=admin_context)
 
         assert updated_permission.id == permission.id
         assert updated_permission.name == "updated_permission"
@@ -88,14 +88,14 @@ class TestPermissionCRUD:
         permission = create_test_permission(context=admin_context)
 
         # Get the permission using get_if_exist
-        retrieved_permission = crud_permissions.get_if_exist(id=permission.id, context=admin_context)
+        retrieved_permission = crud_permissions.get_if_exist(entity_id=permission.id, context=admin_context)
 
         assert retrieved_permission.id == permission.id
 
     def test_get_if_exist_with_nonexistent_permission_raises_error(self, admin_context: UserCtx) -> None:
         """Test get_if_exist with non-existent permission raises EntityNotFoundError."""
         with pytest.raises(EntityNotFoundError):
-            crud_permissions.get_if_exist(id=99999, context=admin_context)
+            crud_permissions.get_if_exist(entity_id=99999, context=admin_context)
 
     def test_get_multi_permissions(self, admin_context: UserCtx) -> None:
         """Test getting multiple permissions with pagination."""

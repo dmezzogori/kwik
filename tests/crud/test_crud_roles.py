@@ -29,7 +29,7 @@ class TestRoleCRUD:
         role = create_test_role(name="Get Test Role", context=admin_context)
 
         # Get the role by ID
-        retrieved_role = crud_roles.get(id=role.id, context=admin_context)
+        retrieved_role = crud_roles.get(entity_id=role.id, context=admin_context)
 
         assert retrieved_role is not None
         assert retrieved_role.id == role.id
@@ -37,7 +37,7 @@ class TestRoleCRUD:
 
     def test_get_role_by_nonexistent_id_returns_none(self, admin_context: UserCtx) -> None:
         """Test getting a role by non-existent ID returns None."""
-        retrieved_role = crud_roles.get(id=99999, context=admin_context)
+        retrieved_role = crud_roles.get(entity_id=99999, context=admin_context)
         assert retrieved_role is None
 
     def test_update_role(self, admin_context: UserCtx) -> None:
@@ -47,7 +47,7 @@ class TestRoleCRUD:
 
         # Update the role
         update_data = RoleUpdate(name="Updated Role")
-        updated_role = crud_roles.update(id=role.id, obj_in=update_data, context=admin_context)
+        updated_role = crud_roles.update(entity_id=role.id, obj_in=update_data, context=admin_context)
 
         assert updated_role.id == role.id
         assert updated_role.name == "Updated Role"
@@ -59,14 +59,14 @@ class TestRoleCRUD:
         role = create_test_role(context=admin_context)
 
         # Get the role using get_if_exist
-        retrieved_role = crud_roles.get_if_exist(id=role.id, context=admin_context)
+        retrieved_role = crud_roles.get_if_exist(entity_id=role.id, context=admin_context)
 
         assert retrieved_role.id == role.id
 
     def test_get_if_exist_with_nonexistent_role_raises_error(self, admin_context: UserCtx) -> None:
         """Test get_if_exist with non-existent role raises NotFound."""
         with pytest.raises(EntityNotFoundError):
-            crud_roles.get_if_exist(id=99999, context=admin_context)
+            crud_roles.get_if_exist(entity_id=99999, context=admin_context)
 
     def test_get_multi_roles(self, admin_context: UserCtx) -> None:
         """Test getting multiple roles with pagination."""
@@ -114,11 +114,11 @@ class TestRoleCRUD:
         role_id = role.id
 
         # Delete the role (hard delete)
-        deleted_role = crud_roles.delete(id=role_id, context=admin_context)
+        deleted_role = crud_roles.delete(entity_id=role_id, context=admin_context)
 
         assert deleted_role is not None
         assert deleted_role.id == role_id
 
         # Verify role is completely removed
-        retrieved_role = crud_roles.get(id=role_id, context=admin_context)
+        retrieved_role = crud_roles.get(entity_id=role_id, context=admin_context)
         assert retrieved_role is None  # Should not be found after deletion
