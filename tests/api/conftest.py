@@ -59,7 +59,7 @@ def admin_token(admin_user: User, client: TestClient, settings: BaseKwikSettings
 
 
 @pytest.fixture
-def authenticated_client(client: TestClient, admin_token: str) -> TestClient:
+def admin_client(client: TestClient, admin_token: str) -> TestClient:
     """TestClient pre-configured with admin authentication headers."""
     client.headers = {
         **client.headers,
