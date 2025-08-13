@@ -17,7 +17,7 @@ import pytest
 from testcontainers.postgres import PostgresContainer
 
 from kwik.crud import Context
-from kwik.database import create_engine, create_session
+from kwik.database import create_engine, create_session, session_scope
 from kwik.models import Base
 from kwik.settings import BaseKwikSettings
 from tests.utils import create_test_user
@@ -83,20 +83,14 @@ def engine(settings: BaseKwikSettings) -> Generator[Engine, None, None]:
 def admin_user(settings: BaseKwikSettings, engine: Engine) -> User:
     """Create shared admin user using settings credentials for all test suites."""
     session = create_session(engine=engine)
-    try:
-        context = Context(session=session, user=None)
+    with session_scope(session=session, commit=True) as session:
         user = create_test_user(
             name="admin",
             surname="admin",
             email=settings.FIRST_SUPERUSER,
             password=settings.FIRST_SUPERUSER_PASSWORD,
             is_active=True,
-            context=context,
+            context=Context(session=session, user=None),
         )
-        # Commit the user to make it available to all test suites
-        session.commit()
-        # Access all attributes to ensure they're loaded before closing session
         _ = (user.id, user.name, user.surname, user.email, user.is_active, user.hashed_password)
         return user
-    finally:
-        session.close()

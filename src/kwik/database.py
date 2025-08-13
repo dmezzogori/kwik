@@ -11,12 +11,15 @@ Functions:
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from sqlalchemy.engine import Engine
 
     from kwik.settings import BaseKwikSettings
@@ -92,4 +95,18 @@ def create_session(engine: Engine) -> Session:
     return session_maker()
 
 
-__all__ = ["create_engine", "create_session", "create_session_factory"]
+@contextmanager
+def session_scope(*, session: Session, commit: bool = False) -> Generator[Session, None, None]:
+    """Provide a transactional scope around a series of operations."""
+    try:
+        yield session
+        if commit:
+            session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+__all__ = ["create_engine", "create_session", "create_session_factory", "session_scope"]

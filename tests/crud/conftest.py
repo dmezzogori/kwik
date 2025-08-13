@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from kwik.crud import Context, NoUserCtx, UserCtx
-from kwik.database import create_session
+from kwik.database import create_session, session_scope
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -22,11 +22,8 @@ if TYPE_CHECKING:
 def session(engine: Engine) -> Generator[Session, None, None]:
     """Create a database session with transaction rollback for test isolation."""
     session = create_session(engine=engine)
-    try:
+    with session_scope(session=session, commit=False) as session:
         yield session
-    finally:
-        session.rollback()
-        session.close()
 
 
 @pytest.fixture

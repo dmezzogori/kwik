@@ -11,20 +11,13 @@ from typing import Annotated
 from fastapi import Depends, Request
 from sqlalchemy.orm import Session as _Session
 
-from kwik.logging import logger
+from kwik.database import session_scope
 
 
 def _get_session(request: Request) -> Generator[_Session, None, None]:
     session: _Session = request.app.state.SessionLocal()
-    try:
+    with session_scope(session=session, commit=True) as session:
         yield session
-        session.commit()
-    except Exception as e:
-        logger.exception(f"Error occurred while processing request: {e}")
-        session.rollback()
-        raise
-    finally:
-        session.close()
 
 
 Session = Annotated[_Session, Depends(_get_session)]
