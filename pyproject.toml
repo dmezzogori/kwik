@@ -63,6 +63,7 @@ omit = [
     "tests/*",
     "src/kwik/applications/uvicorn.py",
     "src/kwik/applications/gunicorn.py",
+    "src/kwik/__main__.py",
 ]
 
 [tool.coverage.report]
