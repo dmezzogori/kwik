@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from kwik.crud import NoUserCtx, UserCtx, crud_roles
+from kwik.crud import NoUserCtx, UserCtx, crud_roles, crud_users
 from kwik.exceptions import EntityNotFoundError
 from kwik.schemas import RoleDefinition, RoleUpdate
-from tests.utils import create_test_role, create_test_user
+from tests.utils import create_test_permission, create_test_role, create_test_user
 
 
 class TestRoleCRUD:
@@ -230,3 +230,209 @@ class TestRoleCRUD:
         assert user2.id in user_ids
         minimum_expected_users = 2
         assert len(users_without_role) >= minimum_expected_users
+
+    def test_get_permissions_assignable_to_role_with_some_permissions(self, admin_context: UserCtx) -> None:
+        """Test getting permissions assignable to role that has some permissions assigned."""
+        role = create_test_role(name="Role With Some Permissions", context=admin_context)
+
+        assigned_permission = create_test_permission(name="Assigned Permission", context=admin_context)
+        unassigned_permission = create_test_permission(name="Unassigned Permission", context=admin_context)
+
+        crud_roles.assign_permission(role=role, permission=assigned_permission, context=admin_context)
+
+        assignable_permissions = crud_roles.get_permissions_assignable_to(role=role, context=admin_context)
+
+        permission_ids = {permission.id for permission in assignable_permissions}
+        assert unassigned_permission.id in permission_ids
+        assert assigned_permission.id not in permission_ids
+
+    def test_get_permissions_assignable_to_role_with_no_permissions(self, admin_context: UserCtx) -> None:
+        """Test getting permissions assignable to role that has no permissions assigned."""
+        role = create_test_role(name="Role With No Permissions", context=admin_context)
+
+        permission1 = create_test_permission(name="Available Permission 1", context=admin_context)
+        permission2 = create_test_permission(name="Available Permission 2", context=admin_context)
+
+        assignable_permissions = crud_roles.get_permissions_assignable_to(role=role, context=admin_context)
+
+        assignable_permission_ids = {permission.id for permission in assignable_permissions}
+        assert permission1.id in assignable_permission_ids
+        assert permission2.id in assignable_permission_ids
+
+    def test_get_permissions_assignable_to_role_with_all_permissions(self, admin_context: UserCtx) -> None:
+        """Test getting permissions assignable to role that has all permissions assigned."""
+        role = create_test_role(name="Role With All Permissions", context=admin_context)
+
+        permission1 = create_test_permission(name="All Permission 1", context=admin_context)
+        permission2 = create_test_permission(name="All Permission 2", context=admin_context)
+
+        crud_roles.assign_permission(role=role, permission=permission1, context=admin_context)
+        crud_roles.assign_permission(role=role, permission=permission2, context=admin_context)
+
+        assignable_permissions = crud_roles.get_permissions_assignable_to(role=role, context=admin_context)
+
+        assert len(assignable_permissions) == 0
+
+        permission_ids = {permission.id for permission in assignable_permissions}
+        assert permission1.id not in permission_ids
+        assert permission2.id not in permission_ids
+
+    def test_get_permissions_assignable_to_no_permissions_in_database(self, admin_context: UserCtx) -> None:
+        """Test getting permissions assignable to role when no permissions exist in database."""
+        role = create_test_role(name="Role With No Available Permissions", context=admin_context)
+
+        assignable_permissions = crud_roles.get_permissions_assignable_to(role=role, context=admin_context)
+
+        assert len(assignable_permissions) == 0
+        assert assignable_permissions == []
+
+    def test_deprecate_role_with_multiple_users(self, admin_context: UserCtx, no_user_context: NoUserCtx) -> None:
+        """Test deprecating role that has multiple users assigned."""
+        expected_users_count = 3
+        role = create_test_role(name="Role To Deprecate", context=admin_context)
+
+        user1 = create_test_user(name="User1", email="user1@test.com", context=no_user_context)
+        user2 = create_test_user(name="User2", email="user2@test.com", context=no_user_context)
+        user3 = create_test_user(name="User3", email="user3@test.com", context=no_user_context)
+
+        crud_roles.assign_user(role=role, user=user1, context=admin_context)
+        crud_roles.assign_user(role=role, user=user2, context=admin_context)
+        crud_roles.assign_user(role=role, user=user3, context=admin_context)
+
+        admin_context.session.refresh(role)
+        users_before_deprecation = crud_roles.get_users_with(role=role)
+        assert len(users_before_deprecation) == expected_users_count
+
+        deprecated_role = crud_roles.deprecate(role=role, context=admin_context)
+
+        assert deprecated_role.id == role.id
+        assert deprecated_role.name == "Role To Deprecate"
+
+        admin_context.session.refresh(deprecated_role)
+        users_after_deprecation = crud_roles.get_users_with(role=deprecated_role)
+        assert len(users_after_deprecation) == 0
+
+        retrieved_user1 = crud_users.get(entity_id=user1.id, context=admin_context)
+        retrieved_user2 = crud_users.get(entity_id=user2.id, context=admin_context)
+        retrieved_user3 = crud_users.get(entity_id=user3.id, context=admin_context)
+        assert retrieved_user1 is not None
+        assert retrieved_user2 is not None
+        assert retrieved_user3 is not None
+
+    def test_deprecate_role_with_no_users(self, admin_context: UserCtx) -> None:
+        """Test deprecating role that has no users assigned."""
+        role = create_test_role(name="Role With No Users To Deprecate", context=admin_context)
+
+        users_before_deprecation = crud_roles.get_users_with(role=role)
+        assert len(users_before_deprecation) == 0
+
+        deprecated_role = crud_roles.deprecate(role=role, context=admin_context)
+
+        assert deprecated_role.id == role.id
+        assert deprecated_role.name == "Role With No Users To Deprecate"
+
+        admin_context.session.refresh(deprecated_role)
+        users_after_deprecation = crud_roles.get_users_with(role=deprecated_role)
+        assert len(users_after_deprecation) == 0
+
+    def test_deprecate_role_still_exists_after_deprecation(
+        self,
+        admin_context: UserCtx,
+        no_user_context: NoUserCtx,
+    ) -> None:
+        """Test that role still exists after deprecation but with no users."""
+        role = create_test_role(name="Role That Still Exists", context=admin_context)
+        user = create_test_user(name="User", email="user@test.com", context=no_user_context)
+
+        crud_roles.assign_user(role=role, user=user, context=admin_context)
+
+        deprecated_role = crud_roles.deprecate(role=role, context=admin_context)
+
+        retrieved_role = admin_context.session.get(type(role), role.id)
+        assert retrieved_role is not None
+        assert retrieved_role.id == deprecated_role.id
+        assert retrieved_role.name == "Role That Still Exists"
+        assert retrieved_role.is_active == role.is_active
+
+        admin_context.session.refresh(retrieved_role)
+        assert len(crud_roles.get_users_with(role=retrieved_role)) == 0
+
+    def test_remove_permission_from_role_with_permission(self, admin_context: UserCtx) -> None:
+        """Test removing existing permission from role."""
+        role = create_test_role(name="Role With Permission", context=admin_context)
+        permission = create_test_permission(name="Permission To Remove", context=admin_context)
+
+        crud_roles.assign_permission(role=role, permission=permission, context=admin_context)
+
+        admin_context.session.refresh(role)
+        permissions_before_removal = crud_roles.get_permissions_assigned_to(role=role)
+        permission_ids_before = {perm.id for perm in permissions_before_removal}
+        assert permission.id in permission_ids_before
+
+        updated_role = crud_roles.remove_permission(role=role, permission=permission, context=admin_context)
+
+        assert updated_role.id == role.id
+        assert updated_role.name == "Role With Permission"
+
+        admin_context.session.refresh(updated_role)
+        permissions_after_removal = crud_roles.get_permissions_assigned_to(role=updated_role)
+        permission_ids_after = {perm.id for perm in permissions_after_removal}
+        assert permission.id not in permission_ids_after
+
+    def test_remove_permission_from_role_without_permission_idempotent(self, admin_context: UserCtx) -> None:
+        """Test removing permission from role that doesn't have it (idempotent operation)."""
+        role = create_test_role(name="Role Without Permission", context=admin_context)
+        permission = create_test_permission(name="Unassigned Permission", context=admin_context)
+
+        permissions_before = crud_roles.get_permissions_assigned_to(role=role)
+        permission_ids_before = {perm.id for perm in permissions_before}
+        assert permission.id not in permission_ids_before
+
+        updated_role = crud_roles.remove_permission(role=role, permission=permission, context=admin_context)
+
+        assert updated_role.id == role.id
+        assert updated_role.name == "Role Without Permission"
+
+        admin_context.session.refresh(updated_role)
+        permissions_after = crud_roles.get_permissions_assigned_to(role=updated_role)
+        permission_ids_after = {perm.id for perm in permissions_after}
+        assert permission.id not in permission_ids_after
+        assert len(permissions_after) == len(permissions_before)
+
+    def test_remove_permission_permission_still_exists_after_removal(self, admin_context: UserCtx) -> None:
+        """Test that permission still exists after removal from role."""
+        role = create_test_role(name="Role To Remove Permission From", context=admin_context)
+        permission = create_test_permission(name="Permission That Still Exists", context=admin_context)
+
+        crud_roles.assign_permission(role=role, permission=permission, context=admin_context)
+
+        crud_roles.remove_permission(role=role, permission=permission, context=admin_context)
+
+        retrieved_permission = admin_context.session.get(type(permission), permission.id)
+        assert retrieved_permission is not None
+        assert retrieved_permission.id == permission.id
+        assert retrieved_permission.name == "Permission That Still Exists"
+
+    def test_remove_permission_role_with_multiple_permissions(self, admin_context: UserCtx) -> None:
+        """Test removing one permission from role that has multiple permissions."""
+        expected_remaining_permissions = 2
+        role = create_test_role(name="Role With Multiple Permissions", context=admin_context)
+
+        permission_to_remove = create_test_permission(name="Permission To Remove", context=admin_context)
+        permission_to_keep1 = create_test_permission(name="Permission To Keep 1", context=admin_context)
+        permission_to_keep2 = create_test_permission(name="Permission To Keep 2", context=admin_context)
+
+        crud_roles.assign_permission(role=role, permission=permission_to_remove, context=admin_context)
+        crud_roles.assign_permission(role=role, permission=permission_to_keep1, context=admin_context)
+        crud_roles.assign_permission(role=role, permission=permission_to_keep2, context=admin_context)
+
+        updated_role = crud_roles.remove_permission(role=role, permission=permission_to_remove, context=admin_context)
+
+        admin_context.session.refresh(updated_role)
+        remaining_permissions = crud_roles.get_permissions_assigned_to(role=updated_role)
+        assert len(remaining_permissions) == expected_remaining_permissions
+
+        permission_ids = {perm.id for perm in remaining_permissions}
+        assert permission_to_remove.id not in permission_ids
+        assert permission_to_keep1.id in permission_ids
+        assert permission_to_keep2.id in permission_ids

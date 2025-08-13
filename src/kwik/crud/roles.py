@@ -38,7 +38,9 @@ class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
 
     def get_permissions_assignable_to(self, *, role: Role, context: UserCtx) -> list[Permission]:
         """Get all permissions not assigned to the specified role."""
-        stmt = select(Permission).join(RolePermission).filter(RolePermission.role_id != role.id)
+        # Get all permissions that are NOT assigned to this specific role
+        assigned_permission_ids = select(RolePermission.permission_id).filter(RolePermission.role_id == role.id)
+        stmt = select(Permission).filter(Permission.id.not_in(assigned_permission_ids))
         return list(context.session.execute(stmt).scalars().all())
 
     def deprecate(self, *, role: Role, context: UserCtx) -> Role:
