@@ -409,3 +409,108 @@ class TestUserCRUD:
         # Check has_roles (should be False)
         result = crud_users.has_roles(user=user, roles=["some_role"])
         assert not result
+
+    def test_get_multi_with_sort_ascending(self, no_user_context: NoUserCtx) -> None:
+        """Test get_multi with ascending sort on name field."""
+        create_test_user(name="Alice", email="alice@test.com", context=no_user_context)
+        create_test_user(name="Bob", email="bob@test.com", context=no_user_context)
+        create_test_user(name="Charlie", email="charlie@test.com", context=no_user_context)
+
+        sort_params = [("name", "asc")]
+        count, sorted_users = crud_users.get_multi(sort=sort_params, context=no_user_context)
+
+        user_names = [user.name for user in sorted_users]
+
+        alice_idx = user_names.index("Alice")
+        bob_idx = user_names.index("Bob")
+        charlie_idx = user_names.index("Charlie")
+
+        assert alice_idx < bob_idx < charlie_idx
+
+    def test_get_multi_with_sort_descending(self, no_user_context: NoUserCtx) -> None:
+        """Test get_multi with descending sort on name field."""
+        create_test_user(name="Alice", email="alice2@test.com", context=no_user_context)
+        create_test_user(name="Bob", email="bob2@test.com", context=no_user_context)
+        create_test_user(name="Charlie", email="charlie2@test.com", context=no_user_context)
+
+        sort_params = [("name", "desc")]
+        count, sorted_users = crud_users.get_multi(sort=sort_params, context=no_user_context)
+
+        user_names = [user.name for user in sorted_users]
+
+        alice_idx = user_names.index("Alice")
+        bob_idx = user_names.index("Bob")
+        charlie_idx = user_names.index("Charlie")
+
+        assert charlie_idx < bob_idx < alice_idx
+
+    def test_get_multi_with_multi_field_sort(self, no_user_context: NoUserCtx) -> None:
+        """Test get_multi with multi-field sorting (name desc, then id asc)."""
+        create_test_user(name="Alice", email="alice1@test.com", context=no_user_context)
+        create_test_user(name="Alice", email="alice2@test.com", context=no_user_context)
+        create_test_user(name="Bob", email="bob1@test.com", context=no_user_context)
+
+        sort_params = [("name", "desc"), ("id", "asc")]
+        count, sorted_users = crud_users.get_multi(sort=sort_params, context=no_user_context)
+
+        filtered_users = [u for u in sorted_users if u.name in ["Alice", "Bob"]]
+
+        min_expected_users = 3
+        alice_count = 2
+        assert len(filtered_users) >= min_expected_users
+        assert filtered_users[0].name == "Bob"
+
+        alice_users = [u for u in filtered_users if u.name == "Alice"]
+        assert len(alice_users) == alice_count
+        assert alice_users[0].id < alice_users[1].id
+
+    def test_get_multi_with_sort_and_pagination(self, no_user_context: NoUserCtx) -> None:
+        """Test get_multi with sorting combined with pagination."""
+        user_names = ["Alpha", "Beta", "Gamma", "Delta"]
+        created_users = []
+        for name in user_names:
+            user = create_test_user(name=name, email=f"{name.lower()}@test.com", context=no_user_context)
+            created_users.append(user)
+
+        sort_params = [("name", "asc")]
+        page_size = 2
+
+        count, first_page = crud_users.get_multi(skip=0, limit=page_size, sort=sort_params, context=no_user_context)
+        count, second_page = crud_users.get_multi(
+            skip=page_size, limit=page_size, sort=sort_params, context=no_user_context
+        )
+
+        first_page_names = [user.name for user in first_page if user.name in user_names]
+        second_page_names = [user.name for user in second_page if user.name in user_names]
+
+        all_sorted_names = first_page_names + second_page_names
+        expected_order = ["Alpha", "Beta", "Gamma", "Delta"]
+
+        for expected_name in expected_order:
+            assert expected_name in all_sorted_names
+
+        first_expected_idx = all_sorted_names.index("Alpha")
+        beta_idx = all_sorted_names.index("Beta")
+        assert first_expected_idx < beta_idx
+
+    def test_get_multi_with_sort_and_filters(self, no_user_context: NoUserCtx) -> None:
+        """Test get_multi with sorting combined with filters."""
+        create_test_user(name="ActiveA", email="activea@test.com", is_active=True, context=no_user_context)
+        create_test_user(name="ActiveB", email="activeb@test.com", is_active=True, context=no_user_context)
+        create_test_user(name="InactiveC", email="inactivec@test.com", is_active=False, context=no_user_context)
+
+        sort_params = [("name", "desc")]
+        count, filtered_sorted_users = crud_users.get_multi(sort=sort_params, is_active=True, context=no_user_context)
+
+        active_test_users = [u for u in filtered_sorted_users if u.name.startswith("Active")]
+
+        expected_active_count = 2
+        assert len(active_test_users) == expected_active_count
+
+        active_names = [u.name for u in active_test_users]
+        assert "ActiveB" in active_names
+        assert "ActiveA" in active_names
+
+        activeb_idx = active_names.index("ActiveB")
+        activea_idx = active_names.index("ActiveA")
+        assert activeb_idx < activea_idx

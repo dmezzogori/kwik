@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from kwik.crud import UserCtx, crud_permissions, crud_roles
-from kwik.exceptions import EntityNotFoundError
+from kwik.exceptions import DuplicatedEntityError, EntityNotFoundError
 from kwik.schemas import PermissionDefinition, PermissionUpdate
 from tests.utils import create_test_permission, create_test_role
 
@@ -296,3 +296,137 @@ class TestPermissionCRUD:
 
         with pytest.raises(EntityNotFoundError):
             crud_permissions.delete(entity_id=nonexistent_permission_id, context=admin_context)
+
+    def test_create_if_not_exist_creates_new_permission(self, admin_context: UserCtx) -> None:
+        """Test create_if_not_exist creates new permission when not found."""
+        permission_data = PermissionDefinition(name="new_permission")
+
+        filters = {"name": "new_permission"}
+        created_permission = crud_permissions.create_if_not_exist(
+            filters=filters, obj_in=permission_data, context=admin_context
+        )
+
+        assert created_permission.name == "new_permission"
+        assert created_permission.id is not None
+
+    def test_create_if_not_exist_returns_existing_permission(self, admin_context: UserCtx) -> None:
+        """Test create_if_not_exist returns existing permission when found."""
+        existing_permission = create_test_permission(name="existing_permission", context=admin_context)
+
+        permission_data = PermissionDefinition(name="different_permission")
+        filters = {"name": "existing_permission"}
+
+        returned_permission = crud_permissions.create_if_not_exist(
+            filters=filters, obj_in=permission_data, context=admin_context
+        )
+
+        assert returned_permission.id == existing_permission.id
+        assert returned_permission.name == "existing_permission"
+
+    def test_create_if_not_exist_with_raise_on_error_creates_new(self, admin_context: UserCtx) -> None:
+        """Test create_if_not_exist with raise_on_error=True creates new permission when not found."""
+        permission_data = PermissionDefinition(name="unique_new_permission")
+
+        filters = {"name": "unique_new_permission"}
+        created_permission = crud_permissions.create_if_not_exist(
+            filters=filters, obj_in=permission_data, context=admin_context, raise_on_error=True
+        )
+
+        assert created_permission.name == "unique_new_permission"
+        assert created_permission.id is not None
+
+    def test_create_if_not_exist_with_raise_on_error_raises_for_existing(self, admin_context: UserCtx) -> None:
+        """Test create_if_not_exist with raise_on_error=True raises error when permission exists."""
+        create_test_permission(name="already_exists_permission", context=admin_context)
+
+        permission_data = PermissionDefinition(name="different_name_permission")
+        filters = {"name": "already_exists_permission"}
+        with pytest.raises(DuplicatedEntityError):
+            crud_permissions.create_if_not_exist(
+                filters=filters, obj_in=permission_data, context=admin_context, raise_on_error=True
+            )
+
+    def test_get_multi_with_sort_ascending(self, admin_context: UserCtx) -> None:
+        """Test get_multi with ascending sort on name field."""
+        create_test_permission(name="alpha_permission", context=admin_context)
+        create_test_permission(name="beta_permission", context=admin_context)
+        create_test_permission(name="gamma_permission", context=admin_context)
+
+        sort_params = [("name", "asc")]
+        count, sorted_permissions = crud_permissions.get_multi(sort=sort_params, context=admin_context)
+
+        permission_names = [perm.name for perm in sorted_permissions]
+
+        alpha_idx = permission_names.index("alpha_permission")
+        beta_idx = permission_names.index("beta_permission")
+        gamma_idx = permission_names.index("gamma_permission")
+
+        assert alpha_idx < beta_idx < gamma_idx
+
+    def test_get_multi_with_sort_descending(self, admin_context: UserCtx) -> None:
+        """Test get_multi with descending sort on name field."""
+        create_test_permission(name="alpha_permission_2", context=admin_context)
+        create_test_permission(name="beta_permission_2", context=admin_context)
+        create_test_permission(name="gamma_permission_2", context=admin_context)
+
+        sort_params = [("name", "desc")]
+        count, sorted_permissions = crud_permissions.get_multi(sort=sort_params, context=admin_context)
+
+        permission_names = [perm.name for perm in sorted_permissions]
+
+        alpha_idx = permission_names.index("alpha_permission_2")
+        beta_idx = permission_names.index("beta_permission_2")
+        gamma_idx = permission_names.index("gamma_permission_2")
+
+        assert gamma_idx < beta_idx < alpha_idx
+
+    def test_get_multi_with_multi_field_sort(self, admin_context: UserCtx) -> None:
+        """Test get_multi with multi-field sorting (name desc, then id asc)."""
+        create_test_permission(name="same_name_permission", context=admin_context)
+        create_test_permission(name="same_name_permission", context=admin_context)
+        create_test_permission(name="different_name_permission", context=admin_context)
+
+        sort_params = [("name", "desc"), ("id", "asc")]
+        count, sorted_permissions = crud_permissions.get_multi(sort=sort_params, context=admin_context)
+
+        test_permissions = [
+            p for p in sorted_permissions if p.name in ["same_name_permission", "different_name_permission"]
+        ]
+
+        min_expected_permissions = 3
+        same_name_count = 2
+        assert len(test_permissions) >= min_expected_permissions
+        assert test_permissions[0].name == "same_name_permission"
+
+        same_name_permissions = [p for p in test_permissions if p.name == "same_name_permission"]
+        assert len(same_name_permissions) == same_name_count
+        assert same_name_permissions[0].id < same_name_permissions[1].id
+
+    def test_get_multi_with_sort_and_pagination(self, admin_context: UserCtx) -> None:
+        """Test get_multi with sorting combined with pagination."""
+        permission_names = ["alpha_paginated", "beta_paginated", "gamma_paginated", "delta_paginated"]
+        created_permissions = []
+        for name in permission_names:
+            permission = create_test_permission(name=name, context=admin_context)
+            created_permissions.append(permission)
+
+        sort_params = [("name", "asc")]
+        page_size = 2
+
+        count, first_page = crud_permissions.get_multi(skip=0, limit=page_size, sort=sort_params, context=admin_context)
+        count, second_page = crud_permissions.get_multi(
+            skip=page_size, limit=page_size, sort=sort_params, context=admin_context
+        )
+
+        first_page_names = [perm.name for perm in first_page if perm.name in permission_names]
+        second_page_names = [perm.name for perm in second_page if perm.name in permission_names]
+
+        all_sorted_names = first_page_names + second_page_names
+        expected_order = ["alpha_paginated", "beta_paginated", "gamma_paginated", "delta_paginated"]
+
+        for expected_name in expected_order:
+            assert expected_name in all_sorted_names
+
+        alpha_idx = all_sorted_names.index("alpha_paginated")
+        beta_idx = all_sorted_names.index("beta_paginated")
+        assert alpha_idx < beta_idx

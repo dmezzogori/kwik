@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from kwik.crud import NoUserCtx, UserCtx, crud_roles, crud_users
-from kwik.exceptions import EntityNotFoundError
+from kwik.exceptions import DuplicatedEntityError, EntityNotFoundError
 from kwik.schemas import RoleDefinition, RoleUpdate
 from tests.utils import create_test_permission, create_test_role, create_test_user
 
@@ -586,6 +586,54 @@ class TestRoleCRUD:
         assert retrieved_permission1.name == "Permission That Still Exists 1"
         assert retrieved_permission2.name == "Permission That Still Exists 2"
 
+    def test_create_if_not_exist_creates_new_role(self, admin_context: UserCtx) -> None:
+        """Test create_if_not_exist creates new role when not found."""
+        role_data = RoleDefinition(name="New Role", is_active=True)
+
+        filters = {"name": "New Role"}
+        created_role = crud_roles.create_if_not_exist(filters=filters, obj_in=role_data, context=admin_context)
+
+        assert created_role.name == "New Role"
+        assert created_role.is_active is True
+        assert created_role.id is not None
+
+    def test_create_if_not_exist_returns_existing_role(self, admin_context: UserCtx) -> None:
+        """Test create_if_not_exist returns existing role when found."""
+        existing_role = create_test_role(name="Existing Role", is_active=True, context=admin_context)
+
+        role_data = RoleDefinition(name="Different Role", is_active=False)
+        filters = {"name": "Existing Role"}
+
+        returned_role = crud_roles.create_if_not_exist(filters=filters, obj_in=role_data, context=admin_context)
+
+        assert returned_role.id == existing_role.id
+        assert returned_role.name == "Existing Role"
+        assert returned_role.is_active is True
+
+    def test_create_if_not_exist_with_raise_on_error_creates_new(self, admin_context: UserCtx) -> None:
+        """Test create_if_not_exist with raise_on_error=True creates new role when not found."""
+        role_data = RoleDefinition(name="Unique New Role", is_active=True)
+
+        filters = {"name": "Unique New Role"}
+        created_role = crud_roles.create_if_not_exist(
+            filters=filters, obj_in=role_data, context=admin_context, raise_on_error=True
+        )
+
+        assert created_role.name == "Unique New Role"
+        assert created_role.is_active is True
+        assert created_role.id is not None
+
+    def test_create_if_not_exist_with_raise_on_error_raises_for_existing(self, admin_context: UserCtx) -> None:
+        """Test create_if_not_exist with raise_on_error=True raises error when role exists."""
+        create_test_role(name="Already Exists", context=admin_context)
+
+        role_data = RoleDefinition(name="Different Name", is_active=False)
+        filters = {"name": "Already Exists"}
+        with pytest.raises(DuplicatedEntityError):
+            crud_roles.create_if_not_exist(
+                filters=filters, obj_in=role_data, context=admin_context, raise_on_error=True
+            )
+
     def test_remove_all_permissions_role_with_mixed_permissions(self, admin_context: UserCtx) -> None:
         """Test removing all permissions from role with multiple different permissions."""
         initial_permissions_count = 5
@@ -614,3 +662,108 @@ class TestRoleCRUD:
         for permission in permissions:
             retrieved_permission = admin_context.session.get(type(permission), permission.id)
             assert retrieved_permission is not None
+
+    def test_get_multi_with_sort_ascending(self, admin_context: UserCtx) -> None:
+        """Test get_multi with ascending sort on name field."""
+        create_test_role(name="Alpha Role", context=admin_context)
+        create_test_role(name="Beta Role", context=admin_context)
+        create_test_role(name="Gamma Role", context=admin_context)
+
+        sort_params = [("name", "asc")]
+        count, sorted_roles = crud_roles.get_multi(sort=sort_params, context=admin_context)
+
+        role_names = [role.name for role in sorted_roles]
+
+        alpha_idx = role_names.index("Alpha Role")
+        beta_idx = role_names.index("Beta Role")
+        gamma_idx = role_names.index("Gamma Role")
+
+        assert alpha_idx < beta_idx < gamma_idx
+
+    def test_get_multi_with_sort_descending(self, admin_context: UserCtx) -> None:
+        """Test get_multi with descending sort on name field."""
+        create_test_role(name="Alpha Role 2", context=admin_context)
+        create_test_role(name="Beta Role 2", context=admin_context)
+        create_test_role(name="Gamma Role 2", context=admin_context)
+
+        sort_params = [("name", "desc")]
+        count, sorted_roles = crud_roles.get_multi(sort=sort_params, context=admin_context)
+
+        role_names = [role.name for role in sorted_roles]
+
+        alpha_idx = role_names.index("Alpha Role 2")
+        beta_idx = role_names.index("Beta Role 2")
+        gamma_idx = role_names.index("Gamma Role 2")
+
+        assert gamma_idx < beta_idx < alpha_idx
+
+    def test_get_multi_with_multi_field_sort(self, admin_context: UserCtx) -> None:
+        """Test get_multi with multi-field sorting (name desc, then id asc)."""
+        create_test_role(name="Same Name", context=admin_context)
+        create_test_role(name="Same Name", context=admin_context)
+        create_test_role(name="Different Name", context=admin_context)
+
+        sort_params = [("name", "desc"), ("id", "asc")]
+        count, sorted_roles = crud_roles.get_multi(sort=sort_params, context=admin_context)
+
+        test_roles = [r for r in sorted_roles if r.name in ["Same Name", "Different Name"]]
+
+        min_expected_roles = 3
+        same_name_count = 2
+        assert len(test_roles) >= min_expected_roles
+        assert test_roles[0].name == "Same Name"
+
+        same_name_roles = [r for r in test_roles if r.name == "Same Name"]
+        assert len(same_name_roles) == same_name_count
+        assert same_name_roles[0].id < same_name_roles[1].id
+
+    def test_get_multi_with_sort_and_pagination(self, admin_context: UserCtx) -> None:
+        """Test get_multi with sorting combined with pagination."""
+        role_names = ["Alpha Paginated", "Beta Paginated", "Gamma Paginated", "Delta Paginated"]
+        created_roles = []
+        for name in role_names:
+            role = create_test_role(name=name, context=admin_context)
+            created_roles.append(role)
+
+        sort_params = [("name", "asc")]
+        page_size = 2
+
+        count, first_page = crud_roles.get_multi(skip=0, limit=page_size, sort=sort_params, context=admin_context)
+        count, second_page = crud_roles.get_multi(
+            skip=page_size, limit=page_size, sort=sort_params, context=admin_context
+        )
+
+        first_page_names = [role.name for role in first_page if role.name in role_names]
+        second_page_names = [role.name for role in second_page if role.name in role_names]
+
+        all_sorted_names = first_page_names + second_page_names
+        expected_order = ["Alpha Paginated", "Beta Paginated", "Gamma Paginated", "Delta Paginated"]
+
+        for expected_name in expected_order:
+            assert expected_name in all_sorted_names
+
+        alpha_idx = all_sorted_names.index("Alpha Paginated")
+        beta_idx = all_sorted_names.index("Beta Paginated")
+        assert alpha_idx < beta_idx
+
+    def test_get_multi_with_sort_and_filters(self, admin_context: UserCtx) -> None:
+        """Test get_multi with sorting combined with filters."""
+        create_test_role(name="Active Z", is_active=True, context=admin_context)
+        create_test_role(name="Active A", is_active=True, context=admin_context)
+        create_test_role(name="Inactive B", is_active=False, context=admin_context)
+
+        sort_params = [("name", "desc")]
+        count, filtered_sorted_roles = crud_roles.get_multi(sort=sort_params, is_active=True, context=admin_context)
+
+        active_test_roles = [r for r in filtered_sorted_roles if r.name.startswith("Active")]
+
+        expected_active_count = 2
+        assert len(active_test_roles) == expected_active_count
+
+        active_names = [r.name for r in active_test_roles]
+        assert "Active Z" in active_names
+        assert "Active A" in active_names
+
+        active_z_idx = active_names.index("Active Z")
+        active_a_idx = active_names.index("Active A")
+        assert active_z_idx < active_a_idx
