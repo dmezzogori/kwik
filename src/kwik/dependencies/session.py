@@ -18,6 +18,7 @@ def _get_session(request: Request) -> Generator[_Session, None, None]:
     session: _Session = request.app.state.SessionLocal()
     try:
         yield session
+        session.commit()
     except Exception as e:
         logger.exception(f"Error occurred while processing request: {e}")
         session.rollback()
