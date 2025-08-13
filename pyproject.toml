@@ -59,7 +59,11 @@ markers = [
 ]
 
 [tool.coverage.run]
-omit = ["tests/*"]
+omit = [
+    "tests/*",
+    "src/kwik/applications/uvicorn.py",
+    "src/kwik/applications/gunicorn.py",
+]
 
 [tool.coverage.report]
 exclude_lines = [
