@@ -113,7 +113,6 @@ def run(kwik_app: str | Kwik) -> None:
             log_level=settings.LOG_LEVEL.lower(),  # Logging verbosity
             reload=reload,  # Hot-reload for development (file watching)
             http="httptools",  # Use httptools for better HTTP parsing performance
-            ws="websockets",  # WebSocket implementation for real-time features
             proxy_headers=True,  # Handle X-Forwarded-* headers (reverse proxy support)
             workers=workers,  # Number of worker processes (usually 1 in development)
         )
