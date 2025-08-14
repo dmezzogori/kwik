@@ -1,13 +1,8 @@
 """Pydantic schemas for role validation."""
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
-
-class RoleBase(BaseModel):
-    """Base schema for role data with common fields."""
-
-    name: str | None = None
-    is_active: bool | None = True
+from .mixins import ORMMixin
 
 
 class RoleDefinition(BaseModel):
@@ -17,23 +12,18 @@ class RoleDefinition(BaseModel):
     is_active: bool
 
 
-class RoleUpdate(RoleBase):
+class RoleUpdate(BaseModel):
     """Schema for updating existing roles."""
 
     name: str | None = None
     is_active: bool | None = None
 
 
-class RoleInDBBase(RoleBase):
-    """Base schema for roles stored in database with ID."""
-
-    id: int | None = None
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class RoleProfile(RoleInDBBase):
+class RoleProfile(ORMMixin):
     """Schema for role profile information."""
+
+    name: str
+    is_active: bool
 
 
 class RolePermissionAssignment(BaseModel):
