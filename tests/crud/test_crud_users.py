@@ -147,7 +147,7 @@ class TestUserCRUD:
 
     def test_get_multi_users(self, no_user_context: NoUserCtx) -> None:
         """Test getting multiple users with pagination."""
-        initial_count = 2  # the admin user and one regular user
+        initial_count = 4  # the admin user, one regular user, and the seeding users
 
         # Test constants
         test_users = 5

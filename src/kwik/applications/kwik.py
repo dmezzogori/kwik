@@ -59,7 +59,7 @@ def _make_lifespan(
         _session_local = create_session_factory(engine=_engine)
 
         if seed_db is not None:
-            with session_scope(session=_session_local()) as _session:
+            with session_scope(session=_session_local(), commit=True) as _session:
                 seed_db(_session, settings)
 
         # Store in app state for middleware access
