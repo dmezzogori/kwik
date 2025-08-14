@@ -2,16 +2,22 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from pydantic import BaseModel, EmailStr, model_validator
+from pydantic.types import StringConstraints
 
 from .mixins import ORMMixin
+
+_UserName = Annotated[str, StringConstraints(min_length=1)]
+_UserSurname = Annotated[str, StringConstraints(min_length=1)]
 
 
 class UserRegistration(BaseModel):
     """Schema for new user registration with required fields."""
 
-    name: str
-    surname: str
+    name: _UserName
+    surname: _UserSurname
     email: EmailStr
     password: str
     is_active: bool = True
@@ -20,8 +26,8 @@ class UserRegistration(BaseModel):
 class UserProfileUpdate(BaseModel):
     """Schema for updating user profile information."""
 
-    name: str | None = None
-    surname: str | None = None
+    name: _UserName | None = None
+    surname: _UserSurname | None = None
     email: EmailStr | None = None
     is_active: bool | None = None
 
@@ -45,7 +51,7 @@ class UserPasswordChange(BaseModel):
 class UserProfile(ORMMixin):
     """Schema for user profile data."""
 
-    name: str
-    surname: str
+    name: _UserName
+    surname: _UserSurname
     email: EmailStr
     is_active: bool
