@@ -139,7 +139,7 @@ class TestUsersRouter:
 
         # Try to create duplicate
         response2 = admin_client.post("/api/v1/users/", json=user_data)
-        assert response2.status_code == HTTPStatus.PRECONDITION_FAILED
+        assert response2.status_code == HTTPStatus.CONFLICT
 
     def test_create_user_invalid_email(self, admin_client: TestClient) -> None:
         """Test creating user with invalid email format fails."""

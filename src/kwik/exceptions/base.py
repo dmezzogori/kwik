@@ -25,7 +25,7 @@ class DuplicatedEntityError(KwikError):
 
     def __init__(self, detail: str = "Entity already exists") -> None:
         """Initialize duplicated entity exception with custom detail message."""
-        super().__init__(status_code=status.HTTP_412_PRECONDITION_FAILED, detail=detail)
+        super().__init__(status_code=status.HTTP_409_CONFLICT, detail=detail)
 
 
 class AccessDeniedError(KwikError):
