@@ -17,79 +17,16 @@ from typing import TYPE_CHECKING
 import jwt
 import pytest
 
-from kwik.core.enum import Permissions
-from kwik.crud import Context, crud_roles
-from kwik.database import create_session, session_scope
 from kwik.security import generate_password_reset_token
-from tests.utils import create_test_permission, create_test_role, create_test_user
 
 if TYPE_CHECKING:
     from fastapi.testclient import TestClient
-    from sqlalchemy.engine import Engine
-    from sqlalchemy.orm import Session
 
     from kwik.models import User
     from kwik.settings import BaseKwikSettings
 
 # Constants for magic values
 MIN_JWT_TOKEN_LENGTH = 50
-
-
-@pytest.fixture(scope="session")
-def regular_user(engine: Engine) -> User:
-    """Create a regular user for testing impersonation functionality."""
-    session = create_session(engine=engine)
-    with session_scope(session=session, commit=False) as session:
-        user = create_test_user(
-            name="regular",
-            surname="user",
-            email="regular@example.com",
-            password="regularpassword123",
-            is_active=True,
-            context=Context(session=session, user=None),
-        )
-        _ = (user.id, user.name, user.surname, user.email)
-        return user
-
-
-@pytest.fixture
-def admin_with_impersonation_permission(engine: Engine, admin_user: User) -> User:
-    """Set up admin user with impersonation permission using CRUD operations."""
-    session = create_session(engine=engine)
-    with session_scope(session=session, commit=False) as session:
-        context = Context(session=session, user=admin_user)
-
-        # Create impersonation permission
-        permission = create_test_permission(name=Permissions.impersonification.value, context=context)
-
-        # Create admin role
-        role = create_test_role(name="admin_role", is_active=True, context=context)
-
-        # Create all necessary permissions for role/permission management
-        permissions_to_create = [
-            Permissions.roles_management_create,
-            Permissions.roles_management_read,
-            Permissions.roles_management_update,
-            Permissions.permissions_management_create,
-            Permissions.permissions_management_read,
-            Permissions.permissions_management_update,
-            Permissions.users_management_read,
-            Permissions.users_management_update,
-        ]
-
-        created_permissions = [permission]  # Include impersonation permission
-        for perm_name in permissions_to_create:
-            perm = create_test_permission(name=perm_name.value, context=context)
-            created_permissions.append(perm)
-
-        # Assign all permissions to the admin role
-        for perm in created_permissions:
-            crud_roles.assign_permission(role=role, permission=perm, context=context)
-
-        # Assign admin user to the role
-        crud_roles.assign_user(role=role, user=admin_user, context=context)
-
-        return admin_user
 
 
 class TestLoginRouter:
@@ -166,7 +103,7 @@ class TestLoginRouter:
     def test_impersonate_with_permission(
         self,
         client: TestClient,
-        admin_with_impersonation_permission: User,
+        admin_user: User,
         regular_user: User,
         settings: BaseKwikSettings,
     ) -> None:
@@ -175,7 +112,7 @@ class TestLoginRouter:
         login_response = client.post(
             "/api/v1/login/access-token",
             data={
-                "username": admin_with_impersonation_permission.email,
+                "username": admin_user.email,
                 "password": settings.FIRST_SUPERUSER_PASSWORD,
             },
         )
@@ -183,7 +120,7 @@ class TestLoginRouter:
         admin_token = login_response.json()["access_token"]
 
         # Impersonate regular user
-        client.headers = {"Authorization": f"Bearer {admin_token}"}
+        client.headers = {**client.headers, "Authorization": f"Bearer {admin_token}"}
         response = client.post(
             "/api/v1/login/impersonate",
             params={"user_id": regular_user.id},
@@ -206,32 +143,19 @@ class TestLoginRouter:
         self,
         client: TestClient,
         regular_user: User,
-        settings: BaseKwikSettings,
-        api_session: Session,
     ) -> None:
         """Test impersonation fails without proper permissions."""
-        # Create a separate admin user without permissions to avoid session conflicts
-
-        clean_admin = create_test_user(
-            name="clean_admin",
-            surname="clean_admin",
-            email="clean.admin@example.com",
-            password=settings.FIRST_SUPERUSER_PASSWORD,
-            is_active=True,
-            context=Context(session=api_session, user=None),
-        )
-
-        # Login as clean admin user without impersonation permissions
+        # Login as regular user without impersonation permissions
         login_response = client.post(
             "/api/v1/login/access-token",
             data={
-                "username": clean_admin.email,
-                "password": settings.FIRST_SUPERUSER_PASSWORD,
+                "username": regular_user.email,
+                "password": "regularpassword123",
             },
         )
-        admin_token = login_response.json()["access_token"]
+        user_token = login_response.json()["access_token"]
 
-        client.headers = {"Authorization": f"Bearer {admin_token}"}
+        client.headers = {"Authorization": f"Bearer {user_token}"}
         response = client.post(
             "/api/v1/login/impersonate",
             params={"user_id": regular_user.id},
@@ -242,7 +166,7 @@ class TestLoginRouter:
     def test_impersonate_nonexistent_user(
         self,
         client: TestClient,
-        admin_with_impersonation_permission: User,
+        admin_user: User,
         settings: BaseKwikSettings,
     ) -> None:
         """Test impersonation of non-existent user."""
@@ -250,7 +174,7 @@ class TestLoginRouter:
         login_response = client.post(
             "/api/v1/login/access-token",
             data={
-                "username": admin_with_impersonation_permission.email,
+                "username": admin_user.email,
                 "password": settings.FIRST_SUPERUSER_PASSWORD,
             },
         )
@@ -275,7 +199,7 @@ class TestLoginRouter:
     def test_is_impersonating_impersonation_token(
         self,
         client: TestClient,
-        admin_with_impersonation_permission: User,
+        admin_user: User,
         regular_user: User,
         settings: BaseKwikSettings,
     ) -> None:
@@ -284,17 +208,18 @@ class TestLoginRouter:
         login_response = client.post(
             "/api/v1/login/access-token",
             data={
-                "username": admin_with_impersonation_permission.email,
+                "username": admin_user.email,
                 "password": settings.FIRST_SUPERUSER_PASSWORD,
             },
         )
         admin_token = login_response.json()["access_token"]
 
-        client.headers = {"Authorization": f"Bearer {admin_token}"}
+        client.headers = {**client.headers, "Authorization": f"Bearer {admin_token}"}
         impersonate_response = client.post(
             "/api/v1/login/impersonate",
             params={"user_id": regular_user.id},
         )
+
         impersonation_token = impersonate_response.json()["access_token"]
 
         # Check impersonation status
@@ -307,7 +232,7 @@ class TestLoginRouter:
     def test_stop_impersonating(
         self,
         client: TestClient,
-        admin_with_impersonation_permission: User,
+        admin_user: User,
         regular_user: User,
         settings: BaseKwikSettings,
     ) -> None:
@@ -316,7 +241,7 @@ class TestLoginRouter:
         login_response = client.post(
             "/api/v1/login/access-token",
             data={
-                "username": admin_with_impersonation_permission.email,
+                "username": admin_user.email,
                 "password": settings.FIRST_SUPERUSER_PASSWORD,
             },
         )
@@ -343,7 +268,7 @@ class TestLoginRouter:
         client.headers = {"Authorization": f"Bearer {original_token}"}
         test_response = client.post("/api/v1/login/test-token")
         user_data = test_response.json()
-        assert user_data["id"] == admin_with_impersonation_permission.id
+        assert user_data["id"] == admin_user.id
 
     def test_stop_impersonating_regular_token(self, admin_client: TestClient) -> None:
         """Test stop_impersonating with regular (non-impersonation) token."""

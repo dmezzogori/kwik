@@ -25,47 +25,28 @@ if TYPE_CHECKING:
     from kwik.settings import BaseKwikSettings
 
 
-@pytest.fixture(scope="session")
-def api_session(engine: Engine) -> Session:
+@pytest.fixture
+def client(settings: BaseKwikSettings, engine: Engine) -> Generator[TestClient, None, None]:
     """
-    Create a database session for API testing.
+    Set up an HTTP client for testing.
 
-    Parameters
-    ----------
-    engine : Engine
-        SQLAlchemy engine instance for database connection.
-
-    Returns
-    -------
-    Session
-        SQLAlchemy session instance for database operations.
-
+    This client will use the FastAPI application instance and the API session
+    for making requests during testing.
+    The API database session will be rolled back after each test to ensure a clean state.
     """
-    return create_session(engine=engine)
-
-
-@pytest.fixture(scope="session")
-def kwik_app(settings: BaseKwikSettings, api_session: Session) -> Kwik:
-    """Set up the Kwik application for testing."""
+    api_session = create_session(engine=engine)
 
     def _get_session_override() -> Generator[Session, None, None]:
         yield api_session
 
     kwik = Kwik(settings=settings, api_router=api_router)
     kwik.app.dependency_overrides[_get_session] = _get_session_override
-    return kwik
 
-
-@pytest.fixture
-def client(kwik_app: Kwik, api_session: Session) -> Generator[TestClient, None, None]:
-    """Set up an HTTP client for testing."""
-    api_session.rollback()
-
-    fastapi_app = kwik_app._app
-    with TestClient(app=fastapi_app) as client:
+    with TestClient(app=kwik.app) as client:
         yield client
 
     api_session.rollback()
+    api_session.close()
 
 
 @pytest.fixture

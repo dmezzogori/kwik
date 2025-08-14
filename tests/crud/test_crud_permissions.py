@@ -99,6 +99,8 @@ class TestPermissionCRUD:
 
     def test_get_multi_permissions(self, admin_context: UserCtx) -> None:
         """Test getting multiple permissions with pagination."""
+        initial_permissions = 1  # the impersonation permission setup in the conftest
+
         # Test constants
         total_permissions = 5
         page_limit = 3
@@ -113,13 +115,13 @@ class TestPermissionCRUD:
         # Get multiple permissions
         count, retrieved_permissions = crud_permissions.get_multi(skip=0, limit=page_limit, context=admin_context)
 
-        assert count == total_permissions  # Total count
+        assert count == total_permissions + initial_permissions  # Total count
         assert len(retrieved_permissions) == page_limit  # Limited to 3
 
         # Test pagination
         count, second_page = crud_permissions.get_multi(skip=page_limit, limit=page_limit, context=admin_context)
-        assert count == total_permissions
-        assert len(second_page) == remaining_permissions  # Remaining permissions
+        assert count == total_permissions + initial_permissions
+        assert len(second_page) == remaining_permissions + initial_permissions  # Remaining permissions
 
     def test_get_roles_assigned_to(self, admin_context: UserCtx) -> None:
         """Test getting roles assigned to a specific permission."""
@@ -158,7 +160,7 @@ class TestPermissionCRUD:
     def test_get_roles_assignable_to(self, admin_context: UserCtx) -> None:
         """Test getting roles assignable to a specific permission."""
         # Test constants
-        expected_assignable_count = 1
+        expected_assignable_count = 2  # counts also the impersonator role setup in conftests
 
         # Create test permission
         permission = create_test_permission(name="test_permission", context=admin_context)

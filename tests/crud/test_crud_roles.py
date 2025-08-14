@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from kwik.crud import NoUserCtx, UserCtx, crud_roles, crud_users
+from kwik.core.enum import Permissions
+from kwik.crud import NoUserCtx, UserCtx, crud_permissions, crud_roles, crud_users
 from kwik.exceptions import DuplicatedEntityError, EntityNotFoundError
 from kwik.schemas import RoleDefinition, RoleUpdate
 from tests.utils import create_test_permission, create_test_role, create_test_user
@@ -70,6 +71,8 @@ class TestRoleCRUD:
 
     def test_get_multi_roles(self, admin_context: UserCtx) -> None:
         """Test getting multiple roles with pagination."""
+        initial_roles = 1  # count for the impersonation role setup in the conftest
+
         # Test constants
         total_roles = 5
         page_limit = 3
@@ -84,13 +87,13 @@ class TestRoleCRUD:
         # Get multiple roles
         count, retrieved_roles = crud_roles.get_multi(skip=0, limit=page_limit, context=admin_context)
 
-        assert count == total_roles  # Total count
+        assert count == total_roles + initial_roles  # Total count
         assert len(retrieved_roles) == page_limit  # Limited to 3
 
         # Test pagination
         count, second_page = crud_roles.get_multi(skip=page_limit, limit=page_limit, context=admin_context)
-        assert count == total_roles
-        assert len(second_page) == remaining_roles  # Remaining roles
+        assert count == total_roles + initial_roles
+        assert len(second_page) == remaining_roles + initial_roles  # Remaining roles
 
     def test_get_multi_with_filters(self, admin_context: UserCtx) -> None:
         """Test getting multiple roles with filters."""
@@ -100,7 +103,7 @@ class TestRoleCRUD:
 
         # Filter by is_active
         count, _ = crud_roles.get_multi(is_active=True, context=admin_context)
-        expected_active_roles = 1  # Active Role
+        expected_active_roles = 2  # Active Role + Impersonation Role
         assert count == expected_active_roles
 
         count, inactive_roles = crud_roles.get_multi(is_active=False, context=admin_context)
@@ -265,9 +268,13 @@ class TestRoleCRUD:
 
         permission1 = create_test_permission(name="All Permission 1", context=admin_context)
         permission2 = create_test_permission(name="All Permission 2", context=admin_context)
+        impersonification = crud_permissions.get_by_name(name=Permissions.impersonification, context=admin_context)
+
+        assert impersonification is not None
 
         crud_roles.assign_permission(role=role, permission=permission1, context=admin_context)
         crud_roles.assign_permission(role=role, permission=permission2, context=admin_context)
+        crud_roles.assign_permission(role=role, permission=impersonification, context=admin_context)
 
         assignable_permissions = crud_roles.get_permissions_assignable_to(role=role, context=admin_context)
 
@@ -282,6 +289,9 @@ class TestRoleCRUD:
         role = create_test_role(name="Role With No Available Permissions", context=admin_context)
 
         assignable_permissions = crud_roles.get_permissions_assignable_to(role=role, context=admin_context)
+
+        # forcefully exclude impersonification permission
+        assignable_permissions = [p for p in assignable_permissions if p.name != Permissions.impersonification]
 
         assert len(assignable_permissions) == 0
         assert assignable_permissions == []
