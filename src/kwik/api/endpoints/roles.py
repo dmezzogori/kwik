@@ -307,7 +307,7 @@ def remove_all_users_from_role(role_id: int, context: UserContext) -> Role:
 
     """
     role = crud_roles.get_if_exist(entity_id=role_id, context=context)
-    return crud_roles.deprecate(role=role, context=context)
+    return crud_roles.remove_all_users(role=role, context=context)
 
 
 __all__ = ["roles_router"]

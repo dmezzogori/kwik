@@ -43,8 +43,8 @@ class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
         stmt = select(Permission).filter(Permission.id.not_in(assigned_permission_ids))
         return list(context.session.execute(stmt).scalars().all())
 
-    def deprecate(self, *, role: Role, context: UserCtx) -> Role:
-        """Deprecate role by removing all user associations."""
+    def remove_all_users(self, *, role: Role, context: UserCtx) -> Role:
+        """Remove all user associated with the role."""
         # Remove all user-role associations for this role
         user_role_associations = context.session.query(UserRole).filter(UserRole.role_id == role.id).all()
         for user_role_db in user_role_associations:

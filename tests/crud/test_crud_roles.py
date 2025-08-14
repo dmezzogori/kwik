@@ -301,7 +301,7 @@ class TestRoleCRUD:
         users_before_deprecation = crud_roles.get_users_with(role=role)
         assert len(users_before_deprecation) == expected_users_count
 
-        deprecated_role = crud_roles.deprecate(role=role, context=admin_context)
+        deprecated_role = crud_roles.remove_all_users(role=role, context=admin_context)
 
         assert deprecated_role.id == role.id
         assert deprecated_role.name == "role_to_deprecate"
@@ -324,7 +324,7 @@ class TestRoleCRUD:
         users_before_deprecation = crud_roles.get_users_with(role=role)
         assert len(users_before_deprecation) == 0
 
-        deprecated_role = crud_roles.deprecate(role=role, context=admin_context)
+        deprecated_role = crud_roles.remove_all_users(role=role, context=admin_context)
 
         assert deprecated_role.id == role.id
         assert deprecated_role.name == "role_with_no_users_to_deprecate"
@@ -344,7 +344,7 @@ class TestRoleCRUD:
 
         crud_roles.assign_user(role=role, user=user, context=admin_context)
 
-        deprecated_role = crud_roles.deprecate(role=role, context=admin_context)
+        deprecated_role = crud_roles.remove_all_users(role=role, context=admin_context)
 
         retrieved_role = admin_context.session.get(type(role), role.id)
         assert retrieved_role is not None
