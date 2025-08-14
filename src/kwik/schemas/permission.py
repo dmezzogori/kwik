@@ -2,13 +2,25 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from pydantic import BaseModel
+from pydantic.types import StringConstraints
 
 from .mixins import ORMMixin
 
+_PermissionName = Annotated[
+    str,
+    StringConstraints(
+        min_length=1,
+        strip_whitespace=True,
+        to_lower=True,
+    ),
+]
+
 
 class _BaseSchema(BaseModel):
-    name: str
+    name: _PermissionName
 
 
 class PermissionProfile(ORMMixin, _BaseSchema):

@@ -400,7 +400,7 @@ class TestRoleCRUD:
     def test_remove_permission_permission_still_exists_after_removal(self, admin_context: UserCtx) -> None:
         """Test that permission still exists after removal from role."""
         role = create_test_role(name="Role To Remove Permission From", context=admin_context)
-        permission = create_test_permission(name="Permission That Still Exists", context=admin_context)
+        permission = create_test_permission(name="permission_that_still_exists", context=admin_context)
 
         crud_roles.assign_permission(role=role, permission=permission, context=admin_context)
 
@@ -409,7 +409,7 @@ class TestRoleCRUD:
         retrieved_permission = admin_context.session.get(type(permission), permission.id)
         assert retrieved_permission is not None
         assert retrieved_permission.id == permission.id
-        assert retrieved_permission.name == "Permission That Still Exists"
+        assert retrieved_permission.name == "permission_that_still_exists"
 
     def test_remove_permission_role_with_multiple_permissions(self, admin_context: UserCtx) -> None:
         """Test removing one permission from role that has multiple permissions."""
@@ -567,8 +567,8 @@ class TestRoleCRUD:
         """Test that permissions still exist after removal from role."""
         role = create_test_role(name="Role To Remove All Permissions From", context=admin_context)
 
-        permission1 = create_test_permission(name="Permission That Still Exists 1", context=admin_context)
-        permission2 = create_test_permission(name="Permission That Still Exists 2", context=admin_context)
+        permission1 = create_test_permission(name="permission_that_still_exists_1", context=admin_context)
+        permission2 = create_test_permission(name="permission_that_still_exists_2", context=admin_context)
 
         crud_roles.assign_permission(role=role, permission=permission1, context=admin_context)
         crud_roles.assign_permission(role=role, permission=permission2, context=admin_context)
@@ -581,8 +581,8 @@ class TestRoleCRUD:
         assert retrieved_permission2 is not None
         assert retrieved_permission1.id == permission1.id
         assert retrieved_permission2.id == permission2.id
-        assert retrieved_permission1.name == "Permission That Still Exists 1"
-        assert retrieved_permission2.name == "Permission That Still Exists 2"
+        assert retrieved_permission1.name == "permission_that_still_exists_1"
+        assert retrieved_permission2.name == "permission_that_still_exists_2"
 
     def test_create_if_not_exist_creates_new_role(self, admin_context: UserCtx) -> None:
         """Test create_if_not_exist creates new role when not found."""
