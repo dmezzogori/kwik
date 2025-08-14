@@ -99,29 +99,25 @@ class TestPermissionCRUD:
 
     def test_get_multi_permissions(self, admin_context: UserCtx) -> None:
         """Test getting multiple permissions with pagination."""
-        initial_permissions = 1  # the impersonation permission setup in the conftest
+        total_permissions = 14  # All permissions from Permissions enum are associated with admin_user
+        page_limit = 5
 
-        # Test constants
-        total_permissions = 5
-        page_limit = 3
-        remaining_permissions = 2
+        # Test first page
+        count, first_page = crud_permissions.get_multi(skip=0, limit=page_limit, context=admin_context)
+        assert count == total_permissions
+        assert len(first_page) == page_limit
 
-        # Create multiple test permissions
-        permissions = []
-        for i in range(total_permissions):
-            permission = create_test_permission(name=f"permission_{i}", context=admin_context)
-            permissions.append(permission)
-
-        # Get multiple permissions
-        count, retrieved_permissions = crud_permissions.get_multi(skip=0, limit=page_limit, context=admin_context)
-
-        assert count == total_permissions + initial_permissions  # Total count
-        assert len(retrieved_permissions) == page_limit  # Limited to 3
-
-        # Test pagination
+        # Test second page
         count, second_page = crud_permissions.get_multi(skip=page_limit, limit=page_limit, context=admin_context)
-        assert count == total_permissions + initial_permissions
-        assert len(second_page) == remaining_permissions + initial_permissions  # Remaining permissions
+        assert count == total_permissions
+        assert len(second_page) == page_limit
+
+        # Test final page
+        final_skip = 10
+        remaining_permissions = total_permissions - final_skip
+        count, final_page = crud_permissions.get_multi(skip=final_skip, limit=page_limit, context=admin_context)
+        assert count == total_permissions
+        assert len(final_page) == remaining_permissions
 
     def test_get_roles_assigned_to(self, admin_context: UserCtx) -> None:
         """Test getting roles assigned to a specific permission."""

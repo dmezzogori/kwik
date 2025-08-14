@@ -106,23 +106,25 @@ def admin_user(settings: BaseKwikSettings, engine: Engine) -> User:
 
         admin_context = Context(session=scoped_session, user=admin_user)
 
-        # Create impersonation permission
-        permission = crud_permissions.create(
-            obj_in=PermissionDefinition(name=Permissions.impersonification.value),
+        # Create admin role
+        admin_role = crud_roles.create(
+            obj_in=RoleDefinition(name="admin", is_active=True),
             context=admin_context,
         )
 
-        # Create impersonator role
-        role = crud_roles.create(
-            obj_in=RoleDefinition(name="impersonator", is_active=True),
-            context=admin_context,
-        )
+        # Assign all permissions to admin role
+        for permission_name in Permissions:
+            # Create permission
+            permission = crud_permissions.create(
+                obj_in=PermissionDefinition(name=permission_name.value),
+                context=admin_context,
+            )
 
-        # Assign permission to role
-        crud_roles.assign_permission(role=role, permission=permission, context=admin_context)
+            # Assign permission to role
+            crud_roles.assign_permission(role=admin_role, permission=permission, context=admin_context)
 
         # Assign admin user to the role
-        crud_roles.assign_user(role=role, user=admin_user, context=admin_context)
+        crud_roles.assign_user(role=admin_role, user=admin_user, context=admin_context)
 
         scoped_session.refresh(admin_user)
 

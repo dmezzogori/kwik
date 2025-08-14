@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from kwik.core.enum import Permissions
-from kwik.crud import NoUserCtx, UserCtx, crud_permissions, crud_roles, crud_users
+from kwik.crud import NoUserCtx, UserCtx, crud_roles, crud_users
 from kwik.exceptions import DuplicatedEntityError, EntityNotFoundError
 from kwik.schemas import RoleDefinition, RoleUpdate
 from tests.utils import create_test_permission, create_test_role, create_test_user
@@ -264,25 +264,13 @@ class TestRoleCRUD:
 
     def test_get_permissions_assignable_to_role_with_all_permissions(self, admin_context: UserCtx) -> None:
         """Test getting permissions assignable to role that has all permissions assigned."""
-        role = create_test_role(name="Role With All Permissions", context=admin_context)
+        admin_role = crud_roles.get_by_name(name="admin", context=admin_context)
 
-        permission1 = create_test_permission(name="All Permission 1", context=admin_context)
-        permission2 = create_test_permission(name="All Permission 2", context=admin_context)
-        impersonification = crud_permissions.get_by_name(name=Permissions.impersonification, context=admin_context)
+        assert admin_role is not None
 
-        assert impersonification is not None
-
-        crud_roles.assign_permission(role=role, permission=permission1, context=admin_context)
-        crud_roles.assign_permission(role=role, permission=permission2, context=admin_context)
-        crud_roles.assign_permission(role=role, permission=impersonification, context=admin_context)
-
-        assignable_permissions = crud_roles.get_permissions_assignable_to(role=role, context=admin_context)
+        assignable_permissions = crud_roles.get_permissions_assignable_to(role=admin_role, context=admin_context)
 
         assert len(assignable_permissions) == 0
-
-        permission_ids = {permission.id for permission in assignable_permissions}
-        assert permission1.id not in permission_ids
-        assert permission2.id not in permission_ids
 
     def test_get_permissions_assignable_to_no_permissions_in_database(self, admin_context: UserCtx) -> None:
         """Test getting permissions assignable to role when no permissions exist in database."""
@@ -290,8 +278,8 @@ class TestRoleCRUD:
 
         assignable_permissions = crud_roles.get_permissions_assignable_to(role=role, context=admin_context)
 
-        # forcefully exclude impersonification permission
-        assignable_permissions = [p for p in assignable_permissions if p.name != Permissions.impersonification]
+        # forcefully exclude built-in permissions
+        assignable_permissions = [p for p in assignable_permissions if p.name not in Permissions]
 
         assert len(assignable_permissions) == 0
         assert assignable_permissions == []
