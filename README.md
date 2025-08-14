@@ -10,15 +10,12 @@
 
 **Repository**: https://github.com/dmezzogori/kwik
 
-[![codecov](https://codecov.io/github/dmezzogori/kwik/branch/feature%2Fv2/graph/badge.svg?token=7WBOPGCSWS)](https://codecov.io/github/dmezzogori/kwik)
+[![codecov](https://codecov.io/github/dmezzogori/kwik/branch/main/graph/badge.svg?token=7WBOPGCSWS)](https://codecov.io/github/dmezzogori/kwik)
 ---
 
-Kwik is a web framework for building modern, batteries-included, RESTful backends with Python 3.12+.
-Kwik is based on FastAPI, builds upon it and delivers an opinionated concise, business-oriented API.
+Kwik is a web framework for building modern, batteries-included, REST APIs backends with Python 3.12+.
+Kwik is based on FastAPI, builds upon it and delivers an opinionated, concise, and business-oriented API.
 
-> :warning:
-> While Kwik is in active development, and already used for production, it is still in a **pre-release state**.
-> **The API is subject to change**, and the documentation is not complete yet.
 
 ## Key Features
 
@@ -27,18 +24,19 @@ Kwik is based on FastAPI, builds upon it and delivers an opinionated concise, bu
 Multi-source configuration system supporting environment variables, files, and programmatic configuration with automatic validation.
 
 ```python
-from kwik.settings import BaseKwikSettings, configure_kwik
+from kwik import Kwik, api_router
+from kwik.settings import BaseKwikSettings
 
 class MyAppSettings(BaseKwikSettings):
     CUSTOM_API_KEY: str = "default-key"
     MAX_WORKERS: int = 4
+    PROJECT_NAME: str = "My Custom API"
 
-# Configure with custom settings class
-configure_kwik(
-    settings_class=MyAppSettings,
-    config_file="config.json",
-    env_file=".env.production"
-)
+# Create settings instance (loads from environment/config files)
+settings = MyAppSettings()
+
+# Create Kwik application
+app = Kwik(settings=settings, api_router=api_router)
 ```
 
 ### 🚀 AutoCRUD System
@@ -46,32 +44,23 @@ configure_kwik(
 Generic CRUD operations with automatic type inference, built-in pagination, filtering, and sorting.
 
 ```python
-from kwik.crud.auto_crud import AutoCRUD
+from kwik.crud.autocrud import AutoCRUD
+from kwik.crud.context import MaybeUserCtx
 from kwik import models, schemas
 
-class ProductCRUD(AutoCRUD[models.Product, schemas.ProductCreate, schemas.ProductUpdate]):
+class ProductCRUD(AutoCRUD[MaybeUserCtx, models.Product, schemas.ProductCreate, schemas.ProductUpdate, int]):
     pass
 
 product_crud = ProductCRUD()
 
 # Automatic pagination and sorting
+# In a real Kwik endpoint, `context` is automatically injected using the `UserContext` or `NoUserContext`
 total, products = product_crud.get_multi(
     skip=0, limit=10, 
     sort=[("name", "asc"), ("created_at", "desc")],
+    context=context,
     category="electronics"
 )
-```
-
-### 💉 Automatic Dependency Injection
-
-Database sessions and current user automatically injected via context variables - no manual dependency management needed.
-
-```python
-class MyAutoCRUD(AutoCRUD[MyModel, MyCreate, MyUpdate]):
-    def custom_method(self):
-        # self.db automatically available (database session)
-        # self.user automatically available (current authenticated user)
-        return self.db.query(MyModel).filter_by(owner_id=self.user.id).all()
 ```
 
 ### 📊 SQLAlchemy Mixins
@@ -79,7 +68,7 @@ class MyAutoCRUD(AutoCRUD[MyModel, MyCreate, MyUpdate]):
 Pre-built mixins for common database patterns with automatic configuration.
 
 ```python
-from kwik.mdoels import RecordInfoMixin
+from kwik.models import RecordInfoMixin
 from kwik.models import Base
 from sqlalchemy import Column, String
 
@@ -96,18 +85,19 @@ class Product(Base, RecordInfoMixin):
 Role-based access control with comprehensive permission management.
 
 ```python
-from kwik.crud.users import users
+from kwik.crud import crud_users
+from kwik.crud import crud_roles
 
-# Check permissions
-if users.has_permissions(user_id=user.id, permissions=["product.create", "product.update"]):
+# Check permissions (requires user object)
+if crud_users.has_permissions(user=user, permissions=["product.create", "product.update"]):
     # User has required permissions
-    pass
+    ...
 
-# Assign roles
-users.assign_role(user_id=user.id, role_id=admin_role.id)
+# Assign roles (done through roles CRUD)
+crud_roles.assign_user(role=admin_role, user=user, context=context)
 
 # Get all user permissions
-permissions = users.get_permissions(user_id=user.id)
+permissions = crud_users.get_permissions(user=user)
 ```
 
 ### 📄 Pagination & Sorting Utilities
@@ -115,15 +105,23 @@ permissions = users.get_permissions(user_id=user.id)
 Ready-to-use pagination schemas and sorting dependencies for clean API endpoints.
 
 ```python
-from fastapi import APIRouter
-from kwik.schemas.pagination import Paginated
-from kwik.dependencies.sorting_query import SortingQuery
+from fastapi import APIRouter, Depends
+from kwik.schemas import Paginated
+from kwik.dependencies import SortingQuery
+from kwik.dependencies import UserContext, NoUserContext
 
 router = APIRouter()
 
 @router.get("/products", response_model=Paginated[ProductResponse])
-def get_products(skip: int = 0, limit: int = 10, sort: SortingQuery = None):
-    total, products = product_crud.get_multi(skip=skip, limit=limit, sort=sort)
+def get_products(
+    skip: int = 0, 
+    limit: int = 10, 
+    sort: SortingQuery = None,
+    context = UserContext  # Context dependency injection
+):
+    total, products = product_crud.get_multi(
+        skip=skip, limit=limit, sort=sort, context=context
+    )
     return {"total": total, "data": products}
 
 # API usage: GET /products?sort=name:asc,created_at:desc
@@ -135,7 +133,7 @@ Python 3.12+
 
 Kwik stands on the shoulder of a couple of giants:
 
-* [FastAPI](https://fastapi.tiangolo.com/): for the web parts.
+* [FastAPI](https://fastapi.tiangolo.com/): for the underlying REST API server.
 * [Pydantic](https://docs.pydantic.dev/1.10/): for the data validation and serialization.
 * [SQLAlchemy](https://www.sqlalchemy.org/): for the ORM part.
 
@@ -153,12 +151,12 @@ It will install Kwik and all its dependencies.
 
 ```python
 # main.py
-from kwik.settings import BaseKwikSettings, configure_kwik
-from kwik.crud.auto_crud import AutoCRUD
-from kwik.database.base import Base
-from kwik.database.mixins import RecordInfoMixin
+from kwik import Kwik, api_router
+from kwik.settings import BaseKwikSettings
+from kwik.crud import AutoCRUD
+from kwik.models import Base, RecordInfoMixin
 from sqlalchemy import Column, String
-import pydantic
+from pydantic import BaseModel
 
 # 1. Define your model
 class Product(Base, RecordInfoMixin):
@@ -167,16 +165,18 @@ class Product(Base, RecordInfoMixin):
     category = Column(String, nullable=False)
 
 # 2. Define your schemas
-class ProductCreate(pydantic.BaseModel):
+class ProductCreate(BaseModel):
     name: str
     category: str
 
-class ProductUpdate(pydantic.BaseModel):
+class ProductUpdate(BaseModel):
     name: str | None = None
     category: str | None = None
 
 # 3. Create CRUD with automatic operations
-class ProductCRUD(AutoCRUD[Product, ProductCreate, ProductUpdate]):
+from kwik.crud.context import UserCtx
+
+class ProductCRUD(AutoCRUD[UserCtx, Product, ProductCreate, ProductUpdate, int]):
     pass
 
 product_crud = ProductCRUD()
@@ -185,7 +185,9 @@ product_crud = ProductCRUD()
 class MySettings(BaseKwikSettings):
     PROJECT_NAME: str = "My Product API"
 
-configure_kwik(settings_class=MySettings)
+# 5. Create and configure Kwik application
+settings = MySettings()
+app = Kwik(settings=settings, api_router=api_router)
 ```
 
 ### Run it
@@ -241,7 +243,7 @@ pytest -m "not integration"
 ```bash
 # Run linter and formatter
 ruff check
-ruff format .
+ruff format
 
 # Fix auto-fixable issues
 ruff check --fix

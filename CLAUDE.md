@@ -78,25 +78,18 @@ tests/
 ├── test_api_endpoints.py    # API endpoint tests
 ```
 
-#### Writing Tests
-- Use `db_session` fixture for database access
-- Use `clean_db` fixture to ensure clean state between tests
-- Use factories from `tests.utils` for creating test data
-- Mark integration tests with `@pytest.mark.integration`
-- Mark slow tests with `@pytest.mark.slow`
-
 #### Continuous Integration
 - **GitHub Actions**: Automatically runs tests on PRs and pushes to main/develop
 - **Test Workflow**: `.github/workflows/test.yml`
 - **Database**: Uses testcontainers for automatic PostgreSQL management
-- **Coverage**: Uploads coverage reports to Codecov (if configured)
+- **Coverage**: Uploads coverage reports to Codecov
 - **Linting**: Runs ruff checks and formatting validation
 
 ### Code Quality & Common Commands
 ```bash
 # Run linter and formatter
 ruff check
-ruff format .
+ruff format
 
 # Fix auto-fixable issues
 ruff check --fix
@@ -126,7 +119,7 @@ docker compose up
 #### Documentation Hosting & Deployment
 - **Technology**: MkDocs Material
 - **Source files**: Located in `docs/handbook/` 
-- **GitHub Pages**: Hosted at `https://dmezzogori.github.io/kwik/`
+- **GitHub Pages**: Hosted at `https://davide.mezzogori.com/kwik/`
 - **Auto-deployment**: GitHub Actions workflow `.github/workflows/mkdocs.yml`
 
 #### Documentation Update Workflow
@@ -134,7 +127,7 @@ docker compose up
 2. Commit and push to feature branch
 3. Merge or push changes to `main` branch (required for deployment)
 4. GitHub Actions automatically builds and deploys to `gh-pages` branch
-5. Documentation updates live at `https://dmezzogori.github.io/kwik/`
+5. Documentation updates live at `https://davide.mezzogori.com/kwik/`
 
 **Note**: Documentation only rebuilds when changes reach the `main` branch, not from feature branches. Manual deployment possible via GitHub Actions `workflow_dispatch`.
 
@@ -175,7 +168,7 @@ docker compose up
 
 - **Status**: Pre-release, active development
 - **License**: MIT
-- **Documentation**: https://dmezzogori.github.io/kwik/
+- **Documentation**: https://davide.mezzogori.com/kwik/
 - **Repository**: https://github.com/dmezzogori/kwik
 
 ## Notes for Claude Code
