@@ -5,7 +5,7 @@ from typing import Annotated
 from pydantic import BaseModel
 from pydantic.types import StringConstraints
 
-from .mixins import ORMMixin
+from .mixins import AtLeastOneFieldMixin, ORMMixin
 
 _RoleName = Annotated[
     str,
@@ -24,7 +24,7 @@ class RoleDefinition(BaseModel):
     is_active: bool
 
 
-class RoleUpdate(BaseModel):
+class RoleUpdate(AtLeastOneFieldMixin):
     """Schema for updating existing roles."""
 
     name: _RoleName | None = None

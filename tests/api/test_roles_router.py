@@ -269,7 +269,7 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_update_role_empty_data(self, admin_client: TestClient) -> None:
-        """Test updating role with empty data succeeds (all fields are optional)."""
+        """Test updating role with empty data fails (at least one field must be provided)."""
         # Create test role first
         created_role = self._create_test_role_via_api(admin_client, "test_role_update_empty")
         role_id = created_role["id"]
@@ -277,13 +277,10 @@ class TestRolesRouter:
         update_data = {}
         response = admin_client.put(f"/api/v1/roles/{role_id}", json=update_data)
 
-        # Empty data is valid since all fields in RoleUpdate schema are optional
-        assert response.status_code == HTTPStatus.OK
-        data = response.json()
-        assert data["id"] == role_id
-        # Original values should remain unchanged
-        assert data["name"] == "test_role_update_empty"
-        assert data["is_active"] == created_role["is_active"]
+        # Empty data is invalid since at least one field must be provided
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        error_data = response.json()
+        assert "detail" in error_data  # Validation error response format
 
     def test_update_role_empty_name(self, admin_client: TestClient) -> None:
         """Test updating role with empty name fails."""
