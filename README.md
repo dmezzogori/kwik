@@ -1,12 +1,12 @@
 # Kwik
 
 <div align="center">
-<img src="docs/handbook/docs/img/logo.png" alt="Kwik Logo" width="200">
+<img src="docs/handbook/docs/img/logo.png" alt="Kwik Logo" width="400">
 </div>
 
 ---
 
-**Documentation**: https://kwik.rocks
+**Documentation**: https://davide.mezzogori.com/kwik/
 
 **Repository**: https://github.com/dmezzogori/kwik
 

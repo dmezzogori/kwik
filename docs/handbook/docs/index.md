@@ -3,12 +3,12 @@ title: Kwik
 ---
 
 <div style="text-align: center;">
-<img src="/img/logo.png" alt="Kwik Logo" width="200">
+<img src="img/logo.png" alt="Kwik Logo" width="400">
 </div>
 
 ---
 
-**Documentation**: https://kwik.rocks
+**Documentation**: https://davide.mezzogori.com/kwik/
 
 **Repository**: https://github.com/dmezzogori/kwik
 
