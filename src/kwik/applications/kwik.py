@@ -11,7 +11,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-from kwik.database import create_engine, create_session_factory
+from kwik.database import create_engine, create_session_factory, session_scope
 from kwik.exceptions import KwikError, kwik_exception_handler
 from kwik.logging import logger
 
@@ -20,24 +20,31 @@ if TYPE_CHECKING:
     from contextlib import AbstractAsyncContextManager
 
     from fastapi import APIRouter
+    from sqlalchemy.orm import Session
 
     from kwik.settings import BaseKwikSettings
 
 
-def _make_lifespan(settings: BaseKwikSettings) -> Callable[[FastAPI], AbstractAsyncContextManager]:
+def _make_lifespan(
+    settings: BaseKwikSettings,
+    seed_db: Callable[[Session, BaseKwikSettings], None] | None = None,
+) -> Callable[[FastAPI], AbstractAsyncContextManager]:
     """
     Create a lifespan context manager for FastAPI application.
 
     This function creates and returns an async context manager that handles
     the application startup and shutdown lifecycle. During startup, it
     initializes the database engine and session factory, storing them in
-    the app state. During shutdown, it cleans up resources and disposes
+    the app state. It also seeds the database if a seeding callable is provided.
+    During shutdown, it cleans up resources and disposes
     of the database engine.
 
     Parameters
     ----------
     settings : BaseKwikSettings
         Application settings containing database configuration and environment details.
+    seed_db : Callable[[Session], None]
+        Function to seed the database.
 
     Returns
     -------
@@ -50,6 +57,10 @@ def _make_lifespan(settings: BaseKwikSettings) -> Callable[[FastAPI], AbstractAs
     async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         _engine = create_engine(settings=settings)
         _session_local = create_session_factory(engine=_engine)
+
+        if seed_db is not None:
+            with session_scope(session=_session_local()) as _session:
+                seed_db(_session, settings)
 
         # Store in app state for middleware access
         app.state.settings = settings
@@ -79,9 +90,16 @@ class Kwik:
     It automatically registers all the endpoints from the api_router.
     """
 
-    def __init__(self, *, settings: BaseKwikSettings, api_router: APIRouter) -> None:
+    def __init__(
+        self,
+        *,
+        settings: BaseKwikSettings,
+        api_router: APIRouter,
+        seed_db: Callable[[Session, BaseKwikSettings], None] | None = None,
+    ) -> None:
         """Initialize Kwik application with API router."""
         self.settings = settings
+        self._seed_db = seed_db
         self._app = self._init_fastapi_app(api_router=api_router)
 
         logger.info(
@@ -110,7 +128,7 @@ class Kwik:
             openapi_url=f"{self.settings.API_V1_STR}/openapi.json",
             debug=self.settings.DEBUG,
             redirect_slashes=False,
-            lifespan=_make_lifespan(self.settings),
+            lifespan=_make_lifespan(self.settings, self._seed_db),
         )
 
         app.add_middleware(ProxyHeadersMiddleware)

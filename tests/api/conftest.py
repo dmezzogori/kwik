@@ -21,12 +21,17 @@ if TYPE_CHECKING:
     from sqlalchemy import Engine
     from sqlalchemy.orm import Session
 
-    from kwik.models import User
     from kwik.settings import BaseKwikSettings
 
 
+@pytest.fixture(scope="session")
+def kwik_app(settings: BaseKwikSettings) -> Kwik:
+    """Create and return a Kwik application instance for testing."""
+    return Kwik(settings=settings, api_router=api_router)
+
+
 @pytest.fixture
-def client(settings: BaseKwikSettings, engine: Engine) -> Generator[TestClient, None, None]:
+def client(kwik_app: Kwik, engine: Engine) -> Generator[TestClient, None, None]:
     """
     Set up an HTTP client for testing.
 
@@ -39,10 +44,9 @@ def client(settings: BaseKwikSettings, engine: Engine) -> Generator[TestClient, 
     def _get_session_override() -> Generator[Session, None, None]:
         yield api_session
 
-    kwik = Kwik(settings=settings, api_router=api_router)
-    kwik.app.dependency_overrides[_get_session] = _get_session_override
+    kwik_app.app.dependency_overrides[_get_session] = _get_session_override
 
-    with TestClient(app=kwik.app) as client:
+    with TestClient(app=kwik_app.app) as client:
         yield client
 
     api_session.rollback()
@@ -50,16 +54,12 @@ def client(settings: BaseKwikSettings, engine: Engine) -> Generator[TestClient, 
 
 
 @pytest.fixture
-def admin_client(
-    client: TestClient,
-    admin_user: User,
-    settings: BaseKwikSettings,
-) -> TestClient:
+def admin_client(client: TestClient, settings: BaseKwikSettings) -> TestClient:
     """TestClient pre-configured with admin authentication headers."""
     response = client.post(
         "/api/v1/login/access-token",
         data={
-            "username": admin_user.email,
+            "username": settings.FIRST_SUPERUSER,
             "password": settings.FIRST_SUPERUSER_PASSWORD,
         },
     )

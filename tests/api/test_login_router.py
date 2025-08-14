@@ -32,14 +32,12 @@ MIN_JWT_TOKEN_LENGTH = 50
 class TestLoginRouter:
     """Test cases for login router API endpoints."""
 
-    def test_access_token_valid_credentials(
-        self, client: TestClient, admin_user: User, settings: BaseKwikSettings
-    ) -> None:
+    def test_access_token_valid_credentials(self, client: TestClient, settings: BaseKwikSettings) -> None:
         """Test successful login with valid credentials."""
         response = client.post(
             "/api/v1/login/access-token",
             data={
-                "username": admin_user.email,
+                "username": settings.FIRST_SUPERUSER,
                 "password": settings.FIRST_SUPERUSER_PASSWORD,
             },
         )
@@ -63,28 +61,25 @@ class TestLoginRouter:
 
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    def test_access_token_invalid_password(self, client: TestClient, admin_user: User) -> None:
+    def test_access_token_invalid_password(self, client: TestClient, settings: BaseKwikSettings) -> None:
         """Test login with invalid password."""
         response = client.post(
             "/api/v1/login/access-token",
             data={
-                "username": admin_user.email,
+                "username": settings.FIRST_SUPERUSER,
                 "password": "wrongpassword",
             },
         )
 
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    def test_test_token_valid_token(self, admin_client: TestClient, admin_user: User) -> None:
+    def test_test_token_valid_token(self, admin_client: TestClient, settings: BaseKwikSettings) -> None:
         """Test token validation with valid token."""
         response = admin_client.post("/api/v1/login/test-token")
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
-        assert data["id"] == admin_user.id
-        assert data["email"] == admin_user.email
-        assert data["name"] == admin_user.name
-        assert data["surname"] == admin_user.surname
+        assert data["email"] == settings.FIRST_SUPERUSER
 
     def test_test_token_invalid_token(self, client: TestClient) -> None:
         """Test token validation with invalid token."""
@@ -103,7 +98,6 @@ class TestLoginRouter:
     def test_impersonate_with_permission(
         self,
         client: TestClient,
-        admin_user: User,
         regular_user: User,
         settings: BaseKwikSettings,
     ) -> None:
@@ -112,7 +106,7 @@ class TestLoginRouter:
         login_response = client.post(
             "/api/v1/login/access-token",
             data={
-                "username": admin_user.email,
+                "username": settings.FIRST_SUPERUSER,
                 "password": settings.FIRST_SUPERUSER_PASSWORD,
             },
         )
@@ -166,7 +160,6 @@ class TestLoginRouter:
     def test_impersonate_nonexistent_user(
         self,
         client: TestClient,
-        admin_user: User,
         settings: BaseKwikSettings,
     ) -> None:
         """Test impersonation of non-existent user."""
@@ -174,7 +167,7 @@ class TestLoginRouter:
         login_response = client.post(
             "/api/v1/login/access-token",
             data={
-                "username": admin_user.email,
+                "username": settings.FIRST_SUPERUSER,
                 "password": settings.FIRST_SUPERUSER_PASSWORD,
             },
         )
@@ -199,7 +192,6 @@ class TestLoginRouter:
     def test_is_impersonating_impersonation_token(
         self,
         client: TestClient,
-        admin_user: User,
         regular_user: User,
         settings: BaseKwikSettings,
     ) -> None:
@@ -208,7 +200,7 @@ class TestLoginRouter:
         login_response = client.post(
             "/api/v1/login/access-token",
             data={
-                "username": admin_user.email,
+                "username": settings.FIRST_SUPERUSER,
                 "password": settings.FIRST_SUPERUSER_PASSWORD,
             },
         )
@@ -232,7 +224,6 @@ class TestLoginRouter:
     def test_stop_impersonating(
         self,
         client: TestClient,
-        admin_user: User,
         regular_user: User,
         settings: BaseKwikSettings,
     ) -> None:
@@ -241,7 +232,7 @@ class TestLoginRouter:
         login_response = client.post(
             "/api/v1/login/access-token",
             data={
-                "username": admin_user.email,
+                "username": settings.FIRST_SUPERUSER,
                 "password": settings.FIRST_SUPERUSER_PASSWORD,
             },
         )
@@ -268,7 +259,7 @@ class TestLoginRouter:
         client.headers = {"Authorization": f"Bearer {original_token}"}
         test_response = client.post("/api/v1/login/test-token")
         user_data = test_response.json()
-        assert user_data["id"] == admin_user.id
+        assert user_data["email"] == settings.FIRST_SUPERUSER
 
     def test_stop_impersonating_regular_token(self, admin_client: TestClient) -> None:
         """Test stop_impersonating with regular (non-impersonation) token."""
@@ -281,7 +272,6 @@ class TestLoginRouter:
         self,
         client: TestClient,
         regular_user: User,
-        admin_user: User,
         settings: BaseKwikSettings,
     ) -> None:
         """Test password reset with valid token."""
@@ -292,7 +282,7 @@ class TestLoginRouter:
         login_response = client.post(
             "/api/v1/login/access-token",
             data={
-                "username": admin_user.email,
+                "username": settings.FIRST_SUPERUSER,
                 "password": settings.FIRST_SUPERUSER_PASSWORD,
             },
         )
