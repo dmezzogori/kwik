@@ -16,25 +16,25 @@ class TestRoleCRUD:
 
     def test_create_role(self, admin_context: UserCtx) -> None:
         """Test creating a new role."""
-        role_data = RoleDefinition(name="Test Role", is_active=True)
+        role_data = RoleDefinition(name="test_role", is_active=True)
 
         created_role = crud_roles.create(obj_in=role_data, context=admin_context)
 
-        assert created_role.name == "Test Role"
+        assert created_role.name == "test_role"
         assert created_role.is_active is True
         assert created_role.id is not None
 
     def test_get_role_by_id(self, admin_context: UserCtx) -> None:
         """Test getting a role by ID."""
         # Create a test role
-        role = create_test_role(name="Get Test Role", context=admin_context)
+        role = create_test_role(name="test_role", context=admin_context)
 
         # Get the role by ID
         retrieved_role = crud_roles.get(entity_id=role.id, context=admin_context)
 
         assert retrieved_role is not None
         assert retrieved_role.id == role.id
-        assert retrieved_role.name == "Get Test Role"
+        assert retrieved_role.name == "test_role"
 
     def test_get_role_by_nonexistent_id_returns_none(self, admin_context: UserCtx) -> None:
         """Test getting a role by non-existent ID returns None."""
@@ -44,14 +44,14 @@ class TestRoleCRUD:
     def test_update_role(self, admin_context: UserCtx) -> None:
         """Test updating a role."""
         # Create a test role
-        role = create_test_role(name="Original Role", context=admin_context)
+        role = create_test_role(name="original_role", context=admin_context)
 
         # Update the role
-        update_data = RoleUpdate(name="Updated Role")
+        update_data = RoleUpdate(name="updated_role")
         updated_role = crud_roles.update(entity_id=role.id, obj_in=update_data, context=admin_context)
 
         assert updated_role.id == role.id
-        assert updated_role.name == "Updated Role"
+        assert updated_role.name == "updated_role"
         assert updated_role.is_active == role.is_active  # Should remain unchanged
 
     def test_get_if_exist_with_existing_role(self, admin_context: UserCtx) -> None:
@@ -98,8 +98,8 @@ class TestRoleCRUD:
     def test_get_multi_with_filters(self, admin_context: UserCtx) -> None:
         """Test getting multiple roles with filters."""
         # Create test roles with different attributes
-        create_test_role(name="Active Role", is_active=True, context=admin_context)
-        create_test_role(name="Inactive Role", is_active=False, context=admin_context)
+        create_test_role(name="active_role", is_active=True, context=admin_context)
+        create_test_role(name="inactive_role", is_active=False, context=admin_context)
 
         # Filter by is_active
         count, _ = crud_roles.get_multi(is_active=True, context=admin_context)
@@ -108,12 +108,12 @@ class TestRoleCRUD:
 
         count, inactive_roles = crud_roles.get_multi(is_active=False, context=admin_context)
         assert count == 1
-        assert inactive_roles[0].name == "Inactive Role"
+        assert inactive_roles[0].name == "inactive_role"
 
     def test_delete_role(self, admin_context: UserCtx) -> None:
         """Test deleting a role (hard delete)."""
         # Create a test role
-        role = create_test_role(name="To Delete", context=admin_context)
+        role = create_test_role(name="to_delete", context=admin_context)
         role_id = role.id
 
         # Delete the role (hard delete)
@@ -128,7 +128,7 @@ class TestRoleCRUD:
 
     def test_get_by_name_existing_role(self, admin_context: UserCtx) -> None:
         """Test getting a role by name when it exists."""
-        role_name = "Unique Role Name"
+        role_name = "unique_role_name"
         role = create_test_role(name=role_name, context=admin_context)
 
         retrieved_role = crud_roles.get_by_name(name=role_name, context=admin_context)
@@ -287,7 +287,7 @@ class TestRoleCRUD:
     def test_deprecate_role_with_multiple_users(self, admin_context: UserCtx, no_user_context: NoUserCtx) -> None:
         """Test deprecating role that has multiple users assigned."""
         expected_users_count = 3
-        role = create_test_role(name="Role To Deprecate", context=admin_context)
+        role = create_test_role(name="role_to_deprecate", context=admin_context)
 
         user1 = create_test_user(name="User1", email="user1@test.com", context=no_user_context)
         user2 = create_test_user(name="User2", email="user2@test.com", context=no_user_context)
@@ -304,7 +304,7 @@ class TestRoleCRUD:
         deprecated_role = crud_roles.deprecate(role=role, context=admin_context)
 
         assert deprecated_role.id == role.id
-        assert deprecated_role.name == "Role To Deprecate"
+        assert deprecated_role.name == "role_to_deprecate"
 
         admin_context.session.refresh(deprecated_role)
         users_after_deprecation = crud_roles.get_users_with(role=deprecated_role)
@@ -319,7 +319,7 @@ class TestRoleCRUD:
 
     def test_deprecate_role_with_no_users(self, admin_context: UserCtx) -> None:
         """Test deprecating role that has no users assigned."""
-        role = create_test_role(name="Role With No Users To Deprecate", context=admin_context)
+        role = create_test_role(name="role_with_no_users_to_deprecate", context=admin_context)
 
         users_before_deprecation = crud_roles.get_users_with(role=role)
         assert len(users_before_deprecation) == 0
@@ -327,7 +327,7 @@ class TestRoleCRUD:
         deprecated_role = crud_roles.deprecate(role=role, context=admin_context)
 
         assert deprecated_role.id == role.id
-        assert deprecated_role.name == "Role With No Users To Deprecate"
+        assert deprecated_role.name == "role_with_no_users_to_deprecate"
 
         admin_context.session.refresh(deprecated_role)
         users_after_deprecation = crud_roles.get_users_with(role=deprecated_role)
@@ -339,7 +339,7 @@ class TestRoleCRUD:
         no_user_context: NoUserCtx,
     ) -> None:
         """Test that role still exists after deprecation but with no users."""
-        role = create_test_role(name="Role That Still Exists", context=admin_context)
+        role = create_test_role(name="role_that_still_exists", context=admin_context)
         user = create_test_user(name="User", email="user@test.com", context=no_user_context)
 
         crud_roles.assign_user(role=role, user=user, context=admin_context)
@@ -349,7 +349,7 @@ class TestRoleCRUD:
         retrieved_role = admin_context.session.get(type(role), role.id)
         assert retrieved_role is not None
         assert retrieved_role.id == deprecated_role.id
-        assert retrieved_role.name == "Role That Still Exists"
+        assert retrieved_role.name == "role_that_still_exists"
         assert retrieved_role.is_active == role.is_active
 
         admin_context.session.refresh(retrieved_role)
@@ -357,8 +357,8 @@ class TestRoleCRUD:
 
     def test_remove_permission_from_role_with_permission(self, admin_context: UserCtx) -> None:
         """Test removing existing permission from role."""
-        role = create_test_role(name="Role With Permission", context=admin_context)
-        permission = create_test_permission(name="Permission To Remove", context=admin_context)
+        role = create_test_role(name="role_with_permission", context=admin_context)
+        permission = create_test_permission(name="permission_to_remove", context=admin_context)
 
         crud_roles.assign_permission(role=role, permission=permission, context=admin_context)
 
@@ -370,7 +370,7 @@ class TestRoleCRUD:
         updated_role = crud_roles.remove_permission(role=role, permission=permission, context=admin_context)
 
         assert updated_role.id == role.id
-        assert updated_role.name == "Role With Permission"
+        assert updated_role.name == "role_with_permission"
 
         admin_context.session.refresh(updated_role)
         permissions_after_removal = crud_roles.get_permissions_assigned_to(role=updated_role)
@@ -379,8 +379,8 @@ class TestRoleCRUD:
 
     def test_remove_permission_from_role_without_permission_idempotent(self, admin_context: UserCtx) -> None:
         """Test removing permission from role that doesn't have it (idempotent operation)."""
-        role = create_test_role(name="Role Without Permission", context=admin_context)
-        permission = create_test_permission(name="Unassigned Permission", context=admin_context)
+        role = create_test_role(name="role_without_permission", context=admin_context)
+        permission = create_test_permission(name="unassigned_permission", context=admin_context)
 
         permissions_before = crud_roles.get_permissions_assigned_to(role=role)
         permission_ids_before = {perm.id for perm in permissions_before}
@@ -389,7 +389,7 @@ class TestRoleCRUD:
         updated_role = crud_roles.remove_permission(role=role, permission=permission, context=admin_context)
 
         assert updated_role.id == role.id
-        assert updated_role.name == "Role Without Permission"
+        assert updated_role.name == "role_without_permission"
 
         admin_context.session.refresh(updated_role)
         permissions_after = crud_roles.get_permissions_assigned_to(role=updated_role)
@@ -437,7 +437,7 @@ class TestRoleCRUD:
 
     def test_remove_user_from_role_with_user(self, admin_context: UserCtx, no_user_context: NoUserCtx) -> None:
         """Test removing existing user from role."""
-        role = create_test_role(name="Role With User", context=admin_context)
+        role = create_test_role(name="role_with_user", context=admin_context)
         user = create_test_user(name="User To Remove", email="remove@test.com", context=no_user_context)
 
         crud_roles.assign_user(role=role, user=user, context=admin_context)
@@ -450,7 +450,7 @@ class TestRoleCRUD:
         updated_role = crud_roles.remove_user(role=role, user=user, context=admin_context)
 
         assert updated_role.id == role.id
-        assert updated_role.name == "Role With User"
+        assert updated_role.name == "role_with_user"
 
         admin_context.session.refresh(updated_role)
         users_after_removal = crud_roles.get_users_with(role=updated_role)
@@ -461,7 +461,7 @@ class TestRoleCRUD:
         self, admin_context: UserCtx, no_user_context: NoUserCtx
     ) -> None:
         """Test removing user from role that doesn't have it (idempotent operation)."""
-        role = create_test_role(name="Role Without User", context=admin_context)
+        role = create_test_role(name="role_without_user", context=admin_context)
         user = create_test_user(name="Unassigned User", email="unassigned@test.com", context=no_user_context)
 
         users_before = crud_roles.get_users_with(role=role)
@@ -471,7 +471,7 @@ class TestRoleCRUD:
         updated_role = crud_roles.remove_user(role=role, user=user, context=admin_context)
 
         assert updated_role.id == role.id
-        assert updated_role.name == "Role Without User"
+        assert updated_role.name == "role_without_user"
 
         admin_context.session.refresh(updated_role)
         users_after = crud_roles.get_users_with(role=updated_role)
@@ -483,7 +483,7 @@ class TestRoleCRUD:
         self, admin_context: UserCtx, no_user_context: NoUserCtx
     ) -> None:
         """Test that user still exists after removal from role."""
-        role = create_test_role(name="Role To Remove User From", context=admin_context)
+        role = create_test_role(name="role_to_remove_user_from", context=admin_context)
         user = create_test_user(name="User That Still Exists", email="still_exists@test.com", context=no_user_context)
 
         crud_roles.assign_user(role=role, user=user, context=admin_context)
@@ -522,7 +522,7 @@ class TestRoleCRUD:
     def test_remove_all_permissions_from_role_with_permissions(self, admin_context: UserCtx) -> None:
         """Test removing all permissions from role that has permissions."""
         initial_permissions_count = 3
-        role = create_test_role(name="Role With Permissions", context=admin_context)
+        role = create_test_role(name="role_with_permissions", context=admin_context)
 
         permission1 = create_test_permission(name="Permission 1", context=admin_context)
         permission2 = create_test_permission(name="Permission 2", context=admin_context)
@@ -539,7 +539,7 @@ class TestRoleCRUD:
         updated_role = crud_roles.remove_all_permissions(role=role, context=admin_context)
 
         assert updated_role.id == role.id
-        assert updated_role.name == "Role With Permissions"
+        assert updated_role.name == "role_with_permissions"
 
         admin_context.session.refresh(updated_role)
         permissions_after_removal = crud_roles.get_permissions_assigned_to(role=updated_role)
@@ -548,7 +548,7 @@ class TestRoleCRUD:
 
     def test_remove_all_permissions_from_role_with_no_permissions(self, admin_context: UserCtx) -> None:
         """Test removing all permissions from role that has no permissions (idempotent operation)."""
-        role = create_test_role(name="Role Without Permissions", context=admin_context)
+        role = create_test_role(name="role_without_permissions", context=admin_context)
 
         permissions_before = crud_roles.get_permissions_assigned_to(role=role)
         assert len(permissions_before) == 0
@@ -556,7 +556,7 @@ class TestRoleCRUD:
         updated_role = crud_roles.remove_all_permissions(role=role, context=admin_context)
 
         assert updated_role.id == role.id
-        assert updated_role.name == "Role Without Permissions"
+        assert updated_role.name == "role_without_permissions"
 
         admin_context.session.refresh(updated_role)
         permissions_after = crud_roles.get_permissions_assigned_to(role=updated_role)
@@ -586,47 +586,47 @@ class TestRoleCRUD:
 
     def test_create_if_not_exist_creates_new_role(self, admin_context: UserCtx) -> None:
         """Test create_if_not_exist creates new role when not found."""
-        role_data = RoleDefinition(name="New Role", is_active=True)
+        role_data = RoleDefinition(name="new_role", is_active=True)
 
-        filters = {"name": "New Role"}
+        filters = {"name": "new_role"}
         created_role = crud_roles.create_if_not_exist(filters=filters, obj_in=role_data, context=admin_context)
 
-        assert created_role.name == "New Role"
+        assert created_role.name == "new_role"
         assert created_role.is_active is True
         assert created_role.id is not None
 
     def test_create_if_not_exist_returns_existing_role(self, admin_context: UserCtx) -> None:
         """Test create_if_not_exist returns existing role when found."""
-        existing_role = create_test_role(name="Existing Role", is_active=True, context=admin_context)
+        existing_role = create_test_role(name="existing_role", is_active=True, context=admin_context)
 
         role_data = RoleDefinition(name="Different Role", is_active=False)
-        filters = {"name": "Existing Role"}
+        filters = {"name": "existing_role"}
 
         returned_role = crud_roles.create_if_not_exist(filters=filters, obj_in=role_data, context=admin_context)
 
         assert returned_role.id == existing_role.id
-        assert returned_role.name == "Existing Role"
+        assert returned_role.name == "existing_role"
         assert returned_role.is_active is True
 
     def test_create_if_not_exist_with_raise_on_error_creates_new(self, admin_context: UserCtx) -> None:
         """Test create_if_not_exist with raise_on_error=True creates new role when not found."""
-        role_data = RoleDefinition(name="Unique New Role", is_active=True)
+        role_data = RoleDefinition(name="unique_new_role", is_active=True)
 
-        filters = {"name": "Unique New Role"}
+        filters = {"name": "unique_new_role"}
         created_role = crud_roles.create_if_not_exist(
             filters=filters, obj_in=role_data, context=admin_context, raise_on_error=True
         )
 
-        assert created_role.name == "Unique New Role"
+        assert created_role.name == "unique_new_role"
         assert created_role.is_active is True
         assert created_role.id is not None
 
     def test_create_if_not_exist_with_raise_on_error_raises_for_existing(self, admin_context: UserCtx) -> None:
         """Test create_if_not_exist with raise_on_error=True raises error when role exists."""
-        create_test_role(name="Already Exists", context=admin_context)
+        create_test_role(name="already_exists", context=admin_context)
 
-        role_data = RoleDefinition(name="Different Name", is_active=False)
-        filters = {"name": "Already Exists"}
+        role_data = RoleDefinition(name="different_name", is_active=False)
+        filters = {"name": "already_exists"}
         with pytest.raises(DuplicatedEntityError):
             crud_roles.create_if_not_exist(
                 filters=filters, obj_in=role_data, context=admin_context, raise_on_error=True
@@ -663,61 +663,61 @@ class TestRoleCRUD:
 
     def test_get_multi_with_sort_ascending(self, admin_context: UserCtx) -> None:
         """Test get_multi with ascending sort on name field."""
-        create_test_role(name="Alpha Role", context=admin_context)
-        create_test_role(name="Beta Role", context=admin_context)
-        create_test_role(name="Gamma Role", context=admin_context)
+        create_test_role(name="alpha_role", context=admin_context)
+        create_test_role(name="beta_role", context=admin_context)
+        create_test_role(name="gamma_role", context=admin_context)
 
         sort_params = [("name", "asc")]
         count, sorted_roles = crud_roles.get_multi(sort=sort_params, context=admin_context)
 
         role_names = [role.name for role in sorted_roles]
 
-        alpha_idx = role_names.index("Alpha Role")
-        beta_idx = role_names.index("Beta Role")
-        gamma_idx = role_names.index("Gamma Role")
+        alpha_idx = role_names.index("alpha_role")
+        beta_idx = role_names.index("beta_role")
+        gamma_idx = role_names.index("gamma_role")
 
         assert alpha_idx < beta_idx < gamma_idx
 
     def test_get_multi_with_sort_descending(self, admin_context: UserCtx) -> None:
         """Test get_multi with descending sort on name field."""
-        create_test_role(name="Alpha Role 2", context=admin_context)
-        create_test_role(name="Beta Role 2", context=admin_context)
-        create_test_role(name="Gamma Role 2", context=admin_context)
+        create_test_role(name="alpha_role_2", context=admin_context)
+        create_test_role(name="beta_role_2", context=admin_context)
+        create_test_role(name="gamma_role_2", context=admin_context)
 
         sort_params = [("name", "desc")]
         count, sorted_roles = crud_roles.get_multi(sort=sort_params, context=admin_context)
 
         role_names = [role.name for role in sorted_roles]
 
-        alpha_idx = role_names.index("Alpha Role 2")
-        beta_idx = role_names.index("Beta Role 2")
-        gamma_idx = role_names.index("Gamma Role 2")
+        alpha_idx = role_names.index("alpha_role_2")
+        beta_idx = role_names.index("beta_role_2")
+        gamma_idx = role_names.index("gamma_role_2")
 
         assert gamma_idx < beta_idx < alpha_idx
 
     def test_get_multi_with_multi_field_sort(self, admin_context: UserCtx) -> None:
         """Test get_multi with multi-field sorting (name desc, then id asc)."""
-        create_test_role(name="Same Name", context=admin_context)
-        create_test_role(name="Same Name", context=admin_context)
-        create_test_role(name="Different Name", context=admin_context)
+        create_test_role(name="same_name", context=admin_context)
+        create_test_role(name="same_name", context=admin_context)
+        create_test_role(name="different_name", context=admin_context)
 
         sort_params = [("name", "desc"), ("id", "asc")]
         count, sorted_roles = crud_roles.get_multi(sort=sort_params, context=admin_context)
 
-        test_roles = [r for r in sorted_roles if r.name in ["Same Name", "Different Name"]]
+        test_roles = [r for r in sorted_roles if r.name in ["same_name", "different_name"]]
 
         min_expected_roles = 3
         same_name_count = 2
         assert len(test_roles) >= min_expected_roles
-        assert test_roles[0].name == "Same Name"
+        assert test_roles[0].name == "same_name"
 
-        same_name_roles = [r for r in test_roles if r.name == "Same Name"]
+        same_name_roles = [r for r in test_roles if r.name == "same_name"]
         assert len(same_name_roles) == same_name_count
         assert same_name_roles[0].id < same_name_roles[1].id
 
     def test_get_multi_with_sort_and_pagination(self, admin_context: UserCtx) -> None:
         """Test get_multi with sorting combined with pagination."""
-        role_names = ["Alpha Paginated", "Beta Paginated", "Gamma Paginated", "Delta Paginated"]
+        role_names = ["alpha_paginated", "beta_paginated", "gamma_paginated", "delta_paginated"]
         created_roles = []
         for name in role_names:
             role = create_test_role(name=name, context=admin_context)
@@ -726,42 +726,42 @@ class TestRoleCRUD:
         sort_params = [("name", "asc")]
         page_size = 2
 
-        count, first_page = crud_roles.get_multi(skip=0, limit=page_size, sort=sort_params, context=admin_context)
-        count, second_page = crud_roles.get_multi(
-            skip=page_size, limit=page_size, sort=sort_params, context=admin_context
+        _, first_page = crud_roles.get_multi(skip=1, limit=page_size, sort=sort_params, context=admin_context)
+        _, second_page = crud_roles.get_multi(
+            skip=page_size + 1, limit=page_size, sort=sort_params, context=admin_context
         )
 
         first_page_names = [role.name for role in first_page if role.name in role_names]
         second_page_names = [role.name for role in second_page if role.name in role_names]
 
         all_sorted_names = first_page_names + second_page_names
-        expected_order = ["Alpha Paginated", "Beta Paginated", "Gamma Paginated", "Delta Paginated"]
+        expected_order = ["alpha_paginated", "beta_paginated", "gamma_paginated", "delta_paginated"]
 
         for expected_name in expected_order:
             assert expected_name in all_sorted_names
 
-        alpha_idx = all_sorted_names.index("Alpha Paginated")
-        beta_idx = all_sorted_names.index("Beta Paginated")
+        alpha_idx = all_sorted_names.index("alpha_paginated")
+        beta_idx = all_sorted_names.index("beta_paginated")
         assert alpha_idx < beta_idx
 
     def test_get_multi_with_sort_and_filters(self, admin_context: UserCtx) -> None:
         """Test get_multi with sorting combined with filters."""
-        create_test_role(name="Active Z", is_active=True, context=admin_context)
-        create_test_role(name="Active A", is_active=True, context=admin_context)
-        create_test_role(name="Inactive B", is_active=False, context=admin_context)
+        create_test_role(name="active_z", is_active=True, context=admin_context)
+        create_test_role(name="active_a", is_active=True, context=admin_context)
+        create_test_role(name="inactive_b", is_active=False, context=admin_context)
 
         sort_params = [("name", "desc")]
         count, filtered_sorted_roles = crud_roles.get_multi(sort=sort_params, is_active=True, context=admin_context)
 
-        active_test_roles = [r for r in filtered_sorted_roles if r.name.startswith("Active")]
+        active_test_roles = [r for r in filtered_sorted_roles if r.name.startswith("active")]
 
         expected_active_count = 2
         assert len(active_test_roles) == expected_active_count
 
         active_names = [r.name for r in active_test_roles]
-        assert "Active Z" in active_names
-        assert "Active A" in active_names
+        assert "active_z" in active_names
+        assert "active_a" in active_names
 
-        active_z_idx = active_names.index("Active Z")
-        active_a_idx = active_names.index("Active A")
+        active_z_idx = active_names.index("active_z")
+        active_a_idx = active_names.index("active_a")
         assert active_z_idx < active_a_idx
