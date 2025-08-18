@@ -1,9 +1,7 @@
-version: "3.3"
-
 services:
 
   kwik-docs:
-    image: squidfunk/mkdocs-material:8.2.1
+    image: squidfunk/mkdocs-material:latest
     ports:
       - "8000:8000"
     volumes:

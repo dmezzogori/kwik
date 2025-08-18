@@ -1,277 +1,227 @@
 ---
 title: Kwik
+subtitle: The Business-First Python Web Framework
 ---
 
 <div style="text-align: center;">
 <img src="img/logo.png" alt="Kwik Logo" width="400">
 </div>
 
+<p align="center">
+    <em>Fast, batteries-included, business-oriented, opinionated REST APIs framework</em>
+</p>
+
+[![codecov](https://codecov.io/github/dmezzogori/kwik/branch/main/graph/badge.svg?token=7WBOPGCSWS)](https://codecov.io/github/dmezzogori/kwik)
+
+!!! warning "Pre-Release Software Warning"
+    
+    Kwik is currently in active development and has not yet reached version 1.0. The internal APIs, data structures, and framework interfaces are subject to change without notice. While we strive to maintain backward compatibility where possible, breaking changes may occur as we refine the framework for the v1.0 release.
+    
+    **Not recommended for production use until v1.0 is released.**
+
 ---
 
 **Documentation**: https://davide.mezzogori.com/kwik/
 
-**Repository**: https://github.com/dmezzogori/kwik
+**Source Code**: https://github.com/dmezzogori/kwik
 
-[![codecov](https://codecov.io/github/dmezzogori/kwik/branch/main/graph/badge.svg?token=7WBOPGCSWS)](https://codecov.io/github/dmezzogori/kwik)
 ---
 
-Kwik is a web framework for building modern, batteries-included, REST APIs backends with Python 3.12+.
-Kwik is based on FastAPI, builds upon it and delivers an opinionated, concise, and business-oriented API.
+# The Business-First Python Web Framework
 
+Kwik is a batteries-included web framework designed for developers who need to build robust, enterprise-grade backends **fast**. Built on top of FastAPI with business-oriented enhancements, Kwik strives to eliminate boilerplate and provides the patterns you need for real-world applications.
 
-## Key Features
-
-### 🛠️ Advanced Settings Management
-
-Multi-source configuration system supporting environment variables, files, and programmatic configuration with automatic validation.
+**Stop writing CRUD endpoints. Start building business logic.**
 
 ```python
-from kwik import Kwik, api_router
-from kwik.settings import BaseKwikSettings
-
-class MyAppSettings(BaseKwikSettings):
-    CUSTOM_API_KEY: str = "default-key"
-    MAX_WORKERS: int = 4
-    PROJECT_NAME: str = "My Custom API"
-
-# Create settings instance (loads from environment/config files)
-settings = MyAppSettings()
-
-# Create Kwik application
-app = Kwik(settings=settings, api_router=api_router)
-```
-
-### 🚀 AutoCRUD System
-
-Generic CRUD operations with automatic type inference, built-in pagination, filtering, and sorting.
-
-```python
-from kwik.crud.autocrud import AutoCRUD
-from kwik.crud.context import MaybeUserCtx
-from kwik import models, schemas
-
-class ProductCRUD(AutoCRUD[MaybeUserCtx, models.Product, schemas.ProductCreate, schemas.ProductUpdate, int]):
-    pass
-
-product_crud = ProductCRUD()
-
-# Automatic pagination and sorting
-# In a real Kwik endpoint, `context` is automatically injected using the `UserContext` or `NoUserContext`
-total, products = product_crud.get_multi(
-    skip=0, limit=10, 
-    sort=[("name", "asc"), ("created_at", "desc")],
-    context=context,
-    category="electronics"
-)
-```
-
-### 📊 SQLAlchemy Mixins
-
-Pre-built mixins for common database patterns with automatic configuration.
-
-```python
-from kwik.models import RecordInfoMixin
-from kwik.models import Base
-from sqlalchemy import Column, String
-
-class Product(Base, RecordInfoMixin):
-    __tablename__ = "products"
-    name = Column(String, nullable=False)
-    # Automatically includes:
-    # - creation_time, last_modification_time (TimeStampsMixin)
-    # - creator_user_id, last_modifier_user_id (UserMixin)
-```
-
-### 🔐 Built-in RBAC System
-
-Role-based access control with comprehensive permission management.
-
-```python
-from kwik.crud import crud_users
-from kwik.crud import crud_roles
-
-# Check permissions (requires user object)
-if crud_users.has_permissions(user=user, permissions=["product.create", "product.update"]):
-    # User has required permissions
-    ...
-
-# Assign roles (done through roles CRUD)
-crud_roles.assign_user(role=admin_role, user=user, context=context)
-
-# Get all user permissions
-permissions = crud_users.get_permissions(user=user)
-```
-
-### 📄 Pagination & Sorting Utilities
-
-Ready-to-use pagination schemas and sorting dependencies for clean API endpoints.
-
-```python
-from fastapi import APIRouter, Depends
-from kwik.schemas import Paginated
-from kwik.dependencies import SortingQuery
-from kwik.dependencies import UserContext, NoUserContext
-
-router = APIRouter()
-
-@router.get("/products", response_model=Paginated[ProductResponse])
-def get_products(
-    skip: int = 0, 
-    limit: int = 10, 
-    sort: SortingQuery = None,
-    context = UserContext  # Context dependency injection
-):
-    total, products = product_crud.get_multi(
-        skip=skip, limit=limit, sort=sort, context=context
-    )
-    return {"total": total, "data": products}
-
-# API usage: GET /products?sort=name:asc,created_at:desc
-```
-
-## Acknowledgments
-
-Python 3.12+
-
-Kwik stands on the shoulder of a couple of giants:
-
-* [FastAPI](https://fastapi.tiangolo.com/): for the underlying REST API server.
-* [Pydantic](https://docs.pydantic.dev/1.10/): for the data validation and serialization.
-* [SQLAlchemy](https://www.sqlalchemy.org/): for the ORM part.
-
-## Installation
-
-```console
-$ uv add kwik
-```
-
-It will install Kwik and all its dependencies.
-
-## Quick Start
-
-### Basic Usage
-
-```python
-# main.py
-from kwik import Kwik, api_router
-from kwik.settings import BaseKwikSettings
-from kwik.crud import AutoCRUD
-from kwik.models import Base, RecordInfoMixin
-from sqlalchemy import Column, String
+# This is all you need for a complete business API
+from decimal import Decimal
 from pydantic import BaseModel
+from sqlalchemy.orm import Mapped, mapped_column
 
-# 1. Define your model
-class Product(Base, RecordInfoMixin):
-    __tablename__ = "products"
-    name = Column(String, nullable=False)
-    category = Column(String, nullable=False)
+from kwik import Kwik
+from kwik.models import Base, RecordInfoMixin
+from kwik.crud import AutoCRUD
+from kwik.dependencies import UserContext, Pagination, has_permission
+from kwik.routers import AuthenticatedRouter
+from kwik.schemas import AtLeastOneFieldMixin, BaseKwikSchema, Paginated
+from kwik.core.enum import Permissions
 
-# 2. Define your schemas
-class ProductCreate(BaseModel):
+# 1. Define the Customer model
+class Customer(Base, RecordInfoMixin):
+    __tablename__ = "customers"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(nullable=False)
+    email: Mapped[str] = mapped_column(unique=True, nullable=False)
+    credit_limit: Mapped[Decimal] = mapped_column(default=Decimal('5000'))
+
+# 2. Define the schemas for input/output validation
+class CustomerProfile(BaseKwikSchema):
+    id: int
     name: str
-    category: str
+    email: str
+    credit_limit: Decimal
 
-class ProductUpdate(BaseModel):
+class CustomerCreate(BaseModel):
+    name: str
+    email: str
+    credit_limit: Decimal = Decimal('5000')
+
+class CustomerUpdate(AtLeastOneFieldMixin):
     name: str | None = None
-    category: str | None = None
+    email: str | None = None
+    credit_limit: Decimal | None = None
 
-# 3. Create CRUD with automatic operations
-from kwik.crud.context import UserCtx
-
-class ProductCRUD(AutoCRUD[UserCtx, Product, ProductCreate, ProductUpdate, int]):
+# 3. Create CRUD operations with automatic audit trails
+# AutoCRUD automatically provides: create(), create_if_not_exists(), get_multi(), get(), get_if_exist(), update(), delete()
+class CustomerCRUD(AutoCRUD[UserContext, Customer, CustomerCreate, CustomerUpdate, int]):
     pass
 
-product_crud = ProductCRUD()
+crud_customers = CustomerCRUD(Customer)
 
-# 4. Configure your settings (optional)
-class MySettings(BaseKwikSettings):
-    PROJECT_NAME: str = "My Product API"
+# 4. Create the API endpoints
+# AuthenticatedRouter ensures all endpoints require JWT authentication
+customers_router = AuthenticatedRouter(prefix="/customers")
 
-# 5. Create and configure Kwik application
-settings = MySettings()
-app = Kwik(settings=settings, api_router=api_router)
+# For public endpoints, add permission dependencies
+@customers_router.get(
+    "/", 
+    response_model=Paginated[CustomerProfile],
+    dependencies=(has_permission(Permissions.customers_read),)
+)
+def read_customers(pagination: Pagination, context: UserContext):
+    """Retrieve customers with pagination, filtering, and sorting."""
+    total, data = crud_customers.get_multi(**pagination, context=context)
+    return {"data": data, "total": total}
+
+@customers_router.post(
+    "/", 
+    response_model=CustomerProfile,
+    dependencies=(has_permission(Permissions.customers_create),)
+)
+def create_customer(customer_in: CustomerCreate, context: UserContext):
+    """Create new customer."""
+    return crud_customers.create(obj_in=customer_in, context=context)
+
+@customers_router.get(
+    "/{customer_id}", 
+    response_model=CustomerProfile,
+    dependencies=(has_permission(Permissions.customers_read),)
+)
+def read_customer(customer_id: int, context: UserContext):
+    """Get a specific customer by ID."""
+    return crud_customers.get_if_exist(entity_id=customer_id, context=context)
+
+@customers_router.put(
+    "/{customer_id}", 
+    response_model=CustomerProfile,
+    dependencies=(has_permission(Permissions.customers_update),)
+)
+def update_customer(customer_id: int, customer_in: CustomerUpdate, context: UserContext):
+    """Update a customer."""
+    return crud_customers.update(entity_id=customer_id, obj_in=customer_in, context=context)
+
+@customers_router.delete(
+    "/{customer_id}",
+    dependencies=(has_permission(Permissions.customers_delete),)
+)
+def delete_customer(customer_id: int, context: UserContext):
+    """Delete a customer."""
+    crud_customers.delete(entity_id=customer_id, context=context)
+    return {"message": "Customer deleted successfully"}
+
+# 5. Register the router with your Kwik app
+app = Kwik()
+app.include_router(customers_router, prefix="/api/v1")
 ```
 
-### Run it
+### Key Features Explained
 
-```console
-$ kwik
-```
+That's it! You now have a complete REST API with:
 
-If Kwik is started in this way, it automatically creates a development server on port `8080`, with hot-reloading enabled.
+ - **AutoCRUD**: The `AutoCRUD` class automatically provides all the standard CRUD operations (`create()`, `get_multi()`, `get_if_exist()`, `update()`, `delete()`) with built-in audit trails, validation, and business rule enforcement. You can override any method to add custom business logic while keeping the automatic features.
 
-### Check it
+ - **AuthenticatedRouter**: Using `AuthenticatedRouter` instead of FastAPI's standard router automatically ensures all endpoints require JWT authentication. Users must provide a valid JWT token to access any endpoint on this router.
 
-Open your browser at http://localhost:8080/docs.
+ - **Permission Dependencies**: The `has_permission()` dependency allows you to specify which permissions a user needs to access each endpoint. As shown in the example, you can require different permissions for different operations (`customers_read`, `customers_create`, `customers_update`, `customers_delete`). You can also combine multiple permissions by passing them as separate arguments to `has_permission()`.
 
-You will see the automatic interactive API documentation, showing the built-in endpoints and schemas.
+### ... and more:
 
-## Development
+- **Automatic AutoCRUD subclasses type-annotations** - through the use of Python generics
+- **Endpoint built-in utilities** - Paginated, filterable, sortable listings
+- **Automatic audit trails** - Who created/modified what and when
+- **Input validation** - Business rule enforcement
+- **Role-based permissions** - Resource access control
 
-### Setup
 
-```bash
-# Clone the repository
-git clone https://github.com/dmezzogori/kwik.git
-cd kwik
+## Why Kwik?
 
-# Install dependencies using uv
-uv sync
+### You're an Expert. Your Framework Should Be Too.
 
-# Start development server with hot reload
-kwik
-```
+You've built FastAPI applications before. You know the drill: define models, write schemas, create CRUD operations, add authentication, implement permissions, set up database connections, write tests... **It's the same code, every time.**
 
-### Testing
+Kwik gives you all of this **out of the box**, with patterns that scale from startup to enterprise.
 
-```bash
-# Run all tests with coverage (testcontainers automatically manages PostgreSQL)
-pytest --cov=src/kwik --cov-report=term-missing
+### Enterprise Features That Matter
 
-# Run tests in parallel (faster)
-pytest -n auto
+**Complete Audit System**: Every change tracked automatically with user context, timestamps, and business event logging.
 
-# Run specific test file
-pytest tests/test_crud_users.py
+**Granular Permissions**: Role-based access control with resource-level permissions and business rule enforcement.
 
-# Run only unit tests (skip integration tests)
-pytest -m "not integration"
-```
+**AutoCRUD with Intelligence**: CRUD operations that understand your business logic, not just database operations.
 
-**Note**: Tests use testcontainers to automatically manage the PostgreSQL database. No manual database setup required.
+**Real Database Testing**: Testcontainers integration means your tests run against actual PostgreSQL, not mocks.
 
-### Code Quality
+**Production-Ready Defaults**: Security headers, rate limiting, connection pooling, health checks, and monitoring built-in.
 
-```bash
-# Run linter and formatter
-ruff check
-ruff format
 
-# Fix auto-fixable issues
-ruff check --fix
-```
+## Start Building, Stop Configuring
 
-### Documentation
+Kwik is opinionated because **you shouldn't have to make the same architectural decisions over and over again**.
 
-```bash
-# Start documentation website locally
-cd docs
-docker compose up
+**Security**: JWT authentication, RBAC permissions, audit trails, rate limiting, security headers - all configured and working.
 
-# Access at http://localhost:8000
-```
+**Database**: PostgreSQL with async support, connection pooling, migrations, model mixins - all integrated.
 
-### Contributing
+**Testing**: Real database testing with testcontainers, user simulation, business scenario testing - all provided.
 
-1. Create a feature branch (`git checkout -b feature/your-feature-name`)
-2. Make your changes following the existing code style
-3. Add tests for new functionality
-4. Run tests and ensure they pass
-5. Run linting and fix any issues
-6. Commit your changes (`git commit -am '<Your commit message>'`)
-7. Push to the branch (`git push origin feature/your-feature-name`)
-8. Create a Pull Request
+**Production**: Multi-worker deployment, health checks, metrics, logging, Docker images - all ready.
+
+**Focus on what makes your application unique - the business logic.**
+
+---
+
+## Built on the Best
+
+Kwik stands on the shoulders of giants:
+
+* **[FastAPI](https://fastapi.tiangolo.com/)**: High-performance async web framework
+* **[SQLAlchemy 2.0+](https://www.sqlalchemy.org/)**: Modern async ORM with type safety
+* **[Pydantic](https://docs.pydantic.dev/)**: Data validation and serialization
+* **[PostgreSQL](https://www.postgresql.org/)**: Enterprise-grade database
+* **[Testcontainers](https://testcontainers-python.readthedocs.io/)**: Real database testing
+
+## Next Steps
+
+**✅ Testing**: Real database testing with business scenarios
+
+---
+
+## Join the Community
+
+**[GitHub Repository](https://github.com/dmezzogori/kwik)**: Source code, issues, and contributions
+
+**[Documentation](https://davide.mezzogori.com/kwik/)**: Complete documentation with examples
+
+---
+
+*Built with ❤️ for Python developers who value productivity and code quality.*
 
 ## License
 
-This project is licensed under the terms of the MIT license.
+MIT License - build amazing things.
+
+---
+
+*Ready to build your next business API? Get started now and see why expert Python developers choose Kwik.*

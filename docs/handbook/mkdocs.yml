@@ -1,6 +1,6 @@
 site_name: Kwik
 site_description: Kwik web framework, modern, concise, opinionated API for batteries-included RESTful backends
-site_url: https://dmezzogori.github.io/kwik/
+site_url: https://davide.mezzogori.com/kwik/
 site_author: Davide Mezzogori
 theme:
   name: material
@@ -26,33 +26,16 @@ plugins:
       minify_html: true
 nav:
   - Kwik: index.md
-  - features.md
-  - Tutorial - User Guide:
-      - tutorial/index.md
-      - tutorial/first-steps.md
-      - tutorial/configuration.md
-      - tutorial/database.md
-      - tutorial/models.md
-      - tutorial/schemas.md
-      - tutorial/endpoints.md
-      - tutorial/permissions.md
-      - tutorial/guards.md
-      - tutorial/auditing.md
-      - tutorial/utilities.md
-  - Advanced:
-      - advanced/custom-settings.md
-copyright: Copyright &copy; 2022 Davide Mezzogori
+copyright: Copyright &copy; 2025 Davide Mezzogori
 
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/dmezzogori/kwik
-    - icon: fontawesome/brands/twitter
-      link: https://twitter.com/kwik.rocks
+      link: https://github.com/dmezzogori
+    - icon: fontawesome/brands/x-twitter
+      link: https://x.com/dmezzogori
     - icon: fontawesome/brands/linkedin
       link: https://linkedin.com/in/davidemezzogori/
-    - icon: material/web
-      link: https://davide.mezzogori.com
   analytics:
     provider: google
     property: G-RT1L5SXNDC
@@ -76,8 +59,8 @@ markdown_extensions:
   - pymdownx.critic
   - pymdownx.details
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.highlight
   - pymdownx.inlinehilite
   - pymdownx.keys
