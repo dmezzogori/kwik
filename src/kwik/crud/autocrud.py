@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, get_args
+from typing import TYPE_CHECKING, ClassVar, get_args
 
 from pydantic import BaseModel
 from sqlalchemy import func, inspect, select
@@ -44,6 +44,8 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
     """Complete CRUD implementation combining create, read, update, and delete operations."""
 
     model: type[ModelType]
+    # Optional allowlist of fields exposed for list filtering/sorting
+    list_allowed_fields: ClassVar[set[str] | None] = None
 
     def __init__(self) -> None:
         """
@@ -68,6 +70,13 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
         model_columns = inspect(self.model).columns
         self.record_creator_user_id = "creator_user_id" in model_columns
         self.record_modifier_user_id = "last_modifier_user_id" in model_columns
+
+        # Determine allowed fields for list queries
+        if self.list_allowed_fields is None:
+            # default to all mapped columns
+            self._list_allowed_fields = set(model_columns.keys())
+        else:
+            self._list_allowed_fields = set(self.list_allowed_fields)
 
         # Validate consistency: if model has audit fields, Context must be UserCtx
         if (self.record_creator_user_id or self.record_modifier_user_id) and bases is not None:
@@ -101,9 +110,8 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
 
         # Apply filters if provided
         if filters:
-            model_columns = inspect(self.model).columns
             for key, value in filters.items():
-                if key not in model_columns:
+                if key not in self._list_allowed_fields:
                     msg = f"Invalid filter field '{key}' for model {self.model.__name__}"
                     raise ValueError(msg)
                 stmt = stmt.where(getattr(self.model, key) == value)
@@ -114,6 +122,11 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
 
         # Apply sorting if provided, otherwise default to primary key(s) ascending for stable pagination
         if sort:
+            # Validate sort fields against allowlist
+            for key, _ in sort:
+                if key not in self._list_allowed_fields:
+                    msg = f"Invalid sort field '{key}' for model {self.model.__name__}"
+                    raise ValueError(msg)
             stmt = _sort_query(model=self.model, stmt=stmt, sort=sort)
         else:
             pk_cols = inspect(self.model).primary_key

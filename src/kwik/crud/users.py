@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from sqlalchemy import select
 
@@ -20,6 +20,9 @@ if TYPE_CHECKING:
 
 class _CRUDUsers(AutoCRUD[MaybeUserCtx, User, UserRegistration, UserProfileUpdate, int]):
     """CRUD operations for users with authentication and authorization support."""
+
+    # Expose only safe/public fields for list filtering/sorting
+    list_allowed_fields: ClassVar[set[str]] = {"id", "name", "surname", "email", "is_active"}
 
     def get_by_email(self, *, email: str, context: MaybeUserCtx) -> User | None:
         """Get user by email address."""
