@@ -95,6 +95,19 @@ docker compose up
 # Access at http://localhost:8000
 ```
 
+### Listing queries (DX)
+
+- Unified dependency `kwik.dependencies.ListQuery` combines pagination, sorting, and filtering for list endpoints.
+- Query params supported:
+  - `skip` and `limit` for pagination (stable default ordering by primary key when no sort is provided)
+  - `sorting` as comma-separated fields with optional direction, e.g. `?sorting=name:asc,id:desc`
+  - `filter_key` and `value` for simple equality filters, e.g. `?filter_key=is_active&value=true`
+- Example endpoint:
+  - `def list_users(q: ListQuery, context: UserContext) -> Paginated[UserProfile]:
+        total, data = crud_users.get_multi(context=context, **q)
+        return {"total": total, "data": data}`
+- Invalid filter/sort fields return HTTP 400 with a clear message.
+
 ### Contributing
 
 1. Create a feature branch (`git checkout -b feature/your-feature-name`)

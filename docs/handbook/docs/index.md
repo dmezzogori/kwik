@@ -37,7 +37,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from kwik import Kwik
 from kwik.models import Base, RecordInfoMixin
 from kwik.crud import AutoCRUD
-from kwik.dependencies import UserContext, Pagination, has_permission
+from kwik.dependencies import UserContext, ListQuery, has_permission
 from kwik.routers import AuthenticatedRouter
 from kwik.schemas import AtLeastOneFieldMixin, BaseKwikSchema, Paginated
 from kwik.core.enum import Permissions
@@ -85,9 +85,9 @@ customers_router = AuthenticatedRouter(prefix="/customers")
     response_model=Paginated[CustomerProfile],
     dependencies=(has_permission(Permissions.customers_read),)
 )
-def read_customers(pagination: Pagination, context: UserContext):
+def read_customers(q: ListQuery, context: UserContext):
     """Retrieve customers with pagination, filtering, and sorting."""
-    total, data = crud_customers.get_multi(**pagination, context=context)
+    total, data = crud_customers.get_multi(context=context, **q)
     return {"data": data, "total": total}
 
 @customers_router.post(
@@ -144,7 +144,17 @@ That's it! You now have a complete REST API with:
 ### ... and more:
 
 - **Automatic AutoCRUD subclasses type-annotations** - through the use of Python generics
-- **Endpoint built-in utilities** - Paginated, filterable, sortable listings
+- **Endpoint built-in utilities** - Paginated, filterable, sortable listings (via `ListQuery`)
+
+### Listing Queries
+
+- Use `ListQuery` dependency to get unified list parameters: pagination, sorting, and filtering in one object.
+- Query params:
+  - `skip`, `limit` for pagination
+  - `sorting` as comma-separated fields with optional `:asc`/`:desc` (e.g., `?sorting=name:asc,id:desc`)
+  - `filter_key` and `value` for simple equality filters (e.g., `?filter_key=is_active&value=true`)
+- Stable default order: when not specified, results are ordered by primary key ascending to ensure deterministic pagination.
+- Invalid sort/filter fields return HTTP 400 with a clear error.
 - **Automatic audit trails** - Who created/modified what and when
 - **Input validation** - Business rule enforcement
 - **Role-based permissions** - Resource access control
