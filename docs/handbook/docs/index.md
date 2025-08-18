@@ -13,15 +13,11 @@ subtitle: The Business-First Python Web Framework
 
 [![codecov](https://codecov.io/github/dmezzogori/kwik/branch/main/graph/badge.svg?token=7WBOPGCSWS)](https://codecov.io/github/dmezzogori/kwik)
 
-!!! warning "Pre-Release Software Warning"
+!!! info "Production Ready"
     
-    Kwik is currently in active development and has not yet reached version 1.0. The internal APIs, data structures, and framework interfaces are subject to change without notice. While we strive to maintain backward compatibility where possible, breaking changes may occur as we refine the framework for the v1.0 release.
-    
-    **Not recommended for production use until v1.0 is released.**
+    Kwik v1.0 has been released and is ready for production use. The internal APIs, data structures, and framework interfaces are now stable. While not guaranteed, we strive to maintain backward compatibility following semantic versioning principles.
 
 ---
-
-**Documentation**: https://davide.mezzogori.com/kwik/
 
 **Source Code**: https://github.com/dmezzogori/kwik
 
