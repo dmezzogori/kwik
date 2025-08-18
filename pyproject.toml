@@ -1,6 +1,6 @@
 [project]
 name = "kwik"
-version = "0.1.0"
+version = "0.1.1"
 description = "Kwik is a web framework for building modern, batteries-included, RESTful backends with Python 3.10+. Kwik is based on FastAPI, builds upon it and delivers an opinionated concise, business-oriented API."
 readme = "README.md"
 requires-python = ">=3.11, <3.12"
