@@ -1,24 +1,31 @@
-name: Publish docs via GitHub Pages
+name: ci
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
-
+  workflow_dispatch:
+permissions:
+  contents: write
 jobs:
-  build:
-    name: Deploy docs
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout main
-        uses: actions/checkout@v2
-      - name: Setup Python
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure Git Credentials
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.x
-      - name: Deploy docs
-        uses: mhausenblas/mkdocs-deploy-gh-pages@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CONFIG_FILE: docs/handbook/mkdocs.yml
-          #EXTRA_PACKAGES: build-base
+      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: ~/.cache
+          restore-keys: |
+            mkdocs-material-
+      - run: pip install mkdocs-material mkdocs-minify-plugin
+      - run: mkdocs gh-deploy --force --config-file docs/handbook/mkdocs.yml
