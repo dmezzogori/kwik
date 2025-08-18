@@ -16,8 +16,7 @@
 [![codecov](https://codecov.io/github/dmezzogori/kwik/branch/main/graph/badge.svg?token=7WBOPGCSWS)](https://codecov.io/github/dmezzogori/kwik)
 ---
 
-Kwik is a web framework for building modern, batteries-included, REST APIs backends with Python 3.12+.
-Kwik is based on FastAPI, builds upon it and delivers an opinionated, concise, and business-oriented API.
+Fast, batteries-included, business-oriented, opinionated REST APIs framework
 
 
 ## Acknowledgments

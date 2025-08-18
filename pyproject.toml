@@ -1,7 +1,7 @@
 [project]
 name = "kwik"
 version = "0.1.0"
-description = "Kwik is a web framework for building modern, batteries-included, RESTful backends with Python 3.10+. Kwik is based on FastAPI, builds upon it and delivers an opinionated concise, business-oriented API."
+description = "Fast, batteries-included, business-oriented, opinionated REST APIs framework"
 readme = "README.md"
 authors = [
     { name = "dmezzogori", email = "dmezzogori@users.noreply.github.com" }

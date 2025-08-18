@@ -1,5 +1,5 @@
 site_name: Kwik
-site_description: Kwik web framework, modern, concise, opinionated API for batteries-included RESTful backends
+site_description: Fast, batteries-included, business-oriented, opinionated REST APIs framework
 site_url: https://davide.mezzogori.com/kwik/
 site_author: Davide Mezzogori
 theme:
