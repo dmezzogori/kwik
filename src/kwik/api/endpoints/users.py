@@ -7,7 +7,14 @@ from typing import TYPE_CHECKING
 import kwik.typings
 from kwik.core.enum import Permissions
 from kwik.crud import crud_users
-from kwik.dependencies import Pagination, UserContext, current_user, has_permission
+from kwik.dependencies import (
+    FilterQuery,
+    Pagination,
+    SortingQuery,
+    UserContext,
+    current_user,
+    has_permission,
+)
 from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuthenticatedRouter
 from kwik.schemas import (
@@ -31,9 +38,14 @@ users_router = AuthenticatedRouter(prefix="/users")
     response_model=Paginated[UserProfile],
     dependencies=(has_permission(Permissions.users_management_read),),
 )
-def read_users(pagination: Pagination, context: UserContext) -> kwik.typings.PaginatedResponse[User]:
+def read_users(
+    pagination: Pagination,
+    sort: SortingQuery,
+    filters: FilterQuery,
+    context: UserContext,
+) -> kwik.typings.PaginatedResponse[User]:
     """Retrieve users."""
-    total, data = crud_users.get_multi(**pagination, context=context)
+    total, data = crud_users.get_multi(**pagination, sort=sort, context=context, **filters)
     return kwik.typings.PaginatedResponse(data=data, total=total)
 
 

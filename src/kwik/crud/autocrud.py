@@ -21,9 +21,13 @@ if TYPE_CHECKING:
 def _sort_query[ModelType: Base](
     *, model: type[ModelType], stmt: Select[tuple[ModelType]], sort: ParsedSortingQuery
 ) -> Select[tuple[ModelType]]:
-    """Apply sorting parameters to SQLAlchemy select statement."""
+    """Apply sorting parameters to SQLAlchemy select statement with basic validation."""
+    mapper_columns = inspect(model).columns
     order_by = []
     for attr, order in sort:
+        if attr not in mapper_columns:
+            msg = f"Invalid sort field '{attr}' for model {model.__name__}"
+            raise ValueError(msg)
         model_attr = getattr(model, attr)
         if order == "asc":
             order_by.append(model_attr.asc())
@@ -97,16 +101,24 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
 
         # Apply filters if provided
         if filters:
+            model_columns = inspect(self.model).columns
             for key, value in filters.items():
+                if key not in model_columns:
+                    msg = f"Invalid filter field '{key}' for model {self.model.__name__}"
+                    raise ValueError(msg)
                 stmt = stmt.where(getattr(self.model, key) == value)
 
         # Get count for pagination
         count_stmt = select(func.count()).select_from(stmt.subquery())
         count = context.session.execute(count_stmt).scalar() or 0
 
-        # Apply sorting if provided
-        if sort is not None:
+        # Apply sorting if provided, otherwise default to primary key(s) ascending for stable pagination
+        if sort:
             stmt = _sort_query(model=self.model, stmt=stmt, sort=sort)
+        else:
+            pk_cols = inspect(self.model).primary_key
+            if pk_cols:
+                stmt = stmt.order_by(*[c.asc() for c in pk_cols])
 
         # Apply pagination and execute
         stmt = stmt.offset(skip).limit(limit)
