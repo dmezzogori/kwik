@@ -25,7 +25,7 @@ plugins:
   - minify:
       minify_html: true
 nav:
-  - Kwik: index.md
+  - Home: index.md
 copyright: Copyright &copy; 2025 Davide Mezzogori
 
 extra:

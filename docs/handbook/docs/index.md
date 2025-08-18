@@ -1,6 +1,5 @@
 ---
-title: Kwik
-subtitle: The Business-First Python Web Framework
+subtitle: Fast, batteries-included, business-oriented, opinionated REST APIs framework
 ---
 
 <div style="text-align: center;">
