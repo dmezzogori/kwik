@@ -18,3 +18,8 @@ async def kwik_exception_handler(request: Request, exc: KwikError) -> JSONRespon
         status_code=exc.status_code,
         content={"detail": exc.detail},
     )
+
+
+async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:  # noqa: ARG001
+    """Map validation `ValueError` to a Bad Request JSON response."""
+    return JSONResponse(status_code=400, content={"detail": str(exc)})

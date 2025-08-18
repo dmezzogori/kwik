@@ -12,7 +12,7 @@ from starlette.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from kwik.database import create_engine, create_session_factory, session_scope
-from kwik.exceptions import KwikError, kwik_exception_handler
+from kwik.exceptions import KwikError, kwik_exception_handler, value_error_handler
 from kwik.logging import logger
 
 if TYPE_CHECKING:
@@ -147,6 +147,7 @@ class Kwik:
         app.include_router(api_router, prefix=self.settings.API_V1_STR)
 
         app.exception_handler(KwikError)(kwik_exception_handler)
+        app.exception_handler(ValueError)(value_error_handler)
 
         return app
 
