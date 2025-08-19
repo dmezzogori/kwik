@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2025-08-19
+
+### Changed
+
+- Documentation updated to clarify current synchronous SQLAlchemy 2.x implementation (async support planned for future).
+
+### Removed
+
+- Unused `asyncpg` dependency to reduce install footprint and eliminate confusion about async vs sync implementation.
+
 ## [1.1.0] - 2025-01-19
 
 ### Added

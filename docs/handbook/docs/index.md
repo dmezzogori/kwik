@@ -187,7 +187,7 @@ Kwik is opinionated because **you shouldn't have to make the same architectural 
 
 **Security**: JWT authentication, RBAC permissions, audit trails, rate limiting, security headers - all configured and working.
 
-**Database**: PostgreSQL with async support, connection pooling, migrations, model mixins - all integrated.
+**Database**: PostgreSQL with synchronous SQLAlchemy 2.x (async support planned), connection pooling, migrations, model mixins - all integrated.
 
 **Testing**: Real database testing with testcontainers, user simulation, business scenario testing - all provided.
 
@@ -202,7 +202,7 @@ Kwik is opinionated because **you shouldn't have to make the same architectural 
 Kwik stands on the shoulders of giants:
 
 * **[FastAPI](https://fastapi.tiangolo.com/)**: High-performance async web framework
-* **[SQLAlchemy 2.0+](https://www.sqlalchemy.org/)**: Modern async ORM with type safety
+* **[SQLAlchemy 2.0+](https://www.sqlalchemy.org/)**: Modern ORM with type safety
 * **[Pydantic](https://docs.pydantic.dev/)**: Data validation and serialization
 * **[PostgreSQL](https://www.postgresql.org/)**: Enterprise-grade database
 * **[Testcontainers](https://testcontainers-python.readthedocs.io/)**: Real database testing
