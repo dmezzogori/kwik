@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, get_args
+from typing import TYPE_CHECKING, ClassVar, get_args
 
 from pydantic import BaseModel
 from sqlalchemy import func, inspect, select
@@ -15,15 +15,19 @@ from .context import Context, UserCtx
 if TYPE_CHECKING:
     from sqlalchemy import Select
 
-    from kwik.typings import ParsedSortingQuery
+    from kwik.dependencies.sorting_query import ParsedSortingQuery
 
 
 def _sort_query[ModelType: Base](
     *, model: type[ModelType], stmt: Select[tuple[ModelType]], sort: ParsedSortingQuery
 ) -> Select[tuple[ModelType]]:
-    """Apply sorting parameters to SQLAlchemy select statement."""
+    """Apply sorting parameters to SQLAlchemy select statement with basic validation."""
+    mapper_columns = inspect(model).columns
     order_by = []
     for attr, order in sort:
+        if attr not in mapper_columns:
+            msg = f"Invalid sort field '{attr}' for model {model.__name__}"
+            raise ValueError(msg)
         model_attr = getattr(model, attr)
         if order == "asc":
             order_by.append(model_attr.asc())
@@ -40,6 +44,8 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
     """Complete CRUD implementation combining create, read, update, and delete operations."""
 
     model: type[ModelType]
+    # Optional allowlist of fields exposed for list filtering/sorting
+    list_allowed_fields: ClassVar[set[str] | None] = None
 
     def __init__(self) -> None:
         """
@@ -64,6 +70,13 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
         model_columns = inspect(self.model).columns
         self.record_creator_user_id = "creator_user_id" in model_columns
         self.record_modifier_user_id = "last_modifier_user_id" in model_columns
+
+        # Determine allowed fields for list queries
+        if self.list_allowed_fields is None:
+            # default to all mapped columns
+            self._list_allowed_fields = set(model_columns.keys())
+        else:
+            self._list_allowed_fields = set(self.list_allowed_fields)
 
         # Validate consistency: if model has audit fields, Context must be UserCtx
         if (self.record_creator_user_id or self.record_modifier_user_id) and bases is not None:
@@ -98,15 +111,27 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
         # Apply filters if provided
         if filters:
             for key, value in filters.items():
+                if key not in self._list_allowed_fields:
+                    msg = f"Invalid filter field '{key}' for model {self.model.__name__}"
+                    raise ValueError(msg)
                 stmt = stmt.where(getattr(self.model, key) == value)
 
         # Get count for pagination
         count_stmt = select(func.count()).select_from(stmt.subquery())
         count = context.session.execute(count_stmt).scalar() or 0
 
-        # Apply sorting if provided
-        if sort is not None:
+        # Apply sorting if provided, otherwise default to primary key(s) ascending for stable pagination
+        if sort:
+            # Validate sort fields against allowlist
+            for key, _ in sort:
+                if key not in self._list_allowed_fields:
+                    msg = f"Invalid sort field '{key}' for model {self.model.__name__}"
+                    raise ValueError(msg)
             stmt = _sort_query(model=self.model, stmt=stmt, sort=sort)
+        else:
+            pk_cols = inspect(self.model).primary_key
+            if pk_cols:
+                stmt = stmt.order_by(*[c.asc() for c in pk_cols])
 
         # Apply pagination and execute
         stmt = stmt.offset(skip).limit(limit)

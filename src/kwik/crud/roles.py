@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from sqlalchemy import or_, select
 
 from kwik.models import Permission, Role, RolePermission, User, UserRole
@@ -13,6 +15,9 @@ from .context import UserCtx
 
 class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
     """CRUD operations for roles with user and permission management."""
+
+    # Expose only safe/public fields for list filtering/sorting
+    list_allowed_fields: ClassVar[set[str]] = {"id", "name", "is_active"}
 
     def get_by_name(self, *, name: str, context: UserCtx) -> Role | None:
         """Get role by name."""

@@ -6,11 +6,10 @@ from typing import TYPE_CHECKING
 
 from kwik.core.enum import Permissions
 from kwik.crud import crud_permissions
-from kwik.dependencies import Pagination, UserContext, has_permission
+from kwik.dependencies import ListQuery, UserContext, has_permission
 from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuthenticatedRouter
 from kwik.schemas import Paginated, PermissionDefinition, PermissionProfile, PermissionUpdate, RoleProfile
-from kwik.typings import PaginatedResponse
 
 if TYPE_CHECKING:
     from kwik.models import Permission, Role
@@ -23,10 +22,10 @@ permissions_router = AuthenticatedRouter(prefix="/permissions")
     response_model=Paginated[PermissionProfile],
     dependencies=(has_permission(Permissions.permissions_management_read),),
 )
-def read_permissions(paginated: Pagination, context: UserContext) -> PaginatedResponse[Permission]:
+def read_permissions(q: ListQuery, context: UserContext) -> Paginated[PermissionProfile]:
     """Retrieve permissions."""
-    total, data = crud_permissions.get_multi(**paginated, context=context)
-    return PaginatedResponse(total=total, data=data)
+    total, data = crud_permissions.get_multi(context=context, **q)
+    return {"total": total, "data": data}
 
 
 @permissions_router.post(

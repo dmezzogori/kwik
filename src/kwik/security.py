@@ -14,7 +14,6 @@ from kwik.exceptions.base import TokenValidationError
 
 if TYPE_CHECKING:
     from kwik.settings import BaseKwikSettings
-    from kwik.typings import Token
 
 ALGORITHM: Final[str] = "HS256"
 
@@ -24,7 +23,7 @@ def create_token(
     user_id: int,
     impersonator_user_id: int | None = None,
     settings: BaseKwikSettings,
-) -> Token:
+) -> schemas.Token:
     """Create OAuth2 bearer token response for user authentication."""
     access_token = jwt.encode(
         {
@@ -36,7 +35,7 @@ def create_token(
         algorithm=ALGORITHM,
     )
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return schemas.Token(access_token=access_token, token_type="bearer")  # noqa: S106
 
 
 def decode_token(*, token: str, settings: BaseKwikSettings) -> schemas.TokenPayload:

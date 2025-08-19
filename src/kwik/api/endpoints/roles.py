@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import kwik.typings
 from kwik.core.enum import Permissions
 from kwik.crud import crud_permissions, crud_roles, crud_users
-from kwik.dependencies import Pagination, UserContext, has_permission
+from kwik.dependencies import ListQuery, UserContext, has_permission
 from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuthenticatedRouter
 from kwik.schemas import (
@@ -32,10 +31,10 @@ roles_router = AuthenticatedRouter(prefix="/roles")
     response_model=Paginated[RoleProfile],
     dependencies=(has_permission(Permissions.roles_management_read),),
 )
-def read_roles(paginated: Pagination, context: UserContext) -> kwik.typings.PaginatedResponse[Role]:
+def read_roles(q: ListQuery, context: UserContext) -> Paginated[RoleProfile]:
     """Retrieve roles."""
-    total, data = crud_roles.get_multi(context=context, **paginated)
-    return kwik.typings.PaginatedResponse(data=data, total=total)
+    total, data = crud_roles.get_multi(context=context, **q)
+    return {"total": total, "data": data}
 
 
 @roles_router.post(

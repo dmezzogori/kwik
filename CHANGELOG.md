@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.1.0] - 2025-01-19
+
+### Added
+
+- Unified `ListQuery` dependency combining pagination, sorting, and filtering for list endpoints.
+- Sorting and filtering now supported on users/roles/permissions endpoints via query params.
+
+### Changed
+
+- Default stable ordering applied to listings (primary key ascending) when no `sorting` is provided.
+- Invalid sort/filter fields now return HTTP 400 with a clear error message.
+
 ## [1.0.0] - 2025-01-18
 
 ### Added
