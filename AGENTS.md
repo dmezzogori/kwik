@@ -174,12 +174,16 @@ Kwik uses an automated release process with GitHub Actions and PyPI trusted publ
 3. Run tests and linting locally during development
 
 ### Release Preparation
-1. **Update Documentation:**
+1. **Update Version:**
+   - Update version in `pyproject.toml` to match the intended release version
+   - **CRITICAL**: This must match the tag version (e.g., if tagging `v1.2.0`, set version to `"1.2.0"`)
+
+2. **Update Documentation:**
    - Move `CHANGELOG.md` [Unreleased] content to new versioned section with release date
    - Update `ROADMAP.md` by removing completed tasks (git history preserves them)
    - Document any breaking changes or migration steps
 
-2. **Pre-release Validation:**
+3. **Pre-release Validation:**
    ```bash
    # Run full test suite
    pytest
@@ -189,7 +193,7 @@ Kwik uses an automated release process with GitHub Actions and PyPI trusted publ
    ruff format
    ```
 
-3. **Rebase Feature Branch:**
+4. **Rebase Feature Branch:**
    ```bash
    # Ensure main branch is up to date
    git checkout main
@@ -200,9 +204,9 @@ Kwik uses an automated release process with GitHub Actions and PyPI trusted publ
    git rebase main
    ```
 
-4. **Commit Documentation Updates:**
+5. **Commit All Updates:**
    ```bash
-   git add CHANGELOG.md ROADMAP.md
+   git add pyproject.toml CHANGELOG.md ROADMAP.md
    git commit -m "docs: prepare v1.x.x release"
    ```
 
