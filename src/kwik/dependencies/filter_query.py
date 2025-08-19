@@ -15,7 +15,7 @@ def _filters(filter_key: str | None = None, value: str | None = None) -> dict[st
     return {}
 
 
-FilterQuery = Annotated[dict[str, str], Depends(_filters)]
+Filters = Annotated[dict[str, str], Depends(_filters)]
 
 
-__all__ = ["FilterQuery"]
+__all__ = ["Filters"]
