@@ -8,7 +8,7 @@
 
 ## Phase 1: Foundation Strengthening
 
-### 1.1 Enhanced Testing Infrastructure (v1.1.0)
+### 1.2 Enhanced Testing Infrastructure (v1.2.0)
 - **Goal:** Robust testing foundation for all improvements
 - **Key Features:**
   - **Fluent Scenario Builder:** `Scenario().with_user(admin=True).with_posts(5).build()`
@@ -17,15 +17,6 @@
   - Better fixtures and factories
 - **Branch:** `feature/v1-testing`
 
-### 1.2 Declarative Data Shaping Engine (v1.2.0)
-- **Goal:** Replace basic pagination/sorting with type-safe, declarative system
-- **Current Issues:** Basic skip/limit, regex-based sorting, no validation
-- **Solution:** Pydantic-based dependency for filtering, sorting, field selection
-- **Features:**
-  - **Auto-Cursor Pagination:** Efficient cursor-based with RFC 8288 Link headers
-  - **Smart Sorting:** Field validation, type safety, relationship support
-  - **Dynamic Filtering:** Type-safe query parameter parsing
-- **Branch:** `feature/v1-data-shaping`
 
 ### 1.3 Adaptive Caching Layer (v1.3.0)
 - **Goal:** Easy-to-use, flexible caching system
@@ -114,3 +105,14 @@
 - Real-time updates via WebSocket integration
 - Customizable with actions and views
 - **Impact**: Modern successor to Django Admin
+
+## Phase 5: Advanced Features (v2.x)
+
+### 5.1 Advanced Data Shaping (v2.1.0)
+- **Goal:** Complete the declarative data shaping vision with advanced features
+- **Features:**
+  - **Auto-Cursor Pagination:** Efficient cursor-based pagination with RFC 8288 Link headers
+  - **Relationship Sorting:** Sort by related model fields (e.g., `users?sort=role.name:desc`)
+  - **Advanced Dynamic Filtering:** Complex query operators and nested filtering
+  - **Field Selection:** GraphQL-style field selection for optimized responses
+- **Branch:** `feature/v2-advanced-data-shaping`

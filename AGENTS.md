@@ -164,6 +164,86 @@ docker compose up
 6. **Linting**: Run `ruff check` and fix issues
 7. **Format**: Run `ruff format` to apply code style
 
+## Release Workflow
+
+Kwik uses an automated release process with GitHub Actions and PyPI trusted publishing.
+
+### Development Phase
+1. Work on feature branches (`feature/feature-name`)
+2. Make regular commits with descriptive messages
+3. Run tests and linting locally during development
+
+### Release Preparation
+1. **Update Documentation:**
+   - Move `CHANGELOG.md` [Unreleased] content to new versioned section with release date
+   - Update `ROADMAP.md` by removing completed tasks (git history preserves them)
+   - Document any breaking changes or migration steps
+
+2. **Pre-release Validation:**
+   ```bash
+   # Run full test suite
+   pytest
+   
+   # Check code quality
+   ruff check
+   ruff format
+   ```
+
+3. **Rebase Feature Branch:**
+   ```bash
+   # Ensure main branch is up to date
+   git checkout main
+   git pull origin main
+   
+   # Rebase feature branch onto main to maintain linear history
+   git checkout feature/your-feature-name
+   git rebase main
+   ```
+
+4. **Commit Documentation Updates:**
+   ```bash
+   git add CHANGELOG.md ROADMAP.md
+   git commit -m "docs: prepare v1.x.x release"
+   ```
+
+### Release Execution
+1. **Create Pull Request:**
+   ```bash
+   gh pr create --title "Release v1.x.x" --body "Release preparation for v1.x.x"
+   ```
+
+2. **Merge to Main:**
+   - Use GitHub UI to merge PR maintaining linear history (rebase or squash merge)
+   - **CRITICAL**: Maintain linear history - no merge commits
+
+3. **Tag and Trigger Release:**
+   ```bash
+   # Switch to main and pull latest
+   git checkout main
+   git pull origin main
+   
+   # Create and push version tag
+   git tag v1.x.x
+   git push origin v1.x.x
+   ```
+
+4. **Automated Publishing:**
+   - GitHub Actions workflow `.github/workflows/publish.yml` triggers on tag push
+   - Workflow runs tests, linting, formatting checks, builds package
+   - Publishes to PyPI using trusted publishing (no manual credentials needed)
+   - Monitor workflow execution in GitHub Actions tab
+
+### Post-Release
+- Verify package appears on PyPI: https://pypi.org/project/kwik/
+- Update any dependent projects or documentation
+- Monitor for issues or feedback
+
+### Tools Used
+- **`git`**: Version control operations (add, commit, tag, push, pull, checkout)
+- **`gh`**: GitHub CLI for pull requests and repository management
+- **GitHub Actions**: Automated testing, building, and publishing
+- **PyPI Trusted Publishing**: Secure automated package publishing
+
 ## Repository Context
 
 - **Status**: Pre-release, active development
