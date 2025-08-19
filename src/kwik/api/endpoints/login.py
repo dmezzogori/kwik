@@ -11,9 +11,8 @@ from kwik.core.enum import Permissions
 from kwik.crud import crud_users
 from kwik.dependencies import NoUserContext, Settings, UserContext, current_token, current_user, has_permission
 from kwik.exceptions.base import TokenValidationError
-from kwik.schemas import UserProfile
+from kwik.schemas import Token, UserProfile
 from kwik.security import create_token, verify_password_reset_token
-from kwik.typings import Token
 
 if TYPE_CHECKING:
     from kwik.models import User

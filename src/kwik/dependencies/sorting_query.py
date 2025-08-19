@@ -7,7 +7,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from kwik.typings import ParsedSortingQuery
+ParsedSortingQuery = list[tuple[str, str]]
 
 
 def _parse_sorting_query(sorting: str | None = None) -> ParsedSortingQuery:

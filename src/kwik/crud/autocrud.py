@@ -15,7 +15,7 @@ from .context import Context, UserCtx
 if TYPE_CHECKING:
     from sqlalchemy import Select
 
-    from kwik.typings import ParsedSortingQuery
+    from kwik.dependencies.sorting_query import ParsedSortingQuery
 
 
 def _sort_query[ModelType: Base](

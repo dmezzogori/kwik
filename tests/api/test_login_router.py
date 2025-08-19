@@ -15,7 +15,6 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING
 
 import jwt
-import pytest
 
 from kwik.security import generate_password_reset_token
 
@@ -263,10 +262,10 @@ class TestLoginRouter:
 
     def test_stop_impersonating_regular_token(self, admin_client: TestClient) -> None:
         """Test stop_impersonating with regular (non-impersonation) token."""
-        # This test demonstrates a bug in the implementation
-        # Regular tokens have empty kwik_impersonate field, causing ValueError in int()
-        with pytest.raises(ValueError, match="invalid literal for int()"):
-            admin_client.post("/api/v1/login/stop_impersonating")
+        # Regular tokens have empty kwik_impersonate field, which should return HTTP 400
+        response = admin_client.post("/api/v1/login/stop_impersonating")
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "invalid literal for int()" in response.json()["detail"]
 
     def test_reset_password_valid_token(
         self,

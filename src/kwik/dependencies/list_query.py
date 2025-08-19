@@ -11,7 +11,7 @@ from .pagination import Pagination  # noqa: TC001
 from .sorting_query import Sorting  # noqa: TC001
 
 if TYPE_CHECKING:
-    from kwik.typings import ParsedSortingQuery
+    from .sorting_query import ParsedSortingQuery
 
 
 class _ListQueryParameters(TypedDict, total=False):

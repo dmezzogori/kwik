@@ -77,7 +77,7 @@ def test_decode_token_valid(settings: BaseKwikSettings) -> None:
     """Test that a valid JWT token is decoded correctly."""
     user_id = 123
     token_data = create_token(user_id=user_id, settings=settings)
-    decoded_payload = decode_token(token=token_data["access_token"], settings=settings)
+    decoded_payload = decode_token(token=token_data.access_token, settings=settings)
 
     assert decoded_payload.sub == user_id
     assert decoded_payload.kwik_impersonate == ""
@@ -88,7 +88,7 @@ def test_decode_token_with_impersonation(settings: BaseKwikSettings) -> None:
     user_id = 123
     impersonator_id = 456
     token_data = create_token(user_id=user_id, impersonator_user_id=impersonator_id, settings=settings)
-    decoded_payload = decode_token(token=token_data["access_token"], settings=settings)
+    decoded_payload = decode_token(token=token_data.access_token, settings=settings)
 
     assert decoded_payload.sub == user_id
     assert decoded_payload.kwik_impersonate == str(impersonator_id)
@@ -98,7 +98,7 @@ def test_decode_token_invalid_signature(settings: BaseKwikSettings) -> None:
     """Test that an invalid token signature raises TokenValidationError."""
     user_id = 123
     token_data = create_token(user_id=user_id, settings=settings)
-    tampered_token = token_data["access_token"] + "invalid"
+    tampered_token = token_data.access_token + "invalid"
 
     with pytest.raises(TokenValidationError):
         decode_token(token=tampered_token, settings=settings)
