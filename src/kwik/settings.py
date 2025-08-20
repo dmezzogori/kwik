@@ -53,6 +53,9 @@ class BaseKwikSettings(BaseSettings):
     # Project settings
     PROJECT_NAME: str = "kwik"
 
+    # File upload settings
+    UPLOADS_DIR: str = "./uploads"
+
     # User settings
     FIRST_SUPERUSER: EmailStr = "admin@example.com"
     FIRST_SUPERUSER_PASSWORD: str = "admin"  # noqa: S105
