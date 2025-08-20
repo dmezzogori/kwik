@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import shutil
+import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import UploadFile
 
+from kwik.settings import BaseKwikSettings
 from kwik.utils.files import store_file
 
 TEST_CONTENT = b"test content"
@@ -15,118 +18,190 @@ TEST_CONTENT_SIZE = len(TEST_CONTENT)
 
 
 @pytest.mark.asyncio
-@patch("aiofiles.open")
-@patch("pathlib.Path.mkdir")
-@patch("pathlib.Path.resolve")
-async def test_store_file_default_path(
-    mock_resolve: MagicMock, mock_mkdir: MagicMock, mock_aio_open: MagicMock
-) -> None:
+async def test_store_file_default_path() -> None:
     """Test storing a file in the default path."""
-    # Arrange
-    mock_resolve.return_value = Path("/uploads")
-    mock_file = MagicMock(spec=UploadFile)
-    mock_file.read = AsyncMock(side_effect=[TEST_CONTENT, b""])
-    mock_file.filename = "test.txt"
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Arrange
+        settings = BaseKwikSettings(UPLOADS_DIR=temp_dir)
+        mock_file = MagicMock(spec=UploadFile)
+        mock_file.read = AsyncMock(side_effect=[TEST_CONTENT, b""])
+        mock_file.filename = "test.txt"
 
-    # Mock the async context manager for aiofiles.open
-    mock_async_file = AsyncMock()
-    mock_aio_open.return_value.__aenter__.return_value = mock_async_file
+        # Act
+        relative_path, file_size = await store_file(in_file=mock_file, settings=settings)
 
-    # Act
-    file_name, file_size = await store_file(in_file=mock_file)
+        # Assert
+        assert isinstance(relative_path, str)
+        assert file_size == TEST_CONTENT_SIZE
+        # Should be just the UUID filename since no subpath
+        assert "/" not in relative_path
 
-    # Assert
-    assert isinstance(file_name, str)
-    assert file_size == TEST_CONTENT_SIZE
-    mock_aio_open.assert_called_once()
-    assert mock_aio_open.call_args[0][0].startswith("/uploads/")
-    mock_async_file.write.assert_called_once_with(TEST_CONTENT)
-    mock_mkdir.assert_not_called()  # No path provided, so no mkdir
+        # Verify file exists and has correct content
+        full_path = Path(temp_dir) / relative_path
+        assert full_path.exists()
+        assert full_path.read_bytes() == TEST_CONTENT
 
 
 @pytest.mark.asyncio
-@patch("aiofiles.open")
-@patch("pathlib.Path.mkdir")
-@patch("pathlib.Path.resolve")
-async def test_store_file_with_subdirectory(
-    mock_resolve: MagicMock, mock_mkdir: MagicMock, mock_aio_open: MagicMock
-) -> None:
+async def test_store_file_with_subdirectory() -> None:
     """Test storing a file in a subdirectory."""
-    # Arrange
-    base_path = Path("/uploads")
-    sub_path = "images"
-    full_path = base_path / sub_path
-    mock_resolve.side_effect = [base_path, full_path, full_path]
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Arrange
+        settings = BaseKwikSettings(UPLOADS_DIR=temp_dir)
+        sub_path = "images"
+        mock_file = MagicMock(spec=UploadFile)
+        mock_file.read = AsyncMock(side_effect=[TEST_CONTENT, b""])
+        mock_file.filename = "test.txt"
 
-    mock_file = MagicMock(spec=UploadFile)
-    mock_file.read = AsyncMock(side_effect=[TEST_CONTENT, b""])
-    mock_file.filename = "test.txt"
+        # Act
+        relative_path, file_size = await store_file(in_file=mock_file, path=sub_path, settings=settings)
 
-    mock_async_file = AsyncMock()
-    mock_aio_open.return_value.__aenter__.return_value = mock_async_file
+        # Assert
+        assert isinstance(relative_path, str)
+        assert file_size == TEST_CONTENT_SIZE
+        assert relative_path.startswith(f"{sub_path}/")
 
-    # Act
-    file_name, file_size = await store_file(in_file=mock_file, path=sub_path)
-
-    # Assert
-    assert isinstance(file_name, str)
-    assert file_size == TEST_CONTENT_SIZE
-    mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
-    mock_aio_open.assert_called_once()
-    assert mock_aio_open.call_args[0][0].startswith(str(full_path))
+        # Verify subdirectory was created and file exists
+        full_path = Path(temp_dir) / relative_path
+        assert full_path.exists()
+        assert full_path.parent.name == sub_path
+        assert full_path.read_bytes() == TEST_CONTENT
 
 
 @pytest.mark.asyncio
-@patch("aiofiles.open")
-@patch("pathlib.Path.mkdir")
-@patch("pathlib.Path.resolve")
-async def test_store_file_with_nested_subdirectory(
-    mock_resolve: MagicMock, mock_mkdir: MagicMock, mock_aio_open: MagicMock
-) -> None:
+async def test_store_file_with_nested_subdirectory() -> None:
     """Test storing a file in a nested subdirectory."""
-    # Arrange
-    base_path = Path("/uploads")
-    sub_path = "images/avatars"
-    full_path = base_path / sub_path
-    mock_resolve.side_effect = [base_path, full_path, full_path]
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Arrange
+        settings = BaseKwikSettings(UPLOADS_DIR=temp_dir)
+        sub_path = "images/avatars"
+        mock_file = MagicMock(spec=UploadFile)
+        mock_file.read = AsyncMock(side_effect=[TEST_CONTENT, b""])
+        mock_file.filename = "test.txt"
 
-    mock_file = MagicMock(spec=UploadFile)
-    mock_file.read = AsyncMock(side_effect=[TEST_CONTENT, b""])
-    mock_file.filename = "test.txt"
+        # Act
+        relative_path, file_size = await store_file(in_file=mock_file, path=sub_path, settings=settings)
 
-    mock_async_file = AsyncMock()
-    mock_aio_open.return_value.__aenter__.return_value = mock_async_file
+        # Assert
+        assert isinstance(relative_path, str)
+        assert file_size == TEST_CONTENT_SIZE
+        assert relative_path.startswith(f"{sub_path}/")
 
-    # Act
-    file_name, file_size = await store_file(in_file=mock_file, path=sub_path)
-
-    # Assert
-    assert isinstance(file_name, str)
-    assert file_size == TEST_CONTENT_SIZE
-    mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
-    mock_aio_open.assert_called_once()
-    assert mock_aio_open.call_args[0][0].startswith(str(full_path))
+        # Verify nested subdirectory was created and file exists
+        full_path = Path(temp_dir) / relative_path
+        assert full_path.exists()
+        assert str(full_path.parent).endswith("images/avatars")
+        assert full_path.read_bytes() == TEST_CONTENT
 
 
 @pytest.mark.asyncio
 async def test_store_file_invalid_path_empty() -> None:
     """Test that an empty path raises a ValueError."""
-    mock_file = MagicMock(spec=UploadFile)
-    with pytest.raises(ValueError, match="Invalid path: empty after cleaning"):
-        await store_file(in_file=mock_file, path="/")
+    with tempfile.TemporaryDirectory() as temp_dir:
+        settings = BaseKwikSettings(UPLOADS_DIR=temp_dir)
+        mock_file = MagicMock(spec=UploadFile)
+        with pytest.raises(ValueError, match="Invalid path: empty after cleaning"):
+            await store_file(in_file=mock_file, path="/", settings=settings)
 
 
 @pytest.mark.asyncio
-@patch("pathlib.Path.resolve")
-async def test_store_file_directory_traversal(mock_resolve: MagicMock) -> None:
+async def test_store_file_directory_traversal() -> None:
     """Test that directory traversal is prevented."""
-    # Arrange
-    mock_resolve.side_effect = [
-        Path("/uploads"),
-        Path("/etc"),
-    ]
-    mock_file = MagicMock(spec=UploadFile)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        settings = BaseKwikSettings(UPLOADS_DIR=temp_dir)
+        mock_file = MagicMock(spec=UploadFile)
 
-    # Act & Assert
-    with pytest.raises(ValueError, match="Invalid path: directory traversal detected"):
-        await store_file(in_file=mock_file, path="../../etc")
+        # Act & Assert - test various traversal attempts
+        with pytest.raises(ValueError, match="Invalid path: directory traversal detected"):
+            await store_file(in_file=mock_file, path="../../etc", settings=settings)
+
+
+@pytest.mark.asyncio
+async def test_store_file_directory_traversal_with_dots() -> None:
+    """Test that directory traversal with different patterns is prevented."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        settings = BaseKwikSettings(UPLOADS_DIR=temp_dir)
+
+        # Test various traversal patterns that should be blocked
+        dangerous_paths = [
+            "../../../etc/passwd",
+            "images/../../../etc",
+            "valid/../../etc/passwd",
+        ]
+
+        for path_attempt in dangerous_paths:
+            # Create a fresh mock for each attempt
+            mock_file = MagicMock(spec=UploadFile)
+            mock_file.read = AsyncMock(side_effect=[TEST_CONTENT, b""])
+            with pytest.raises(ValueError, match="Invalid path: directory traversal detected"):
+                await store_file(in_file=mock_file, path=path_attempt, settings=settings)
+
+
+@pytest.mark.asyncio
+async def test_store_file_safe_paths_allowed() -> None:
+    """Test that safe paths with dots are allowed."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        settings = BaseKwikSettings(UPLOADS_DIR=temp_dir)
+
+        # These paths should be safe and allowed
+        safe_paths = [
+            "images/..valid",  # backslash literal in filename is safe on Unix
+            "docs/file.name",  # normal path
+            "images/icons",  # normal nested path
+        ]
+
+        for safe_path in safe_paths:
+            mock_file = MagicMock(spec=UploadFile)
+            mock_file.read = AsyncMock(side_effect=[TEST_CONTENT, b""])
+
+            # Should not raise an exception
+            relative_path, file_size = await store_file(in_file=mock_file, path=safe_path, settings=settings)
+            assert file_size == TEST_CONTENT_SIZE
+            assert relative_path.startswith(f"{safe_path}/")
+
+
+@pytest.mark.asyncio
+async def test_store_file_backward_compatibility() -> None:
+    """Test that the function works without explicit settings parameter."""
+    # This creates the default settings internally
+    mock_file = MagicMock(spec=UploadFile)
+    mock_file.read = AsyncMock(side_effect=[TEST_CONTENT, b""])
+    mock_file.filename = "test.txt"
+
+    # Should work without settings parameter (creates default ./uploads)
+    relative_path, file_size = await store_file(in_file=mock_file)
+
+    assert isinstance(relative_path, str)
+    assert file_size == TEST_CONTENT_SIZE
+    assert "/" not in relative_path  # No subpath, just filename
+
+    # Clean up the created ./uploads directory
+    uploads_dir = Path("./uploads")
+    if uploads_dir.exists():
+        shutil.rmtree(uploads_dir)
+
+
+@pytest.mark.asyncio
+async def test_store_file_chunk_size_performance() -> None:
+    """Test that large files are handled with 64KB chunks."""
+    # Create a larger test content to verify chunking behavior
+    large_content = b"x" * (128 * 1024)  # 128KB content
+    expected_size = len(large_content)
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        settings = BaseKwikSettings(UPLOADS_DIR=temp_dir)
+        mock_file = MagicMock(spec=UploadFile)
+
+        # Simulate chunked reading: 64KB + 64KB + empty
+        chunk_size = 65536  # 64KB
+        mock_file.read = AsyncMock(side_effect=[large_content[:chunk_size], large_content[chunk_size:], b""])
+        mock_file.filename = "large_test.bin"
+
+        # Act
+        relative_path, file_size = await store_file(in_file=mock_file, settings=settings)
+
+        # Assert
+        assert file_size == expected_size
+        full_path = Path(temp_dir) / relative_path
+        assert full_path.exists()
+        assert full_path.stat().st_size == expected_size

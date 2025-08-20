@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-08-20
+
+### Added
+
+- **Configurable Upload Directory**: Added `UPLOADS_DIR` setting to `BaseKwikSettings` with default `"./uploads"` for flexible file storage configuration.
+- **Enhanced File Upload Security**: Implemented robust path traversal protection using `pathlib.Path.resolve()` and `relative_to()` methods.
+- **Storage Abstraction**: File upload function now returns relative paths for better storage abstraction and portability.
+
+### Changed
+
+- **File Upload Location**: Default upload directory changed from absolute `/uploads` to relative `./uploads` for better cross-environment compatibility.
+- **Improved Performance**: Increased file upload chunk size from 1KB to 64KB (64x improvement) for better handling of large files.
+- **Enhanced Security**: Replaced brittle string-based path validation with robust pathlib-based directory traversal prevention.
+- **Better Error Handling**: Path traversal attempts now raise clear `ValueError` exceptions with descriptive messages.
+
+### Migration Guide
+
+**For users who need the previous absolute path behavior:**
+- Set the environment variable `KWIK_UPLOADS_DIR="/uploads"` to maintain the old behavior.
+- Alternatively, configure `UPLOADS_DIR="/uploads"` in your settings class.
+
+**API Compatibility:**
+- The `store_file` function signature remains unchanged for backward compatibility.
+- Return value now includes relative paths instead of absolute paths for better storage abstraction.
+- Optional `settings` parameter added but defaults to backward-compatible behavior when not provided.
+
 ## [1.1.1] - 2025-08-19
 
 ### Changed
