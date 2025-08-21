@@ -1,6 +1,6 @@
 [project]
 name = "kwik"
-version = "1.2.0"
+version = "1.2.1"
 description = "Fast, batteries-included, business-oriented, opinionated REST APIs framework"
 readme = "README.md"
 authors = [
