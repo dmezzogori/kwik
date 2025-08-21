@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2025-08-21
+
+### Security
+
+- **CRITICAL FIX**: Removed context router endpoints (`/context/settings`, `/context/session`) that exposed sensitive configuration data including JWT secret keys, database credentials, and other application secrets to unauthenticated users.
+
+### Removed
+
+- **Context Router**: Completely removed `src/kwik/api/endpoints/context.py` and all references to prevent accidental exposure of sensitive data.
+- **Development Endpoints**: Removed debug/development endpoints that were inadvertently included in production builds.
+
+### Migration Notes
+
+- **Breaking Change**: If your application relied on `/api/v1/context/settings` or `/api/v1/context/session` endpoints, they are no longer available.
+- **Immediate Action**: Update to this version immediately if using Kwik 1.2.0 in any production environment.
+- **Security Audit**: Review your logs for any unauthorized access to `/api/v1/context/*` endpoints.
+
 ## [1.2.0] - 2025-08-20
 
 ### Added
