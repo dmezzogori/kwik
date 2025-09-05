@@ -4,7 +4,7 @@ version = "1.2.1"
 description = "Fast, batteries-included, business-oriented, opinionated REST APIs framework"
 readme = "README.md"
 authors = [
-    { name = "dmezzogori", email = "dmezzogori@users.noreply.github.com" }
+    { name = "dmezzogori", email = "dmezzogori@users.noreply.github.com" },
 ]
 requires-python = ">=3.12"
 dependencies = [
@@ -34,7 +34,6 @@ dev = [
     "pytest-cov>=6.2.1",
     "pytest-asyncio>=0.23.0",
     "pytest-xdist>=3.6.0",
-    "factory-boy>=3.3.0",
     "ruff>=0.12.1",
     "testcontainers>=4.0.0",
 ]
@@ -58,10 +57,7 @@ omit = [
 ]
 
 [tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "if TYPE_CHECKING:",
-]
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:"]
 
 
 [tool.ruff]

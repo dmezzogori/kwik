@@ -7,6 +7,7 @@ This module provides pytest fixtures for:
 - Test settings configuration
 - Admin user creation for testing
 - Regular user creation for testing
+- Enhanced testing infrastructure (v1.2.0)
 """
 
 from __future__ import annotations
