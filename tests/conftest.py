@@ -170,5 +170,4 @@ def admin_context(session: Session, admin_user: User) -> UserCtx:
     return Context(session=session, user=admin_user)
 
 
-# Import the factory fixtures to make them available to all tests
-pytest_plugins = ["kwik.testing.fixtures"]
+# Factory fixtures are now auto-discovered via pytest11 entry point in pyproject.toml

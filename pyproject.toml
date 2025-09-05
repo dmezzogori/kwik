@@ -24,6 +24,9 @@ dependencies = [
 [project.scripts]
 kwik = "kwik.__main__:main"
 
+[project.entry-points.pytest11]
+kwik-testing = "kwik.testing.fixtures"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
