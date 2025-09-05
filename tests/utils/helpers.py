@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 from kwik.testing import Scenario
 
 if TYPE_CHECKING:
-    from kwik.crud import NoUserCtx, UserCtx
-    from kwik.models import Permission, Role, User
+    from kwik.crud import NoUserCtx
+    from kwik.models import User
 
 
 def create_test_user(  # noqa: PLR0913
@@ -30,18 +30,3 @@ def create_test_user(  # noqa: PLR0913
     )
     result = scenario.build(session=context.session)
     return result.users[name]
-
-
-def create_test_role(*, name: str = "test_role", is_active: bool = True, context: UserCtx) -> Role:
-    """Create a test role with the specified parameters."""
-    scenario = Scenario().with_role(name=name, is_active=is_active)
-    result = scenario.build(session=context.session, admin_user=context.user)
-    return result.roles[name]
-
-
-def create_test_permission(*, name: str = "test_permission", context: UserCtx) -> Permission:
-    """Create a test permission with the specified parameters."""
-    scenario = Scenario()
-    scenario._custom_permissions.add(name)
-    result = scenario.build(session=context.session, admin_user=context.user)
-    return result.permissions[name]

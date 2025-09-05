@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 
 from kwik.crud import UserCtx, crud_permissions, crud_roles
 from kwik.exceptions import DuplicatedEntityError, EntityNotFoundError
 from kwik.schemas import PermissionDefinition, PermissionUpdate
-from tests.utils import create_test_permission, create_test_role
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from kwik.models import Permission, Role
 
 
 class TestPermissionCRUD:
@@ -36,10 +42,10 @@ class TestPermissionCRUD:
         assert perm1.id != perm2.id
         assert perm1.name == perm2.name == "duplicate_permission"
 
-    def test_get_permission_by_id(self, admin_context: UserCtx) -> None:
+    def test_get_permission_by_id(self, permission_factory: Callable[..., Permission], admin_context: UserCtx) -> None:
         """Test getting a permission by ID."""
         # Create a test permission
-        permission = create_test_permission(name="get_test_permission", context=admin_context)
+        permission = permission_factory(name="get_test_permission")
 
         # Get the permission by ID
         retrieved_permission = crud_permissions.get(entity_id=permission.id, context=admin_context)
@@ -53,10 +59,12 @@ class TestPermissionCRUD:
         retrieved_permission = crud_permissions.get(entity_id=99999, context=admin_context)
         assert retrieved_permission is None
 
-    def test_get_permission_by_name(self, admin_context: UserCtx) -> None:
+    def test_get_permission_by_name(
+        self, permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test getting a permission by name."""
         # Create a test permission
-        permission = create_test_permission(name="unique_permission", context=admin_context)
+        permission = permission_factory(name="unique_permission")
 
         # Get the permission by name
         retrieved_permission = crud_permissions.get_by_name(name="unique_permission", context=admin_context)
@@ -70,10 +78,10 @@ class TestPermissionCRUD:
         retrieved_permission = crud_permissions.get_by_name(name="nonexistent_permission", context=admin_context)
         assert retrieved_permission is None
 
-    def test_update_permission(self, admin_context: UserCtx) -> None:
+    def test_update_permission(self, permission_factory: Callable[..., Permission], admin_context: UserCtx) -> None:
         """Test updating a permission."""
         # Create a test permission
-        permission = create_test_permission(name="original_permission", context=admin_context)
+        permission = permission_factory(name="original_permission")
 
         # Update the permission
         update_data = PermissionUpdate(name="updated_permission")
@@ -82,10 +90,12 @@ class TestPermissionCRUD:
         assert updated_permission.id == permission.id
         assert updated_permission.name == "updated_permission"
 
-    def test_get_if_exist_with_existing_permission(self, admin_context: UserCtx) -> None:
+    def test_get_if_exist_with_existing_permission(
+        self, permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test get_if_exist with an existing permission."""
         # Create a test permission
-        permission = create_test_permission(context=admin_context)
+        permission = permission_factory()
 
         # Get the permission using get_if_exist
         retrieved_permission = crud_permissions.get_if_exist(entity_id=permission.id, context=admin_context)
@@ -119,18 +129,23 @@ class TestPermissionCRUD:
         assert count == total_permissions
         assert len(final_page) == remaining_permissions
 
-    def test_get_roles_assigned_to(self, admin_context: UserCtx) -> None:
+    def test_get_roles_assigned_to(
+        self,
+        permission_factory: Callable[..., Permission],
+        role_factory: Callable[..., Role],
+        admin_context: UserCtx,
+    ) -> None:
         """Test getting roles assigned to a specific permission."""
         # Test constants
         expected_assigned_count = 2
 
         # Create test permission
-        permission = create_test_permission(name="test_permission", context=admin_context)
+        permission = permission_factory(name="test_permission")
 
         # Create test roles
-        role1 = create_test_role(name="assigned_role_1", context=admin_context)
-        role2 = create_test_role(name="assigned_role_2", context=admin_context)
-        role3 = create_test_role(name="unassigned_role", context=admin_context)
+        role1 = role_factory(name="assigned_role_1")
+        role2 = role_factory(name="assigned_role_2")
+        role3 = role_factory(name="unassigned_role")
 
         # Assign roles to permission
         crud_roles.assign_permission(role=role1, permission=permission, context=admin_context)
@@ -153,18 +168,20 @@ class TestPermissionCRUD:
         assert "assigned_role_2" in assigned_role_names
         assert "unassigned_role" not in assigned_role_names
 
-    def test_get_roles_assignable_to(self, admin_context: UserCtx) -> None:
+    def test_get_roles_assignable_to(
+        self, permission_factory: Callable[..., Permission], role_factory: Callable[..., Role], admin_context: UserCtx
+    ) -> None:
         """Test getting roles assignable to a specific permission."""
         # Test constants
         expected_assignable_count = 2  # counts also the impersonator role setup in conftests
 
         # Create test permission
-        permission = create_test_permission(name="test_permission", context=admin_context)
+        permission = permission_factory(name="test_permission")
 
         # Create test roles
-        role1 = create_test_role(name="assigned_role_1", context=admin_context)
-        role2 = create_test_role(name="assigned_role_2", context=admin_context)
-        role3 = create_test_role(name="assignable_role", context=admin_context)
+        role1 = role_factory(name="assigned_role_1")
+        role2 = role_factory(name="assigned_role_2")
+        role3 = role_factory(name="assignable_role")
 
         # Assign some roles to permission
         crud_roles.assign_permission(role=role1, permission=permission, context=admin_context)
@@ -187,19 +204,24 @@ class TestPermissionCRUD:
         assert "assigned_role_1" not in assignable_role_names
         assert "assigned_role_2" not in assignable_role_names
 
-    def test_purge_all_roles(self, admin_context: UserCtx) -> None:
+    def test_purge_all_roles(
+        self,
+        permission_factory: Callable[..., Permission],
+        role_factory: Callable[..., Role],
+        admin_context: UserCtx,
+    ) -> None:
         """Test purging all role associations from a permission."""
         # Test constants
         initial_role_count = 3
         expected_roles_after_purge = 0
 
         # Create test permission
-        permission = create_test_permission(name="test_permission_purge", context=admin_context)
+        permission = permission_factory(name="test_permission_purge")
 
         # Create test roles
-        role1 = create_test_role(name="role_to_purge_1", context=admin_context)
-        role2 = create_test_role(name="role_to_purge_2", context=admin_context)
-        role3 = create_test_role(name="role_to_purge_3", context=admin_context)
+        role1 = role_factory(name="role_to_purge_1")
+        role2 = role_factory(name="role_to_purge_2")
+        role3 = role_factory(name="role_to_purge_3")
 
         # Assign all roles to permission
         crud_roles.assign_permission(role=role1, permission=permission, context=admin_context)
@@ -245,17 +267,22 @@ class TestPermissionCRUD:
         with pytest.raises(EntityNotFoundError):
             crud_permissions.purge_all_roles(permission_id=nonexistent_permission_id, context=admin_context)
 
-    def test_delete_permission(self, admin_context: UserCtx) -> None:
+    def test_delete_permission(
+        self,
+        permission_factory: Callable[..., Permission],
+        role_factory: Callable[..., Role],
+        admin_context: UserCtx,
+    ) -> None:
         """Test deleting a permission with role associations."""
         # Test constants
         initial_role_count = 2
 
         # Create test permission
-        permission = create_test_permission(name="permission_to_delete", context=admin_context)
+        permission = permission_factory(name="permission_to_delete")
 
         # Create test roles
-        role1 = create_test_role(name="role_with_deleted_permission_1", context=admin_context)
-        role2 = create_test_role(name="role_with_deleted_permission_2", context=admin_context)
+        role1 = role_factory(name="role_with_deleted_permission_1")
+        role2 = role_factory(name="role_with_deleted_permission_2")
 
         # Assign roles to permission
         crud_roles.assign_permission(role=role1, permission=permission, context=admin_context)
@@ -307,9 +334,11 @@ class TestPermissionCRUD:
         assert created_permission.name == "new_permission"
         assert created_permission.id is not None
 
-    def test_create_if_not_exist_returns_existing_permission(self, admin_context: UserCtx) -> None:
+    def test_create_if_not_exist_returns_existing_permission(
+        self, permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test create_if_not_exist returns existing permission when found."""
-        existing_permission = create_test_permission(name="existing_permission", context=admin_context)
+        existing_permission = permission_factory(name="existing_permission")
 
         permission_data = PermissionDefinition(name="different_permission")
         filters = {"name": "existing_permission"}
@@ -333,9 +362,11 @@ class TestPermissionCRUD:
         assert created_permission.name == "unique_new_permission"
         assert created_permission.id is not None
 
-    def test_create_if_not_exist_with_raise_on_error_raises_for_existing(self, admin_context: UserCtx) -> None:
+    def test_create_if_not_exist_with_raise_on_error_raises_for_existing(
+        self, permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test create_if_not_exist with raise_on_error=True raises error when permission exists."""
-        create_test_permission(name="already_exists_permission", context=admin_context)
+        permission_factory(name="already_exists_permission")
 
         permission_data = PermissionDefinition(name="different_name_permission")
         filters = {"name": "already_exists_permission"}
@@ -344,11 +375,13 @@ class TestPermissionCRUD:
                 filters=filters, obj_in=permission_data, context=admin_context, raise_on_error=True
             )
 
-    def test_get_multi_with_sort_ascending(self, admin_context: UserCtx) -> None:
+    def test_get_multi_with_sort_ascending(
+        self, permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test get_multi with ascending sort on name field."""
-        create_test_permission(name="alpha_permission", context=admin_context)
-        create_test_permission(name="beta_permission", context=admin_context)
-        create_test_permission(name="gamma_permission", context=admin_context)
+        permission_factory(name="alpha_permission")
+        permission_factory(name="beta_permission")
+        permission_factory(name="gamma_permission")
 
         sort_params = [("name", "asc")]
         count, sorted_permissions = crud_permissions.get_multi(sort=sort_params, context=admin_context)
@@ -361,11 +394,13 @@ class TestPermissionCRUD:
 
         assert alpha_idx < beta_idx < gamma_idx
 
-    def test_get_multi_with_sort_descending(self, admin_context: UserCtx) -> None:
+    def test_get_multi_with_sort_descending(
+        self, permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test get_multi with descending sort on name field."""
-        create_test_permission(name="alpha_permission_2", context=admin_context)
-        create_test_permission(name="beta_permission_2", context=admin_context)
-        create_test_permission(name="gamma_permission_2", context=admin_context)
+        permission_factory(name="alpha_permission_2")
+        permission_factory(name="beta_permission_2")
+        permission_factory(name="gamma_permission_2")
 
         sort_params = [("name", "desc")]
         count, sorted_permissions = crud_permissions.get_multi(sort=sort_params, context=admin_context)
@@ -378,11 +413,13 @@ class TestPermissionCRUD:
 
         assert gamma_idx < beta_idx < alpha_idx
 
-    def test_get_multi_with_multi_field_sort(self, admin_context: UserCtx) -> None:
+    def test_get_multi_with_multi_field_sort(
+        self, permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test get_multi with multi-field sorting (name desc, then id asc)."""
-        create_test_permission(name="same_name_permission", context=admin_context)
-        create_test_permission(name="same_name_permission", context=admin_context)
-        create_test_permission(name="different_name_permission", context=admin_context)
+        permission_factory(name="same_name_permission")
+        permission_factory(name="same_name_permission")
+        permission_factory(name="different_name_permission")
 
         sort_params = [("name", "desc"), ("id", "asc")]
         count, sorted_permissions = crud_permissions.get_multi(sort=sort_params, context=admin_context)
@@ -400,12 +437,14 @@ class TestPermissionCRUD:
         assert len(same_name_permissions) == same_name_count
         assert same_name_permissions[0].id < same_name_permissions[1].id
 
-    def test_get_multi_with_sort_and_pagination(self, admin_context: UserCtx) -> None:
+    def test_get_multi_with_sort_and_pagination(
+        self, permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test get_multi with sorting combined with pagination."""
         permission_names = ["alpha_paginated", "beta_paginated", "gamma_paginated", "delta_paginated"]
         created_permissions = []
         for name in permission_names:
-            permission = create_test_permission(name=name, context=admin_context)
+            permission = permission_factory(name=name)
             created_permissions.append(permission)
 
         sort_params = [("name", "asc")]

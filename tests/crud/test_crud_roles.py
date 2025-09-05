@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 
 from kwik.core.enum import Permissions
-from kwik.crud import NoUserCtx, UserCtx, crud_roles, crud_users
+from kwik.crud import UserCtx, crud_roles, crud_users
 from kwik.exceptions import DuplicatedEntityError, EntityNotFoundError
 from kwik.schemas import RoleDefinition, RoleUpdate
-from tests.utils import create_test_permission, create_test_role, create_test_user
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from kwik.models import Permission, Role, User
 
 
 class TestRoleCRUD:
@@ -24,10 +30,10 @@ class TestRoleCRUD:
         assert created_role.is_active is True
         assert created_role.id is not None
 
-    def test_get_role_by_id(self, admin_context: UserCtx) -> None:
+    def test_get_role_by_id(self, role_factory: Callable[..., Role], admin_context: UserCtx) -> None:
         """Test getting a role by ID."""
-        # Create a test role
-        role = create_test_role(name="test_role", context=admin_context)
+        # Create a test role using the factory fixture
+        role = role_factory(name="test_role")
 
         # Get the role by ID
         retrieved_role = crud_roles.get(entity_id=role.id, context=admin_context)
@@ -41,10 +47,10 @@ class TestRoleCRUD:
         retrieved_role = crud_roles.get(entity_id=99999, context=admin_context)
         assert retrieved_role is None
 
-    def test_update_role(self, admin_context: UserCtx) -> None:
+    def test_update_role(self, role_factory: Callable[..., Role], admin_context: UserCtx) -> None:
         """Test updating a role."""
         # Create a test role
-        role = create_test_role(name="original_role", context=admin_context)
+        role = role_factory(name="original_role")
 
         # Update the role
         update_data = RoleUpdate(name="updated_role")
@@ -54,10 +60,10 @@ class TestRoleCRUD:
         assert updated_role.name == "updated_role"
         assert updated_role.is_active == role.is_active  # Should remain unchanged
 
-    def test_get_if_exist_with_existing_role(self, admin_context: UserCtx) -> None:
+    def test_get_if_exist_with_existing_role(self, role_factory: Callable[..., Role], admin_context: UserCtx) -> None:
         """Test get_if_exist with an existing role."""
         # Create a test role
-        role = create_test_role(context=admin_context)
+        role = role_factory()
 
         # Get the role using get_if_exist
         retrieved_role = crud_roles.get_if_exist(entity_id=role.id, context=admin_context)
@@ -69,7 +75,7 @@ class TestRoleCRUD:
         with pytest.raises(EntityNotFoundError):
             crud_roles.get_if_exist(entity_id=99999, context=admin_context)
 
-    def test_get_multi_roles(self, admin_context: UserCtx) -> None:
+    def test_get_multi_roles(self, role_factory: Callable[..., Role], admin_context: UserCtx) -> None:
         """Test getting multiple roles with pagination."""
         initial_roles = 1  # count for the impersonation role setup in the conftest
 
@@ -78,10 +84,10 @@ class TestRoleCRUD:
         page_limit = 3
         remaining_roles = 2
 
-        # Create multiple test roles
+        # Create multiple test roles using factory fixture
         roles = []
         for i in range(total_roles):
-            role = create_test_role(name=f"Role {i}", context=admin_context)
+            role = role_factory(name=f"Role {i}")
             roles.append(role)
 
         # Get multiple roles
@@ -95,11 +101,11 @@ class TestRoleCRUD:
         assert count == total_roles + initial_roles
         assert len(second_page) == remaining_roles + initial_roles  # Remaining roles
 
-    def test_get_multi_with_filters(self, admin_context: UserCtx) -> None:
+    def test_get_multi_with_filters(self, role_factory: Callable[..., Role], admin_context: UserCtx) -> None:
         """Test getting multiple roles with filters."""
         # Create test roles with different attributes
-        create_test_role(name="active_role", is_active=True, context=admin_context)
-        create_test_role(name="inactive_role", is_active=False, context=admin_context)
+        role_factory(name="active_role", is_active=True)
+        role_factory(name="inactive_role", is_active=False)
 
         # Filter by is_active
         count, _ = crud_roles.get_multi(is_active=True, context=admin_context)
@@ -110,10 +116,10 @@ class TestRoleCRUD:
         assert count == 1
         assert inactive_roles[0].name == "inactive_role"
 
-    def test_delete_role(self, admin_context: UserCtx) -> None:
+    def test_delete_role(self, role_factory: Callable[..., Role], admin_context: UserCtx) -> None:
         """Test deleting a role (hard delete)."""
         # Create a test role
-        role = create_test_role(name="to_delete", context=admin_context)
+        role = role_factory(name="to_delete")
         role_id = role.id
 
         # Delete the role (hard delete)
@@ -126,10 +132,10 @@ class TestRoleCRUD:
         retrieved_role = crud_roles.get(entity_id=role_id, context=admin_context)
         assert retrieved_role is None  # Should not be found after deletion
 
-    def test_get_by_name_existing_role(self, admin_context: UserCtx) -> None:
+    def test_get_by_name_existing_role(self, role_factory: Callable[..., Role], admin_context: UserCtx) -> None:
         """Test getting a role by name when it exists."""
         role_name = "unique_role_name"
-        role = create_test_role(name=role_name, context=admin_context)
+        role = role_factory(name=role_name)
 
         retrieved_role = crud_roles.get_by_name(name=role_name, context=admin_context)
 
@@ -145,13 +151,15 @@ class TestRoleCRUD:
 
         assert retrieved_role is None
 
-    def test_get_users_with_role_having_users(self, admin_context: UserCtx, no_user_context: NoUserCtx) -> None:
+    def test_get_users_with_role_having_users(
+        self, role_factory: Callable[..., Role], user_factory: Callable[..., User], admin_context: UserCtx
+    ) -> None:
         """Test getting users associated with a role that has users."""
-        role = create_test_role(name="Role With Users", context=admin_context)
+        role = role_factory(name="Role With Users")
 
-        user1 = create_test_user(name="User1", email="user1@test.com", context=no_user_context)
-        user2 = create_test_user(name="User2", email="user2@test.com", context=no_user_context)
-        user3 = create_test_user(name="User3", email="user3@test.com", context=no_user_context)
+        user1 = user_factory(name="User1", email="user1@test.com")
+        user2 = user_factory(name="User2", email="user2@test.com")
+        user3 = user_factory(name="User3", email="user3@test.com")
 
         crud_roles.assign_user(role=role, user=user1, context=admin_context)
         crud_roles.assign_user(role=role, user=user2, context=admin_context)
@@ -168,27 +176,28 @@ class TestRoleCRUD:
         assert user2.id in user_ids
         assert user3.id in user_ids
 
-    def test_get_users_with_role_having_no_users(self, admin_context: UserCtx) -> None:
+    def test_get_users_with_role_having_no_users(self, role_factory: Callable[..., Role]) -> None:
         """Test getting users associated with a role that has no users."""
-        role = create_test_role(name="Role Without Users", context=admin_context)
+        role = role_factory(name="Role Without Users")
 
         users_with_role = crud_roles.get_users_with(role=role)
 
         assert len(users_with_role) == 0
         assert users_with_role == []
 
-    def test_get_users_without_specific_role(self, admin_context: UserCtx, no_user_context: NoUserCtx) -> None:
+    def test_get_users_without_specific_role(
+        self,
+        role_factory: Callable[..., Role],
+        user_factory: Callable[..., User],
+        admin_context: UserCtx,
+    ) -> None:
         """Test getting users not associated with a specific role."""
-        target_role = create_test_role(name="Target Role", context=admin_context)
-        other_role = create_test_role(name="Other Role", context=admin_context)
+        target_role = role_factory(name="Target Role")
+        other_role = role_factory(name="Other Role")
 
-        user_with_target_role = create_test_user(
-            name="UserWithTarget", email="with_target@test.com", context=no_user_context
-        )
-        user_with_other_role = create_test_user(
-            name="UserWithOther", email="with_other@test.com", context=no_user_context
-        )
-        user_with_no_role = create_test_user(name="UserWithNoRole", email="no_role@test.com", context=no_user_context)
+        user_with_target_role = user_factory(name="UserWithTarget", email="with_target@test.com")
+        user_with_other_role = user_factory(name="UserWithOther", email="with_other@test.com")
+        user_with_no_role = user_factory(name="UserWithNoRole", email="no_role@test.com")
 
         crud_roles.assign_user(role=target_role, user=user_with_target_role, context=admin_context)
         crud_roles.assign_user(role=other_role, user=user_with_other_role, context=admin_context)
@@ -203,13 +212,13 @@ class TestRoleCRUD:
         assert len(users_without_target_role) >= minimum_expected_users
 
     def test_get_users_without_all_users_have_no_roles(
-        self, admin_context: UserCtx, no_user_context: NoUserCtx
+        self, role_factory: Callable[..., Role], user_factory: Callable[..., User], admin_context: UserCtx
     ) -> None:
         """Test getting users not associated with a role when all users have no roles."""
-        target_role = create_test_role(name="Unused Role", context=admin_context)
+        target_role = role_factory(name="Unused Role")
 
-        user1 = create_test_user(name="User1", email="user1@test.com", context=no_user_context)
-        user2 = create_test_user(name="User2", email="user2@test.com", context=no_user_context)
+        user1 = user_factory(name="User1", email="user1@test.com")
+        user2 = user_factory(name="User2", email="user2@test.com")
 
         users_without_role = crud_roles.get_users_without(role_id=target_role.id, context=admin_context)
 
@@ -219,12 +228,14 @@ class TestRoleCRUD:
         minimum_expected_users = 2
         assert len(users_without_role) >= minimum_expected_users
 
-    def test_get_users_without_nonexistent_role_id(self, admin_context: UserCtx, no_user_context: NoUserCtx) -> None:
+    def test_get_users_without_nonexistent_role_id(
+        self, user_factory: Callable[..., User], admin_context: UserCtx
+    ) -> None:
         """Test getting users not associated with a non-existent role ID."""
         nonexistent_role_id = 99999
 
-        user1 = create_test_user(name="User1", email="user1@test.com", context=no_user_context)
-        user2 = create_test_user(name="User2", email="user2@test.com", context=no_user_context)
+        user1 = user_factory(name="User1", email="user1@test.com")
+        user2 = user_factory(name="User2", email="user2@test.com")
 
         users_without_role = crud_roles.get_users_without(role_id=nonexistent_role_id, context=admin_context)
 
@@ -234,12 +245,14 @@ class TestRoleCRUD:
         minimum_expected_users = 2
         assert len(users_without_role) >= minimum_expected_users
 
-    def test_get_permissions_assignable_to_role_with_some_permissions(self, admin_context: UserCtx) -> None:
+    def test_get_permissions_assignable_to_role_with_some_permissions(
+        self, role_factory: Callable[..., Role], permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test getting permissions assignable to role that has some permissions assigned."""
-        role = create_test_role(name="Role With Some Permissions", context=admin_context)
+        role = role_factory(name="Role With Some Permissions")
 
-        assigned_permission = create_test_permission(name="Assigned Permission", context=admin_context)
-        unassigned_permission = create_test_permission(name="Unassigned Permission", context=admin_context)
+        assigned_permission = permission_factory(name="Assigned Permission")
+        unassigned_permission = permission_factory(name="Unassigned Permission")
 
         crud_roles.assign_permission(role=role, permission=assigned_permission, context=admin_context)
 
@@ -249,12 +262,14 @@ class TestRoleCRUD:
         assert unassigned_permission.id in permission_ids
         assert assigned_permission.id not in permission_ids
 
-    def test_get_permissions_assignable_to_role_with_no_permissions(self, admin_context: UserCtx) -> None:
+    def test_get_permissions_assignable_to_role_with_no_permissions(
+        self, role_factory: Callable[..., Role], permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test getting permissions assignable to role that has no permissions assigned."""
-        role = create_test_role(name="Role With No Permissions", context=admin_context)
+        role = role_factory(name="Role With No Permissions")
 
-        permission1 = create_test_permission(name="Available Permission 1", context=admin_context)
-        permission2 = create_test_permission(name="Available Permission 2", context=admin_context)
+        permission1 = permission_factory(name="Available Permission 1")
+        permission2 = permission_factory(name="Available Permission 2")
 
         assignable_permissions = crud_roles.get_permissions_assignable_to(role=role, context=admin_context)
 
@@ -272,9 +287,11 @@ class TestRoleCRUD:
 
         assert len(assignable_permissions) == 0
 
-    def test_get_permissions_assignable_to_no_permissions_in_database(self, admin_context: UserCtx) -> None:
+    def test_get_permissions_assignable_to_no_permissions_in_database(
+        self, role_factory: Callable[..., Role], admin_context: UserCtx
+    ) -> None:
         """Test getting permissions assignable to role when no permissions exist in database."""
-        role = create_test_role(name="Role With No Available Permissions", context=admin_context)
+        role = role_factory(name="Role With No Available Permissions")
 
         assignable_permissions = crud_roles.get_permissions_assignable_to(role=role, context=admin_context)
 
@@ -284,14 +301,19 @@ class TestRoleCRUD:
         assert len(assignable_permissions) == 0
         assert assignable_permissions == []
 
-    def test_deprecate_role_with_multiple_users(self, admin_context: UserCtx, no_user_context: NoUserCtx) -> None:
+    def test_deprecate_role_with_multiple_users(
+        self,
+        role_factory: Callable[..., Role],
+        user_factory: Callable[..., User],
+        admin_context: UserCtx,
+    ) -> None:
         """Test deprecating role that has multiple users assigned."""
         expected_users_count = 3
-        role = create_test_role(name="role_to_deprecate", context=admin_context)
+        role = role_factory(name="role_to_deprecate")
 
-        user1 = create_test_user(name="User1", email="user1@test.com", context=no_user_context)
-        user2 = create_test_user(name="User2", email="user2@test.com", context=no_user_context)
-        user3 = create_test_user(name="User3", email="user3@test.com", context=no_user_context)
+        user1 = user_factory(name="User1", email="user1@test.com")
+        user2 = user_factory(name="User2", email="user2@test.com")
+        user3 = user_factory(name="User3", email="user3@test.com")
 
         crud_roles.assign_user(role=role, user=user1, context=admin_context)
         crud_roles.assign_user(role=role, user=user2, context=admin_context)
@@ -317,9 +339,9 @@ class TestRoleCRUD:
         assert retrieved_user2 is not None
         assert retrieved_user3 is not None
 
-    def test_deprecate_role_with_no_users(self, admin_context: UserCtx) -> None:
+    def test_deprecate_role_with_no_users(self, role_factory: Callable[..., Role], admin_context: UserCtx) -> None:
         """Test deprecating role that has no users assigned."""
-        role = create_test_role(name="role_with_no_users_to_deprecate", context=admin_context)
+        role = role_factory(name="role_with_no_users_to_deprecate")
 
         users_before_deprecation = crud_roles.get_users_with(role=role)
         assert len(users_before_deprecation) == 0
@@ -335,12 +357,13 @@ class TestRoleCRUD:
 
     def test_deprecate_role_still_exists_after_deprecation(
         self,
+        role_factory: Callable[..., Role],
+        user_factory: Callable[..., User],
         admin_context: UserCtx,
-        no_user_context: NoUserCtx,
     ) -> None:
         """Test that role still exists after deprecation but with no users."""
-        role = create_test_role(name="role_that_still_exists", context=admin_context)
-        user = create_test_user(name="User", email="user@test.com", context=no_user_context)
+        role = role_factory(name="role_that_still_exists")
+        user = user_factory(name="User", email="user@test.com")
 
         crud_roles.assign_user(role=role, user=user, context=admin_context)
 
@@ -355,10 +378,12 @@ class TestRoleCRUD:
         admin_context.session.refresh(retrieved_role)
         assert len(crud_roles.get_users_with(role=retrieved_role)) == 0
 
-    def test_remove_permission_from_role_with_permission(self, admin_context: UserCtx) -> None:
+    def test_remove_permission_from_role_with_permission(
+        self, role_factory: Callable[..., Role], permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test removing existing permission from role."""
-        role = create_test_role(name="role_with_permission", context=admin_context)
-        permission = create_test_permission(name="permission_to_remove", context=admin_context)
+        role = role_factory(name="role_with_permission")
+        permission = permission_factory(name="permission_to_remove")
 
         crud_roles.assign_permission(role=role, permission=permission, context=admin_context)
 
@@ -377,10 +402,12 @@ class TestRoleCRUD:
         permission_ids_after = {perm.id for perm in permissions_after_removal}
         assert permission.id not in permission_ids_after
 
-    def test_remove_permission_from_role_without_permission_idempotent(self, admin_context: UserCtx) -> None:
+    def test_remove_permission_from_role_without_permission_idempotent(
+        self, role_factory: Callable[..., Role], permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test removing permission from role that doesn't have it (idempotent operation)."""
-        role = create_test_role(name="role_without_permission", context=admin_context)
-        permission = create_test_permission(name="unassigned_permission", context=admin_context)
+        role = role_factory(name="role_without_permission")
+        permission = permission_factory(name="unassigned_permission")
 
         permissions_before = crud_roles.get_permissions_assigned_to(role=role)
         permission_ids_before = {perm.id for perm in permissions_before}
@@ -397,10 +424,12 @@ class TestRoleCRUD:
         assert permission.id not in permission_ids_after
         assert len(permissions_after) == len(permissions_before)
 
-    def test_remove_permission_permission_still_exists_after_removal(self, admin_context: UserCtx) -> None:
+    def test_remove_permission_permission_still_exists_after_removal(
+        self, role_factory: Callable[..., Role], permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test that permission still exists after removal from role."""
-        role = create_test_role(name="Role To Remove Permission From", context=admin_context)
-        permission = create_test_permission(name="permission_that_still_exists", context=admin_context)
+        role = role_factory(name="Role To Remove Permission From")
+        permission = permission_factory(name="permission_that_still_exists")
 
         crud_roles.assign_permission(role=role, permission=permission, context=admin_context)
 
@@ -411,14 +440,16 @@ class TestRoleCRUD:
         assert retrieved_permission.id == permission.id
         assert retrieved_permission.name == "permission_that_still_exists"
 
-    def test_remove_permission_role_with_multiple_permissions(self, admin_context: UserCtx) -> None:
+    def test_remove_permission_role_with_multiple_permissions(
+        self, role_factory: Callable[..., Role], permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test removing one permission from role that has multiple permissions."""
         expected_remaining_permissions = 2
-        role = create_test_role(name="Role With Multiple Permissions", context=admin_context)
+        role = role_factory(name="Role With Multiple Permissions")
 
-        permission_to_remove = create_test_permission(name="Permission To Remove", context=admin_context)
-        permission_to_keep1 = create_test_permission(name="Permission To Keep 1", context=admin_context)
-        permission_to_keep2 = create_test_permission(name="Permission To Keep 2", context=admin_context)
+        permission_to_remove = permission_factory(name="Permission To Remove")
+        permission_to_keep1 = permission_factory(name="Permission To Keep 1")
+        permission_to_keep2 = permission_factory(name="Permission To Keep 2")
 
         crud_roles.assign_permission(role=role, permission=permission_to_remove, context=admin_context)
         crud_roles.assign_permission(role=role, permission=permission_to_keep1, context=admin_context)
@@ -435,10 +466,12 @@ class TestRoleCRUD:
         assert permission_to_keep1.id in permission_ids
         assert permission_to_keep2.id in permission_ids
 
-    def test_remove_user_from_role_with_user(self, admin_context: UserCtx, no_user_context: NoUserCtx) -> None:
+    def test_remove_user_from_role_with_user(
+        self, role_factory: Callable[..., Role], user_factory: Callable[..., User], admin_context: UserCtx
+    ) -> None:
         """Test removing existing user from role."""
-        role = create_test_role(name="role_with_user", context=admin_context)
-        user = create_test_user(name="User To Remove", email="remove@test.com", context=no_user_context)
+        role = role_factory(name="role_with_user")
+        user = user_factory(name="User To Remove", email="remove@test.com")
 
         crud_roles.assign_user(role=role, user=user, context=admin_context)
 
@@ -458,11 +491,11 @@ class TestRoleCRUD:
         assert user.id not in user_ids_after
 
     def test_remove_user_from_role_without_user_idempotent(
-        self, admin_context: UserCtx, no_user_context: NoUserCtx
+        self, role_factory: Callable[..., Role], user_factory: Callable[..., User], admin_context: UserCtx
     ) -> None:
         """Test removing user from role that doesn't have it (idempotent operation)."""
-        role = create_test_role(name="role_without_user", context=admin_context)
-        user = create_test_user(name="Unassigned User", email="unassigned@test.com", context=no_user_context)
+        role = role_factory(name="role_without_user")
+        user = user_factory(name="Unassigned User", email="unassigned@test.com")
 
         users_before = crud_roles.get_users_with(role=role)
         user_ids_before = {u.id for u in users_before}
@@ -480,11 +513,11 @@ class TestRoleCRUD:
         assert len(users_after) == len(users_before)
 
     def test_remove_user_user_still_exists_after_removal(
-        self, admin_context: UserCtx, no_user_context: NoUserCtx
+        self, role_factory: Callable[..., Role], user_factory: Callable[..., User], admin_context: UserCtx
     ) -> None:
         """Test that user still exists after removal from role."""
-        role = create_test_role(name="role_to_remove_user_from", context=admin_context)
-        user = create_test_user(name="User That Still Exists", email="still_exists@test.com", context=no_user_context)
+        role = role_factory(name="role_to_remove_user_from")
+        user = user_factory(name="User That Still Exists", email="still_exists@test.com")
 
         crud_roles.assign_user(role=role, user=user, context=admin_context)
 
@@ -495,14 +528,16 @@ class TestRoleCRUD:
         assert retrieved_user.id == user.id
         assert retrieved_user.name == "User That Still Exists"
 
-    def test_remove_user_role_with_multiple_users(self, admin_context: UserCtx, no_user_context: NoUserCtx) -> None:
+    def test_remove_user_role_with_multiple_users(
+        self, role_factory: Callable[..., Role], user_factory: Callable[..., User], admin_context: UserCtx
+    ) -> None:
         """Test removing one user from role that has multiple users."""
         expected_remaining_users = 2
-        role = create_test_role(name="Role With Multiple Users", context=admin_context)
+        role = role_factory(name="Role With Multiple Users")
 
-        user_to_remove = create_test_user(name="User To Remove", email="remove@test.com", context=no_user_context)
-        user_to_keep1 = create_test_user(name="User To Keep 1", email="keep1@test.com", context=no_user_context)
-        user_to_keep2 = create_test_user(name="User To Keep 2", email="keep2@test.com", context=no_user_context)
+        user_to_remove = user_factory(name="User To Remove", email="remove@test.com")
+        user_to_keep1 = user_factory(name="User To Keep 1", email="keep1@test.com")
+        user_to_keep2 = user_factory(name="User To Keep 2", email="keep2@test.com")
 
         crud_roles.assign_user(role=role, user=user_to_remove, context=admin_context)
         crud_roles.assign_user(role=role, user=user_to_keep1, context=admin_context)
@@ -519,14 +554,16 @@ class TestRoleCRUD:
         assert user_to_keep1.id in user_ids
         assert user_to_keep2.id in user_ids
 
-    def test_remove_all_permissions_from_role_with_permissions(self, admin_context: UserCtx) -> None:
+    def test_remove_all_permissions_from_role_with_permissions(
+        self, role_factory: Callable[..., Role], permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test removing all permissions from role that has permissions."""
         initial_permissions_count = 3
-        role = create_test_role(name="role_with_permissions", context=admin_context)
+        role = role_factory(name="role_with_permissions")
 
-        permission1 = create_test_permission(name="Permission 1", context=admin_context)
-        permission2 = create_test_permission(name="Permission 2", context=admin_context)
-        permission3 = create_test_permission(name="Permission 3", context=admin_context)
+        permission1 = permission_factory(name="Permission 1")
+        permission2 = permission_factory(name="Permission 2")
+        permission3 = permission_factory(name="Permission 3")
 
         crud_roles.assign_permission(role=role, permission=permission1, context=admin_context)
         crud_roles.assign_permission(role=role, permission=permission2, context=admin_context)
@@ -546,9 +583,11 @@ class TestRoleCRUD:
         assert len(permissions_after_removal) == 0
         assert permissions_after_removal == []
 
-    def test_remove_all_permissions_from_role_with_no_permissions(self, admin_context: UserCtx) -> None:
+    def test_remove_all_permissions_from_role_with_no_permissions(
+        self, role_factory: Callable[..., Role], admin_context: UserCtx
+    ) -> None:
         """Test removing all permissions from role that has no permissions (idempotent operation)."""
-        role = create_test_role(name="role_without_permissions", context=admin_context)
+        role = role_factory(name="role_without_permissions")
 
         permissions_before = crud_roles.get_permissions_assigned_to(role=role)
         assert len(permissions_before) == 0
@@ -563,12 +602,14 @@ class TestRoleCRUD:
         assert len(permissions_after) == 0
         assert permissions_after == []
 
-    def test_remove_all_permissions_permissions_still_exist_after_removal(self, admin_context: UserCtx) -> None:
+    def test_remove_all_permissions_permissions_still_exist_after_removal(
+        self, role_factory: Callable[..., Role], permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test that permissions still exist after removal from role."""
-        role = create_test_role(name="Role To Remove All Permissions From", context=admin_context)
+        role = role_factory(name="Role To Remove All Permissions From")
 
-        permission1 = create_test_permission(name="permission_that_still_exists_1", context=admin_context)
-        permission2 = create_test_permission(name="permission_that_still_exists_2", context=admin_context)
+        permission1 = permission_factory(name="permission_that_still_exists_1")
+        permission2 = permission_factory(name="permission_that_still_exists_2")
 
         crud_roles.assign_permission(role=role, permission=permission1, context=admin_context)
         crud_roles.assign_permission(role=role, permission=permission2, context=admin_context)
@@ -595,9 +636,11 @@ class TestRoleCRUD:
         assert created_role.is_active is True
         assert created_role.id is not None
 
-    def test_create_if_not_exist_returns_existing_role(self, admin_context: UserCtx) -> None:
+    def test_create_if_not_exist_returns_existing_role(
+        self, role_factory: Callable[..., Role], admin_context: UserCtx
+    ) -> None:
         """Test create_if_not_exist returns existing role when found."""
-        existing_role = create_test_role(name="existing_role", is_active=True, context=admin_context)
+        existing_role = role_factory(name="existing_role", is_active=True)
 
         role_data = RoleDefinition(name="Different Role", is_active=False)
         filters = {"name": "existing_role"}
@@ -621,9 +664,11 @@ class TestRoleCRUD:
         assert created_role.is_active is True
         assert created_role.id is not None
 
-    def test_create_if_not_exist_with_raise_on_error_raises_for_existing(self, admin_context: UserCtx) -> None:
+    def test_create_if_not_exist_with_raise_on_error_raises_for_existing(
+        self, role_factory: Callable[..., Role], admin_context: UserCtx
+    ) -> None:
         """Test create_if_not_exist with raise_on_error=True raises error when role exists."""
-        create_test_role(name="already_exists", context=admin_context)
+        role_factory(name="already_exists")
 
         role_data = RoleDefinition(name="different_name", is_active=False)
         filters = {"name": "already_exists"}
@@ -632,14 +677,16 @@ class TestRoleCRUD:
                 filters=filters, obj_in=role_data, context=admin_context, raise_on_error=True
             )
 
-    def test_remove_all_permissions_role_with_mixed_permissions(self, admin_context: UserCtx) -> None:
+    def test_remove_all_permissions_role_with_mixed_permissions(
+        self, role_factory: Callable[..., Role], permission_factory: Callable[..., Permission], admin_context: UserCtx
+    ) -> None:
         """Test removing all permissions from role with multiple different permissions."""
         initial_permissions_count = 5
-        role = create_test_role(name="Role With Mixed Permissions", context=admin_context)
+        role = role_factory(name="Role With Mixed Permissions")
 
         permissions = []
         for i in range(initial_permissions_count):
-            permission = create_test_permission(name=f"Mixed Permission {i}", context=admin_context)
+            permission = permission_factory(name=f"Mixed Permission {i}")
             permissions.append(permission)
             crud_roles.assign_permission(role=role, permission=permission, context=admin_context)
 
@@ -661,11 +708,11 @@ class TestRoleCRUD:
             retrieved_permission = admin_context.session.get(type(permission), permission.id)
             assert retrieved_permission is not None
 
-    def test_get_multi_with_sort_ascending(self, admin_context: UserCtx) -> None:
+    def test_get_multi_with_sort_ascending(self, role_factory: Callable[..., Role], admin_context: UserCtx) -> None:
         """Test get_multi with ascending sort on name field."""
-        create_test_role(name="alpha_role", context=admin_context)
-        create_test_role(name="beta_role", context=admin_context)
-        create_test_role(name="gamma_role", context=admin_context)
+        role_factory(name="alpha_role")
+        role_factory(name="beta_role")
+        role_factory(name="gamma_role")
 
         sort_params = [("name", "asc")]
         count, sorted_roles = crud_roles.get_multi(sort=sort_params, context=admin_context)
@@ -678,11 +725,11 @@ class TestRoleCRUD:
 
         assert alpha_idx < beta_idx < gamma_idx
 
-    def test_get_multi_with_sort_descending(self, admin_context: UserCtx) -> None:
+    def test_get_multi_with_sort_descending(self, role_factory: Callable[..., Role], admin_context: UserCtx) -> None:
         """Test get_multi with descending sort on name field."""
-        create_test_role(name="alpha_role_2", context=admin_context)
-        create_test_role(name="beta_role_2", context=admin_context)
-        create_test_role(name="gamma_role_2", context=admin_context)
+        role_factory(name="alpha_role_2")
+        role_factory(name="beta_role_2")
+        role_factory(name="gamma_role_2")
 
         sort_params = [("name", "desc")]
         count, sorted_roles = crud_roles.get_multi(sort=sort_params, context=admin_context)
@@ -695,11 +742,11 @@ class TestRoleCRUD:
 
         assert gamma_idx < beta_idx < alpha_idx
 
-    def test_get_multi_with_multi_field_sort(self, admin_context: UserCtx) -> None:
+    def test_get_multi_with_multi_field_sort(self, role_factory: Callable[..., Role], admin_context: UserCtx) -> None:
         """Test get_multi with multi-field sorting (name desc, then id asc)."""
-        create_test_role(name="same_name", context=admin_context)
-        create_test_role(name="same_name", context=admin_context)
-        create_test_role(name="different_name", context=admin_context)
+        role_factory(name="same_name")
+        role_factory(name="same_name")
+        role_factory(name="different_name")
 
         sort_params = [("name", "desc"), ("id", "asc")]
         count, sorted_roles = crud_roles.get_multi(sort=sort_params, context=admin_context)
@@ -715,12 +762,14 @@ class TestRoleCRUD:
         assert len(same_name_roles) == same_name_count
         assert same_name_roles[0].id < same_name_roles[1].id
 
-    def test_get_multi_with_sort_and_pagination(self, admin_context: UserCtx) -> None:
+    def test_get_multi_with_sort_and_pagination(
+        self, role_factory: Callable[..., Role], admin_context: UserCtx
+    ) -> None:
         """Test get_multi with sorting combined with pagination."""
         role_names = ["alpha_paginated", "beta_paginated", "gamma_paginated", "delta_paginated"]
         created_roles = []
         for name in role_names:
-            role = create_test_role(name=name, context=admin_context)
+            role = role_factory(name=name)
             created_roles.append(role)
 
         sort_params = [("name", "asc")]
@@ -744,11 +793,11 @@ class TestRoleCRUD:
         beta_idx = all_sorted_names.index("beta_paginated")
         assert alpha_idx < beta_idx
 
-    def test_get_multi_with_sort_and_filters(self, admin_context: UserCtx) -> None:
+    def test_get_multi_with_sort_and_filters(self, role_factory: Callable[..., Role], admin_context: UserCtx) -> None:
         """Test get_multi with sorting combined with filters."""
-        create_test_role(name="active_z", is_active=True, context=admin_context)
-        create_test_role(name="active_a", is_active=True, context=admin_context)
-        create_test_role(name="inactive_b", is_active=False, context=admin_context)
+        role_factory(name="active_z", is_active=True)
+        role_factory(name="active_a", is_active=True)
+        role_factory(name="inactive_b", is_active=False)
 
         sort_params = [("name", "desc")]
         count, filtered_sorted_roles = crud_roles.get_multi(sort=sort_params, is_active=True, context=admin_context)

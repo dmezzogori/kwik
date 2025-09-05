@@ -19,7 +19,7 @@ import pytest
 from testcontainers.postgres import PostgresContainer
 
 from kwik.core.enum import Permissions
-from kwik.crud import Context, crud_permissions, crud_roles
+from kwik.crud import Context, NoUserCtx, UserCtx, crud_permissions, crud_roles
 from kwik.database import create_engine, create_session, session_scope
 from kwik.models import Base
 from kwik.schemas import PermissionDefinition, RoleDefinition
@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
     from sqlalchemy.engine import Engine
+    from sqlalchemy.orm import Session
 
     from kwik.models import User
 
@@ -147,3 +148,27 @@ def regular_user(engine: Engine) -> User:
         )
         _ = (regular_user.id, regular_user.name, regular_user.surname, regular_user.email)
         return regular_user
+
+
+@pytest.fixture
+def session(engine: Engine) -> Generator[Session, None, None]:
+    """Create a database session with transaction rollback for test isolation."""
+    session = create_session(engine=engine)
+    with session_scope(session=session, commit=False) as session:
+        yield session
+
+
+@pytest.fixture
+def no_user_context(session: Session) -> NoUserCtx:
+    """Create a Context with no user for CRUD operations."""
+    return Context(session=session, user=None)
+
+
+@pytest.fixture
+def admin_context(session: Session, admin_user: User) -> UserCtx:
+    """Create a Context with shared admin user for CRUD operations."""
+    return Context(session=session, user=admin_user)
+
+
+# Import the factory fixtures to make them available to all tests
+pytest_plugins = ["kwik.testing.fixtures"]

@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 # Import utilities that remain in tests/utils/
-from .helpers import create_test_permission, create_test_role, create_test_user
+from .helpers import create_test_user
 
 __all__ = [
-    "create_test_permission",
-    "create_test_role",
     "create_test_user",
 ]

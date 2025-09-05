@@ -26,10 +26,14 @@ Example usage:
 from __future__ import annotations
 
 from .client import IdentityAwareTestClient
+from .fixtures import permission_factory, role_factory, user_factory
 from .scenario import Scenario, ScenarioResult
 
 __all__ = [
     "IdentityAwareTestClient",
     "Scenario",
     "ScenarioResult",
+    "permission_factory",
+    "role_factory",
+    "user_factory",
 ]
