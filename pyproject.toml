@@ -42,13 +42,14 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=src/kwik --cov-branch --cov-report=term-missing --cov-report=xml -v"
+addopts = "-n auto --cov=src/kwik --cov-branch --cov-report=term-missing --cov-report=xml -v"
 asyncio_mode = "auto"
 testpaths = ["tests"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
+    "crud: marks tests as CRUD operation tests",
 ]
 
 [tool.coverage.run]

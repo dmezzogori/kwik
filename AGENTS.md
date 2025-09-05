@@ -40,10 +40,13 @@ kwik
 
 #### Local Testing Setup
 ```bash
-# Run all tests with coverage (testcontainers automatically manages PostgreSQL)
+# Run all tests in parallel with coverage (default behavior - fast!)
 pytest
 
-# Run tests with detailed coverage report
+# Run tests without parallel execution (for debugging)
+pytest -n 0
+
+# Run tests with detailed coverage report  
 pytest --cov=src/kwik --cov-report=term-missing
 
 # Run specific test file
@@ -52,11 +55,15 @@ pytest tests/crud/test_crud_users.py
 # Run specific test method
 pytest tests/crud/test_crud_users.py::TestUserCRUD::test_create_user
 
-# Run tests in parallel (faster)
-pytest -n auto
+# Run tests by category (using markers)
+pytest -m crud                    # Only CRUD tests
+pytest -m unit                    # Only unit tests  
+pytest -m integration             # Only integration tests
+pytest -m "not slow"              # Skip slow tests (fast feedback)
+pytest -m "crud and not slow"     # CRUD tests that aren't slow
 
-# Run only unit tests (skip integration tests)
-pytest -m "not integration"
+# Disable coverage for even faster execution during development
+pytest --disable-warnings --tb=short
 ```
 
 #### Test Database

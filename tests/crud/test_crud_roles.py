@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from kwik.models import Permission, Role, User
 
 
+@pytest.mark.crud
 class TestRoleCRUD:
     """Test cases for role CRUD operations."""
 
