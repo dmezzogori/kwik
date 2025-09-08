@@ -26,6 +26,9 @@ plugins:
       minify_html: true
 nav:
   - Home: index.md
+  - Testing:
+      - Overview: testing.md
+      - Fixtures: testing-fixtures.md
 copyright: Copyright &copy; 2025 Davide Mezzogori
 
 extra:

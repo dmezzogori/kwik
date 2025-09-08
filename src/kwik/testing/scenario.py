@@ -266,9 +266,10 @@ class Scenario:
                         )
                         if permission:
                             result.permissions[permission_name] = permission
+                        else:
+                            self._raise_permission_not_found(permission_name)
                     except ValueError:
-                        msg = f"Permission '{permission_name}' not found"
-                        raise ValueError(msg) from None
+                        self._raise_permission_not_found(permission_name)
 
                 crud_roles.assign_permission(
                     role=role,
@@ -286,10 +287,10 @@ class Scenario:
             result.roles["admin"] = admin_role
 
             # Assign all permissions to admin role
-            for permission_name in Permissions:
+            for perm_enum in Permissions:
                 # Get existing permission
                 permission = crud_permissions.get_by_name(
-                    name=permission_name.value,
+                    name=perm_enum.value,
                     context=admin_context,
                 )
                 if permission:
@@ -327,3 +328,8 @@ class Scenario:
                     raise ValueError(msg)
 
         return result
+
+    def _raise_permission_not_found(self, permission_name: str) -> None:
+        """Raise ValueError for permission not found."""
+        msg = f"Permission '{permission_name}' not found"
+        raise ValueError(msg)
