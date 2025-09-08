@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
     from kwik.models import User
     from kwik.settings import BaseKwikSettings
+    from kwik.testing import IdentityAwareTestClient
 
 # Constants for magic values
 MIN_JWT_TOKEN_LENGTH = 50
@@ -72,9 +73,11 @@ class TestLoginRouter:
 
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    def test_test_token_valid_token(self, admin_client: TestClient, settings: BaseKwikSettings) -> None:
+    def test_test_token_valid_token(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User, settings: BaseKwikSettings
+    ) -> None:
         """Test token validation with valid token."""
-        response = admin_client.post("/api/v1/login/test-token")
+        response = identity_aware_client.post_as(admin_user, "/api/v1/login/test-token")
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -181,9 +184,11 @@ class TestLoginRouter:
 
         assert response.status_code == HTTPStatus.NOT_FOUND
 
-    def test_is_impersonating_regular_token(self, admin_client: TestClient) -> None:
+    def test_is_impersonating_regular_token(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test is_impersonating returns False for regular token."""
-        response = admin_client.post("/api/v1/login/is_impersonating")
+        response = identity_aware_client.post_as(admin_user, "/api/v1/login/is_impersonating")
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() is False
@@ -260,10 +265,12 @@ class TestLoginRouter:
         user_data = test_response.json()
         assert user_data["email"] == settings.FIRST_SUPERUSER
 
-    def test_stop_impersonating_regular_token(self, admin_client: TestClient) -> None:
+    def test_stop_impersonating_regular_token(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test stop_impersonating with regular (non-impersonation) token."""
         # Regular tokens have empty kwik_impersonate field, which should return HTTP 400
-        response = admin_client.post("/api/v1/login/stop_impersonating")
+        response = identity_aware_client.post_as(admin_user, "/api/v1/login/stop_impersonating")
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "invalid literal for int()" in response.json()["detail"]
 

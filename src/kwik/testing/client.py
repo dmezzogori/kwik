@@ -24,6 +24,7 @@ Example usage:
 
 from __future__ import annotations
 
+from http import HTTPStatus
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
     from requests import Response
 
     from kwik.models import User
+    from kwik.settings import BaseKwikSettings
 
 
 class IdentityAwareTestClient:
@@ -41,16 +43,18 @@ class IdentityAwareTestClient:
     without manually managing authentication tokens or headers.
     """
 
-    def __init__(self, client: TestClient) -> None:
+    def __init__(self, client: TestClient, settings: BaseKwikSettings | None = None) -> None:
         """
         Initialize the identity-aware client.
 
         Args:
             client: Base TestClient instance to wrap
+            settings: Optional settings for admin user detection
 
         """
         self._client = client
         self._token_cache: dict[int, str] = {}
+        self._settings = settings
 
     def _get_auth_token(self, user: User) -> str:
         """
@@ -63,21 +67,38 @@ class IdentityAwareTestClient:
             Authentication token
 
         Raises:
-            AssertionError: If authentication fails
+            RuntimeError: If authentication fails
 
         """
         if user.id in self._token_cache:
             return self._token_cache[user.id]
 
+        # Determine the correct password based on user email
+        if user.email == "regular@example.com":
+            password = "regularpassword123"  # noqa: S105
+        elif self._settings and user.email == self._settings.FIRST_SUPERUSER:
+            password = self._settings.FIRST_SUPERUSER_PASSWORD
+        else:
+            password = "testpassword123"  # Default test password  # noqa: S105
+
         response = self._client.post(
             "/api/v1/login/access-token",
             data={
                 "username": user.email,
-                "password": "testpassword123",  # Default test password
+                "password": password,
             },
         )
 
-        token = response.json()["access_token"]
+        if response.status_code != HTTPStatus.OK:
+            msg = f"Authentication failed for user {user.email}: {response.status_code} {response.text}"
+            raise RuntimeError(msg)
+
+        try:
+            token = response.json()["access_token"]
+        except (KeyError, ValueError) as e:
+            msg = f"Invalid authentication response for user {user.email}: {e}"
+            raise RuntimeError(msg) from e
+
         self._token_cache[user.id] = token
         return token
 
@@ -86,6 +107,7 @@ class IdentityAwareTestClient:
         method: str,
         user: User,
         url: str,
+        **kwargs,  # noqa: ANN003
     ) -> Response:
         """
         Make an authenticated request as a specific user.
@@ -102,13 +124,13 @@ class IdentityAwareTestClient:
         """
         token = self._get_auth_token(user)
 
-        # Add authorization header
-        headers = {}
+        # Add authorization header, merging with any existing headers
+        headers = kwargs.pop("headers", {})
         headers["Authorization"] = f"Bearer {token}"
 
-        return getattr(self._client, method.lower())(url, headers=headers)
+        return getattr(self._client, method.lower())(url, headers=headers, **kwargs)
 
-    def get_as(self, user: User, url: str) -> Response:
+    def get_as(self, user: User, url: str, **kwargs) -> Response:  # noqa: ANN003
         """
         Make authenticated GET request as specific user.
 
@@ -124,9 +146,9 @@ class IdentityAwareTestClient:
             response = client.get_as(admin_user, "/admin/users")
 
         """
-        return self._make_authenticated_request("GET", user, url)
+        return self._make_authenticated_request("GET", user, url, **kwargs)
 
-    def post_as(self, user: User, url: str) -> Response:
+    def post_as(self, user: User, url: str, **kwargs) -> Response:  # noqa: ANN003
         """
         Make authenticated POST request as specific user.
 
@@ -142,9 +164,9 @@ class IdentityAwareTestClient:
             response = client.post_as(editor_user, "/posts", json={"title": "New Post"})
 
         """
-        return self._make_authenticated_request("POST", user, url)
+        return self._make_authenticated_request("POST", user, url, **kwargs)
 
-    def put_as(self, user: User, url: str) -> Response:
+    def put_as(self, user: User, url: str, **kwargs) -> Response:  # noqa: ANN003
         """
         Make authenticated PUT request as specific user.
 
@@ -157,9 +179,9 @@ class IdentityAwareTestClient:
             Response object
 
         """
-        return self._make_authenticated_request("PUT", user, url)
+        return self._make_authenticated_request("PUT", user, url, **kwargs)
 
-    def patch_as(self, user: User, url: str) -> Response:
+    def patch_as(self, user: User, url: str, **kwargs) -> Response:  # noqa: ANN003
         """
         Make authenticated PATCH request as specific user.
 
@@ -172,9 +194,9 @@ class IdentityAwareTestClient:
             Response object
 
         """
-        return self._make_authenticated_request("PATCH", user, url)
+        return self._make_authenticated_request("PATCH", user, url, **kwargs)
 
-    def delete_as(self, user: User, url: str) -> Response:
+    def delete_as(self, user: User, url: str, **kwargs) -> Response:  # noqa: ANN003
         """
         Make authenticated DELETE request as specific user.
 
@@ -187,7 +209,7 @@ class IdentityAwareTestClient:
             Response object
 
         """
-        return self._make_authenticated_request("DELETE", user, url)
+        return self._make_authenticated_request("DELETE", user, url, **kwargs)
 
     def clear_token_cache(self) -> None:
         """Clear the authentication token cache."""

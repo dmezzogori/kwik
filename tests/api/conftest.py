@@ -6,7 +6,6 @@ from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import pytest
-from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy.orm.session import Session
 
@@ -14,6 +13,7 @@ from kwik.api.api import api_router
 from kwik.applications import Kwik
 from kwik.database import create_session
 from kwik.dependencies.session import _get_session
+from kwik.testing import IdentityAwareTestClient
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -54,20 +54,6 @@ def client(kwik_app: Kwik, engine: Engine) -> Generator[TestClient, None, None]:
 
 
 @pytest.fixture
-def admin_client(client: TestClient, settings: BaseKwikSettings) -> TestClient:
-    """TestClient pre-configured with admin authentication headers."""
-    response = client.post(
-        "/api/v1/login/access-token",
-        data={
-            "username": settings.FIRST_SUPERUSER,
-            "password": settings.FIRST_SUPERUSER_PASSWORD,
-        },
-    )
-    assert response.status_code == status.HTTP_200_OK, f"Login failed: {response.text}"
-    admin_token = response.json()["access_token"]
-
-    client.headers = {
-        **client.headers,
-        "Authorization": f"Bearer {admin_token}",
-    }
-    return client
+def identity_aware_client(client: TestClient, settings: BaseKwikSettings) -> IdentityAwareTestClient:
+    """TestClient with identity-aware authentication context switching."""
+    return IdentityAwareTestClient(client, settings)

@@ -15,10 +15,11 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from fastapi.testclient import TestClient
+    from starlette.testclient import TestClient
 
     from kwik.models import User
     from kwik.settings import BaseKwikSettings
+    from kwik.testing import IdentityAwareTestClient
 
 # Constants for magic values to satisfy ruff linting
 TEST_USER_COUNTER_START = 1000
@@ -32,7 +33,8 @@ class TestUsersRouter:
 
     def _create_test_user_via_api(  # noqa: PLR0913
         self,
-        admin_client: TestClient,
+        identity_aware_client: IdentityAwareTestClient,
+        admin_user: User,
         email: str,
         name: str = "testuser",
         surname: str = "testsurname",
@@ -48,27 +50,16 @@ class TestUsersRouter:
             "password": password,
             "is_active": is_active,
         }
-        response = admin_client.post("/api/v1/users/", json=user_data)
+        response = identity_aware_client.post_as(admin_user, "/api/v1/users/", json=user_data)
         assert response.status_code == HTTPStatus.OK
         return response.json()
 
-    def _authenticate_user(self, client: TestClient, email: str, password: str) -> str:
-        """Authenticate a user and return access token."""
-        response = client.post(
-            "/api/v1/login/access-token",
-            data={"username": email, "password": password},
-        )
-        assert response.status_code == HTTPStatus.OK
-        return response.json()["access_token"]
-
-    def _set_auth_headers(self, client: TestClient, token: str) -> None:
-        """Set authorization headers on client."""
-        client.headers = {**client.headers, "Authorization": f"Bearer {token}"}
-
     # Tests for GET /users/ - List users
-    def test_list_users_with_admin_permission(self, admin_client: TestClient) -> None:
+    def test_list_users_with_admin_permission(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test listing users with admin permissions."""
-        response = admin_client.get("/api/v1/users/")
+        response = identity_aware_client.get_as(admin_user, "/api/v1/users/")
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -80,9 +71,9 @@ class TestUsersRouter:
         expected_number_of_users = 2
         assert data["total"] == expected_number_of_users
 
-    def test_list_users_with_pagination(self, admin_client: TestClient) -> None:
+    def test_list_users_with_pagination(self, identity_aware_client: IdentityAwareTestClient, admin_user: User) -> None:
         """Test listing users with pagination parameters."""
-        response = admin_client.get("/api/v1/users/?skip=0&limit=10")
+        response = identity_aware_client.get_as(admin_user, "/api/v1/users/?skip=0&limit=10")
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -90,12 +81,11 @@ class TestUsersRouter:
         assert "total" in data
         assert len(data["data"]) <= PAGINATION_DEFAULT_LIMIT
 
-    def test_list_users_without_permission(self, client: TestClient, regular_user: User) -> None:
+    def test_list_users_without_permission(
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+    ) -> None:
         """Test listing users without admin permission fails."""
-        token = self._authenticate_user(client, regular_user.email, "regularpassword123")
-        self._set_auth_headers(client, token)
-
-        response = client.get("/api/v1/users/")
+        response = identity_aware_client.get_as(regular_user, "/api/v1/users/")
         assert response.status_code == HTTPStatus.FORBIDDEN
 
     def test_list_users_without_authentication(self, client: TestClient) -> None:
@@ -104,7 +94,9 @@ class TestUsersRouter:
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
     # Tests for POST /users/ - Create user
-    def test_create_user_with_admin_permission(self, admin_client: TestClient) -> None:
+    def test_create_user_with_admin_permission(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test creating a new user with admin permissions."""
         user_data = {
             "name": "newuser",
@@ -113,7 +105,7 @@ class TestUsersRouter:
             "password": "newpassword123",
             "is_active": True,
         }
-        response = admin_client.post("/api/v1/users/", json=user_data)
+        response = identity_aware_client.post_as(admin_user, "/api/v1/users/", json=user_data)
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -123,7 +115,9 @@ class TestUsersRouter:
         assert data["is_active"] == user_data["is_active"]
         assert "id" in data
 
-    def test_create_user_duplicate_email(self, admin_client: TestClient) -> None:
+    def test_create_user_duplicate_email(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test creating user with duplicate email fails."""
         user_data = {
             "name": "testuser",
@@ -134,14 +128,14 @@ class TestUsersRouter:
         }
 
         # Create first user
-        response1 = admin_client.post("/api/v1/users/", json=user_data)
+        response1 = identity_aware_client.post_as(admin_user, "/api/v1/users/", json=user_data)
         assert response1.status_code == HTTPStatus.OK
 
         # Try to create duplicate
-        response2 = admin_client.post("/api/v1/users/", json=user_data)
+        response2 = identity_aware_client.post_as(admin_user, "/api/v1/users/", json=user_data)
         assert response2.status_code == HTTPStatus.CONFLICT
 
-    def test_create_user_invalid_email(self, admin_client: TestClient) -> None:
+    def test_create_user_invalid_email(self, identity_aware_client: IdentityAwareTestClient, admin_user: User) -> None:
         """Test creating user with invalid email format fails."""
         user_data = {
             "name": "testuser",
@@ -150,23 +144,24 @@ class TestUsersRouter:
             "password": "password123",
             "is_active": True,
         }
-        response = admin_client.post("/api/v1/users/", json=user_data)
+        response = identity_aware_client.post_as(admin_user, "/api/v1/users/", json=user_data)
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
-    def test_create_user_missing_required_fields(self, admin_client: TestClient) -> None:
+    def test_create_user_missing_required_fields(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test creating user with missing required fields fails."""
         user_data = {
             "name": "testuser",
             # Missing required fields: surname, email, password
         }
-        response = admin_client.post("/api/v1/users/", json=user_data)
+        response = identity_aware_client.post_as(admin_user, "/api/v1/users/", json=user_data)
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
-    def test_create_user_without_permission(self, client: TestClient, regular_user: User) -> None:
+    def test_create_user_without_permission(
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+    ) -> None:
         """Test creating user without admin permission fails."""
-        token = self._authenticate_user(client, regular_user.email, "regularpassword123")
-        self._set_auth_headers(client, token)
-
         user_data = {
             "name": "testuser",
             "surname": "testsurname",
@@ -174,7 +169,7 @@ class TestUsersRouter:
             "password": "password123",
             "is_active": True,
         }
-        response = client.post("/api/v1/users/", json=user_data)
+        response = identity_aware_client.post_as(regular_user, "/api/v1/users/", json=user_data)
         assert response.status_code == HTTPStatus.FORBIDDEN
 
     def test_create_user_without_authentication(self, client: TestClient) -> None:
@@ -190,9 +185,9 @@ class TestUsersRouter:
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
     # Tests for GET /users/me - Get current user
-    def test_get_current_user_as_admin(self, admin_client: TestClient, admin_user: User) -> None:
+    def test_get_current_user_as_admin(self, identity_aware_client: IdentityAwareTestClient, admin_user: User) -> None:
         """Test getting current user profile as admin."""
-        response = admin_client.get("/api/v1/users/me")
+        response = identity_aware_client.get_as(admin_user, "/api/v1/users/me")
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -202,12 +197,11 @@ class TestUsersRouter:
         assert data["email"] == admin_user.email
         assert "is_active" in data
 
-    def test_get_current_user_as_regular_user(self, client: TestClient, regular_user: User) -> None:
+    def test_get_current_user_as_regular_user(
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+    ) -> None:
         """Test getting current user profile as regular user."""
-        token = self._authenticate_user(client, regular_user.email, "regularpassword123")
-        self._set_auth_headers(client, token)
-
-        response = client.get("/api/v1/users/me")
+        response = identity_aware_client.get_as(regular_user, "/api/v1/users/me")
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -222,7 +216,9 @@ class TestUsersRouter:
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
     # Tests for PUT /users/me - Update current user
-    def test_update_current_user_all_fields(self, admin_client: TestClient) -> None:
+    def test_update_current_user_all_fields(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test updating current user profile with all fields."""
         update_data = {
             "name": "UpdatedName",
@@ -230,7 +226,7 @@ class TestUsersRouter:
             "email": "updated@example.com",
             "is_active": False,
         }
-        response = admin_client.put("/api/v1/users/me", json=update_data)
+        response = identity_aware_client.put_as(admin_user, "/api/v1/users/me", json=update_data)
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -239,42 +235,47 @@ class TestUsersRouter:
         assert data["email"] == update_data["email"]
         assert data["is_active"] == update_data["is_active"]
 
-    def test_update_current_user_partial_fields(self, admin_client: TestClient) -> None:
+    def test_update_current_user_partial_fields(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test updating current user with only some fields."""
         update_data = {
             "name": "PartialUpdate",
         }
-        response = admin_client.put("/api/v1/users/me", json=update_data)
+        response = identity_aware_client.put_as(admin_user, "/api/v1/users/me", json=update_data)
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
         assert data["name"] == update_data["name"]
 
-    def test_update_current_user_empty_data(self, admin_client: TestClient) -> None:
+    def test_update_current_user_empty_data(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test updating current user with empty data fails validation."""
         update_data = {}
-        response = admin_client.put("/api/v1/users/me", json=update_data)
+        response = identity_aware_client.put_as(admin_user, "/api/v1/users/me", json=update_data)
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
-    def test_update_current_user_invalid_email(self, admin_client: TestClient) -> None:
+    def test_update_current_user_invalid_email(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test updating current user with invalid email fails."""
         update_data = {
             "email": "invalid-email-format",
         }
-        response = admin_client.put("/api/v1/users/me", json=update_data)
+        response = identity_aware_client.put_as(admin_user, "/api/v1/users/me", json=update_data)
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
-    def test_update_current_user_as_regular_user(self, client: TestClient, regular_user: User) -> None:
+    def test_update_current_user_as_regular_user(
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+    ) -> None:
         """Test updating profile as regular user works."""
-        token = self._authenticate_user(client, regular_user.email, "regularpassword123")
-        self._set_auth_headers(client, token)
-
         update_data = {
             "name": "UpdatedRegularUser",
         }
-        response = client.put("/api/v1/users/me", json=update_data)
+        response = identity_aware_client.put_as(regular_user, "/api/v1/users/me", json=update_data)
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -289,9 +290,11 @@ class TestUsersRouter:
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
     # Tests for GET /users/me/permissions - Get current user permissions
-    def test_get_current_user_permissions_as_admin(self, admin_client: TestClient) -> None:
+    def test_get_current_user_permissions_as_admin(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test getting current user permissions as admin."""
-        response = admin_client.get("/api/v1/users/me/permissions")
+        response = identity_aware_client.get_as(admin_user, "/api/v1/users/me/permissions")
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -305,12 +308,11 @@ class TestUsersRouter:
             assert "id" in permission
             assert "name" in permission
 
-    def test_get_current_user_permissions_as_regular_user(self, client: TestClient, regular_user: User) -> None:
+    def test_get_current_user_permissions_as_regular_user(
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+    ) -> None:
         """Test getting current user permissions as regular user."""
-        token = self._authenticate_user(client, regular_user.email, "regularpassword123")
-        self._set_auth_headers(client, token)
-
-        response = client.get("/api/v1/users/me/permissions")
+        response = identity_aware_client.get_as(regular_user, "/api/v1/users/me/permissions")
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -324,9 +326,11 @@ class TestUsersRouter:
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
     # Tests for GET /users/me/roles - Get current user roles
-    def test_get_current_user_roles_as_admin(self, admin_client: TestClient) -> None:
+    def test_get_current_user_roles_as_admin(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test getting current user roles as admin."""
-        response = admin_client.get("/api/v1/users/me/roles")
+        response = identity_aware_client.get_as(admin_user, "/api/v1/users/me/roles")
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -341,12 +345,11 @@ class TestUsersRouter:
             assert "name" in role
             assert "is_active" in role
 
-    def test_get_current_user_roles_as_regular_user(self, client: TestClient, regular_user: User) -> None:
+    def test_get_current_user_roles_as_regular_user(
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+    ) -> None:
         """Test getting current user roles as regular user."""
-        token = self._authenticate_user(client, regular_user.email, "regularpassword123")
-        self._set_auth_headers(client, token)
-
-        response = client.get("/api/v1/users/me/roles")
+        response = identity_aware_client.get_as(regular_user, "/api/v1/users/me/roles")
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -360,13 +363,15 @@ class TestUsersRouter:
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
     # Tests for PUT /users/me/password - Update current user password
-    def test_update_current_user_password_valid(self, admin_client: TestClient, settings: BaseKwikSettings) -> None:
+    def test_update_current_user_password_valid(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User, settings: BaseKwikSettings
+    ) -> None:
         """Test updating current user password with valid data."""
         password_data = {
             "old_password": settings.FIRST_SUPERUSER_PASSWORD,
             "new_password": "newpassword123",
         }
-        response = admin_client.put("/api/v1/users/me/password", json=password_data)
+        response = identity_aware_client.put_as(admin_user, "/api/v1/users/me/password", json=password_data)
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -374,37 +379,40 @@ class TestUsersRouter:
         assert "name" in data
         assert "email" in data
 
-    def test_update_current_user_password_wrong_old_password(self, admin_client: TestClient) -> None:
+    def test_update_current_user_password_wrong_old_password(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test updating password with wrong old password fails."""
         password_data = {
             "old_password": "wrongoldpassword",
             "new_password": "newpassword123",
         }
-        response = admin_client.put("/api/v1/users/me/password", json=password_data)
+        response = identity_aware_client.put_as(admin_user, "/api/v1/users/me/password", json=password_data)
 
         # This should fail with some error status - let's see what the implementation returns
         assert response.status_code != HTTPStatus.OK
 
-    def test_update_current_user_password_missing_fields(self, admin_client: TestClient) -> None:
+    def test_update_current_user_password_missing_fields(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test updating password with missing fields fails."""
         password_data = {
             "old_password": "somepassword",
             # Missing new_password
         }
-        response = admin_client.put("/api/v1/users/me/password", json=password_data)
+        response = identity_aware_client.put_as(admin_user, "/api/v1/users/me/password", json=password_data)
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
-    def test_update_current_user_password_as_regular_user(self, client: TestClient, regular_user: User) -> None:
+    def test_update_current_user_password_as_regular_user(
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+    ) -> None:
         """Test updating password as regular user works."""
-        token = self._authenticate_user(client, regular_user.email, "regularpassword123")
-        self._set_auth_headers(client, token)
-
         password_data = {
             "old_password": "regularpassword123",
             "new_password": "newregularpassword123",
         }
-        response = client.put("/api/v1/users/me/password", json=password_data)
+        response = identity_aware_client.put_as(regular_user, "/api/v1/users/me/password", json=password_data)
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -420,9 +428,11 @@ class TestUsersRouter:
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
     # Tests for GET /users/{user_id} - Get user by ID
-    def test_get_user_by_id_with_admin_permission(self, admin_client: TestClient, regular_user: User) -> None:
+    def test_get_user_by_id_with_admin_permission(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User, regular_user: User
+    ) -> None:
         """Test getting user by ID with admin permissions."""
-        response = admin_client.get(f"/api/v1/users/{regular_user.id}")
+        response = identity_aware_client.get_as(admin_user, f"/api/v1/users/{regular_user.id}")
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -431,18 +441,19 @@ class TestUsersRouter:
         assert data["surname"] == regular_user.surname
         assert data["email"] == regular_user.email
 
-    def test_get_user_by_id_nonexistent_user(self, admin_client: TestClient) -> None:
+    def test_get_user_by_id_nonexistent_user(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test getting non-existent user by ID fails."""
-        response = admin_client.get(f"/api/v1/users/{NONEXISTENT_USER_ID}")
+        response = identity_aware_client.get_as(admin_user, f"/api/v1/users/{NONEXISTENT_USER_ID}")
 
         assert response.status_code == HTTPStatus.NOT_FOUND
 
-    def test_get_user_by_id_without_permission(self, client: TestClient, regular_user: User, admin_user: User) -> None:
+    def test_get_user_by_id_without_permission(
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: User, admin_user: User
+    ) -> None:
         """Test getting user by ID without admin permission fails."""
-        token = self._authenticate_user(client, regular_user.email, "regularpassword123")
-        self._set_auth_headers(client, token)
-
-        response = client.get(f"/api/v1/users/{admin_user.id}")
+        response = identity_aware_client.get_as(regular_user, f"/api/v1/users/{admin_user.id}")
         assert response.status_code == HTTPStatus.FORBIDDEN
 
     def test_get_user_by_id_without_authentication(self, client: TestClient, regular_user: User) -> None:
@@ -450,19 +461,21 @@ class TestUsersRouter:
         response = client.get(f"/api/v1/users/{regular_user.id}")
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    def test_get_user_by_id_invalid_id(self, admin_client: TestClient) -> None:
+    def test_get_user_by_id_invalid_id(self, identity_aware_client: IdentityAwareTestClient, admin_user: User) -> None:
         """Test getting user with invalid ID format."""
-        response = admin_client.get("/api/v1/users/invalid-id")
+        response = identity_aware_client.get_as(admin_user, "/api/v1/users/invalid-id")
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     # Tests for PUT /users/{user_id} - Update user by ID
-    def test_update_user_by_id_with_admin_permission(self, admin_client: TestClient, regular_user: User) -> None:
+    def test_update_user_by_id_with_admin_permission(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User, regular_user: User
+    ) -> None:
         """Test updating user by ID with admin permissions."""
         update_data = {
             "name": "UpdatedByAdmin",
             "surname": "AdminUpdated",
         }
-        response = admin_client.put(f"/api/v1/users/{regular_user.id}", json=update_data)
+        response = identity_aware_client.put_as(admin_user, f"/api/v1/users/{regular_user.id}", json=update_data)
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -470,42 +483,45 @@ class TestUsersRouter:
         assert data["name"] == update_data["name"]
         assert data["surname"] == update_data["surname"]
 
-    def test_update_user_by_id_nonexistent_user(self, admin_client: TestClient) -> None:
+    def test_update_user_by_id_nonexistent_user(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test updating non-existent user by ID fails."""
         update_data = {
             "name": "ShouldFail",
         }
-        response = admin_client.put(f"/api/v1/users/{NONEXISTENT_USER_ID}", json=update_data)
+        response = identity_aware_client.put_as(admin_user, f"/api/v1/users/{NONEXISTENT_USER_ID}", json=update_data)
 
         assert response.status_code == HTTPStatus.NOT_FOUND
 
-    def test_update_user_by_id_empty_data(self, admin_client: TestClient, regular_user: User) -> None:
+    def test_update_user_by_id_empty_data(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User, regular_user: User
+    ) -> None:
         """Test updating user by ID with empty data fails."""
         update_data = {}
-        response = admin_client.put(f"/api/v1/users/{regular_user.id}", json=update_data)
+        response = identity_aware_client.put_as(admin_user, f"/api/v1/users/{regular_user.id}", json=update_data)
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
-    def test_update_user_by_id_invalid_email(self, admin_client: TestClient, regular_user: User) -> None:
+    def test_update_user_by_id_invalid_email(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User, regular_user: User
+    ) -> None:
         """Test updating user by ID with invalid email fails."""
         update_data = {
             "email": "invalid-email-format",
         }
-        response = admin_client.put(f"/api/v1/users/{regular_user.id}", json=update_data)
+        response = identity_aware_client.put_as(admin_user, f"/api/v1/users/{regular_user.id}", json=update_data)
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_update_user_by_id_without_permission(
-        self, client: TestClient, regular_user: User, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: User, admin_user: User
     ) -> None:
         """Test updating user by ID without admin permission fails."""
-        token = self._authenticate_user(client, regular_user.email, "regularpassword123")
-        self._set_auth_headers(client, token)
-
         update_data = {
             "name": "ShouldFail",
         }
-        response = client.put(f"/api/v1/users/{admin_user.id}", json=update_data)
+        response = identity_aware_client.put_as(regular_user, f"/api/v1/users/{admin_user.id}", json=update_data)
         assert response.status_code == HTTPStatus.FORBIDDEN
 
     def test_update_user_by_id_without_authentication(self, client: TestClient, regular_user: User) -> None:
@@ -516,18 +532,22 @@ class TestUsersRouter:
         response = client.put(f"/api/v1/users/{regular_user.id}", json=update_data)
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    def test_update_user_by_id_invalid_id(self, admin_client: TestClient) -> None:
+    def test_update_user_by_id_invalid_id(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test updating user with invalid ID format."""
         update_data = {
             "name": "ShouldFail",
         }
-        response = admin_client.put("/api/v1/users/invalid-id", json=update_data)
+        response = identity_aware_client.put_as(admin_user, "/api/v1/users/invalid-id", json=update_data)
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     # Tests for GET /users/{user_id}/permissions - Get user permissions
-    def test_get_user_permissions_with_admin_permission(self, admin_client: TestClient, regular_user: User) -> None:
+    def test_get_user_permissions_with_admin_permission(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User, regular_user: User
+    ) -> None:
         """Test getting user permissions with admin permissions."""
-        response = admin_client.get(f"/api/v1/users/{regular_user.id}/permissions")
+        response = identity_aware_client.get_as(admin_user, f"/api/v1/users/{regular_user.id}/permissions")
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -538,20 +558,19 @@ class TestUsersRouter:
             assert "id" in permission
             assert "name" in permission
 
-    def test_get_user_permissions_nonexistent_user(self, admin_client: TestClient) -> None:
+    def test_get_user_permissions_nonexistent_user(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test getting permissions for non-existent user fails."""
-        response = admin_client.get(f"/api/v1/users/{NONEXISTENT_USER_ID}/permissions")
+        response = identity_aware_client.get_as(admin_user, f"/api/v1/users/{NONEXISTENT_USER_ID}/permissions")
 
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_get_user_permissions_without_permission(
-        self, client: TestClient, regular_user: User, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: User, admin_user: User
     ) -> None:
         """Test getting user permissions without required permissions fails."""
-        token = self._authenticate_user(client, regular_user.email, "regularpassword123")
-        self._set_auth_headers(client, token)
-
-        response = client.get(f"/api/v1/users/{admin_user.id}/permissions")
+        response = identity_aware_client.get_as(regular_user, f"/api/v1/users/{admin_user.id}/permissions")
         assert response.status_code == HTTPStatus.FORBIDDEN
 
     def test_get_user_permissions_without_authentication(self, client: TestClient, regular_user: User) -> None:
@@ -559,15 +578,19 @@ class TestUsersRouter:
         response = client.get(f"/api/v1/users/{regular_user.id}/permissions")
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    def test_get_user_permissions_invalid_id(self, admin_client: TestClient) -> None:
+    def test_get_user_permissions_invalid_id(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test getting user permissions with invalid ID format."""
-        response = admin_client.get("/api/v1/users/invalid-id/permissions")
+        response = identity_aware_client.get_as(admin_user, "/api/v1/users/invalid-id/permissions")
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     # Tests for GET /users/{user_id}/roles - Get user roles
-    def test_get_user_roles_with_admin_permission(self, admin_client: TestClient, regular_user: User) -> None:
+    def test_get_user_roles_with_admin_permission(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User, regular_user: User
+    ) -> None:
         """Test getting user roles with admin permissions."""
-        response = admin_client.get(f"/api/v1/users/{regular_user.id}/roles")
+        response = identity_aware_client.get_as(admin_user, f"/api/v1/users/{regular_user.id}/roles")
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -579,18 +602,19 @@ class TestUsersRouter:
             assert "name" in role
             assert "is_active" in role
 
-    def test_get_user_roles_nonexistent_user(self, admin_client: TestClient) -> None:
+    def test_get_user_roles_nonexistent_user(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test getting roles for non-existent user fails."""
-        response = admin_client.get(f"/api/v1/users/{NONEXISTENT_USER_ID}/roles")
+        response = identity_aware_client.get_as(admin_user, f"/api/v1/users/{NONEXISTENT_USER_ID}/roles")
 
         assert response.status_code == HTTPStatus.NOT_FOUND
 
-    def test_get_user_roles_without_permission(self, client: TestClient, regular_user: User, admin_user: User) -> None:
+    def test_get_user_roles_without_permission(
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: User, admin_user: User
+    ) -> None:
         """Test getting user roles without required permissions fails."""
-        token = self._authenticate_user(client, regular_user.email, "regularpassword123")
-        self._set_auth_headers(client, token)
-
-        response = client.get(f"/api/v1/users/{admin_user.id}/roles")
+        response = identity_aware_client.get_as(regular_user, f"/api/v1/users/{admin_user.id}/roles")
         assert response.status_code == HTTPStatus.FORBIDDEN
 
     def test_get_user_roles_without_authentication(self, client: TestClient, regular_user: User) -> None:
@@ -598,56 +622,67 @@ class TestUsersRouter:
         response = client.get(f"/api/v1/users/{regular_user.id}/roles")
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    def test_get_user_roles_invalid_id(self, admin_client: TestClient) -> None:
+    def test_get_user_roles_invalid_id(self, identity_aware_client: IdentityAwareTestClient, admin_user: User) -> None:
         """Test getting user roles with invalid ID format."""
-        response = admin_client.get("/api/v1/users/invalid-id/roles")
+        response = identity_aware_client.get_as(admin_user, "/api/v1/users/invalid-id/roles")
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     # Tests for PUT /users/{user_id}/password - Admin password change
-    def test_update_user_password_with_admin_permission(self, admin_client: TestClient, regular_user: User) -> None:
+    def test_update_user_password_with_admin_permission(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User, regular_user: User
+    ) -> None:
         """Test updating user password with admin permissions."""
         password_data = {
             "old_password": "regularpassword123",
             "new_password": "adminchangedpassword123",
         }
-        response = admin_client.put(f"/api/v1/users/{regular_user.id}/password", json=password_data)
+        response = identity_aware_client.put_as(
+            admin_user, f"/api/v1/users/{regular_user.id}/password", json=password_data
+        )
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
         assert data["id"] == regular_user.id
 
-    def test_update_user_password_nonexistent_user(self, admin_client: TestClient) -> None:
+    def test_update_user_password_nonexistent_user(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test updating password for non-existent user fails."""
         password_data = {
             "old_password": "anypassword",
             "new_password": "newpassword123",
         }
-        response = admin_client.put(f"/api/v1/users/{NONEXISTENT_USER_ID}/password", json=password_data)
+        response = identity_aware_client.put_as(
+            admin_user, f"/api/v1/users/{NONEXISTENT_USER_ID}/password", json=password_data
+        )
 
         assert response.status_code == HTTPStatus.NOT_FOUND
 
-    def test_update_user_password_missing_fields(self, admin_client: TestClient, regular_user: User) -> None:
+    def test_update_user_password_missing_fields(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User, regular_user: User
+    ) -> None:
         """Test updating user password with missing fields fails."""
         password_data = {
             "old_password": "somepassword",
             # Missing new_password
         }
-        response = admin_client.put(f"/api/v1/users/{regular_user.id}/password", json=password_data)
+        response = identity_aware_client.put_as(
+            admin_user, f"/api/v1/users/{regular_user.id}/password", json=password_data
+        )
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_update_user_password_without_permission(
-        self, client: TestClient, regular_user: User, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: User, admin_user: User
     ) -> None:
         """Test updating user password without admin permission fails."""
-        token = self._authenticate_user(client, regular_user.email, "regularpassword123")
-        self._set_auth_headers(client, token)
-
         password_data = {
             "old_password": "somepassword",
             "new_password": "newpassword123",
         }
-        response = client.put(f"/api/v1/users/{admin_user.id}/password", json=password_data)
+        response = identity_aware_client.put_as(
+            regular_user, f"/api/v1/users/{admin_user.id}/password", json=password_data
+        )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
     def test_update_user_password_without_authentication(self, client: TestClient, regular_user: User) -> None:
@@ -659,11 +694,13 @@ class TestUsersRouter:
         response = client.put(f"/api/v1/users/{regular_user.id}/password", json=password_data)
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    def test_update_user_password_invalid_id(self, admin_client: TestClient) -> None:
+    def test_update_user_password_invalid_id(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
         """Test updating user password with invalid ID format."""
         password_data = {
             "old_password": "somepassword",
             "new_password": "newpassword123",
         }
-        response = admin_client.put("/api/v1/users/invalid-id/password", json=password_data)
+        response = identity_aware_client.put_as(admin_user, "/api/v1/users/invalid-id/password", json=password_data)
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
