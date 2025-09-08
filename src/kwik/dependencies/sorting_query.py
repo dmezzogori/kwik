@@ -27,9 +27,6 @@ def _parse_sorting_query(sorting: str | None = None) -> ParsedSortingQuery:
     if sorting is not None:
         pattern = r"(\w+)(?::(asc|desc))?"
         for field, direction in re.findall(pattern, sorting):
-            if direction and direction not in ("asc", "desc"):
-                msg = f"Invalid sorting {direction=} for {field=}"
-                raise ValueError(msg)
             sort.append((field, direction or "asc"))
     return sort
 
