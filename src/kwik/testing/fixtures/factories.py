@@ -24,8 +24,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from kwik.crud import Context
-
-from .scenario import Scenario
+from kwik.testing.scenario import Scenario
 
 if TYPE_CHECKING:
     from collections.abc import Callable

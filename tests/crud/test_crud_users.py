@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from kwik.models import User
 
 
-@pytest.mark.crud
 class TestUserCRUD:
     """Test cases for user CRUD operations."""
 

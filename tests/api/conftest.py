@@ -14,7 +14,6 @@ from kwik.api.api import api_router
 from kwik.applications import Kwik
 from kwik.database import create_session
 from kwik.dependencies.session import _get_session
-from kwik.testing import IdentityAwareTestClient
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -72,9 +71,3 @@ def admin_client(client: TestClient, settings: BaseKwikSettings) -> TestClient:
         "Authorization": f"Bearer {admin_token}",
     }
     return client
-
-
-@pytest.fixture
-def auth_client(client: TestClient) -> IdentityAwareTestClient:
-    """Identity-aware TestClient for seamless authentication testing."""
-    return IdentityAwareTestClient(client)

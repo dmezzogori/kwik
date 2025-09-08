@@ -21,38 +21,30 @@ dependencies = [
     "loguru>=0.7.3",
 ]
 
-[project.scripts]
-kwik = "kwik.__main__:main"
-
-[project.entry-points.pytest11]
-kwik-testing = "kwik.testing.fixtures"
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
 [dependency-groups]
 dev = [
     "pre-commit>=4.2.0",
     "pytest-cov>=6.2.1",
     "pytest-asyncio>=0.23.0",
-    "pytest-xdist>=3.6.0",
     "ruff>=0.12.1",
     "testcontainers>=4.0.0",
+    "pytest-xdist>=3.8.0",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+kwik = "kwik.__main__:main"
 
 [tool.pytest.ini_options]
-addopts = "-n auto --cov=src/kwik --cov-branch --cov-report=term-missing --cov-report=xml -v"
+addopts = "-n auto --cov=src/kwik --cov-branch --cov-report=term-missing:skip-covered --cov-report=xml --cov-append"
 asyncio_mode = "auto"
 testpaths = ["tests"]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests",
-    "crud: marks tests as CRUD operation tests",
-]
 
 [tool.coverage.run]
+branch = true
 omit = [
     "tests/*",
     "src/kwik/applications/uvicorn.py",
@@ -62,7 +54,6 @@ omit = [
 
 [tool.coverage.report]
 exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:"]
-
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.

@@ -24,9 +24,7 @@ Example usage:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
-
-from fastapi import status
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from fastapi.testclient import TestClient
@@ -79,10 +77,6 @@ class IdentityAwareTestClient:
             },
         )
 
-        assert response.status_code == status.HTTP_200_OK, (
-            f"Authentication failed for user {user.email}: {response.text}"
-        )
-
         token = response.json()["access_token"]
         self._token_cache[user.id] = token
         return token
@@ -92,7 +86,6 @@ class IdentityAwareTestClient:
         method: str,
         user: User,
         url: str,
-        **kwargs: Any,
     ) -> Response:
         """
         Make an authenticated request as a specific user.
@@ -110,13 +103,12 @@ class IdentityAwareTestClient:
         token = self._get_auth_token(user)
 
         # Add authorization header
-        headers = kwargs.get("headers", {})
+        headers = {}
         headers["Authorization"] = f"Bearer {token}"
-        kwargs["headers"] = headers
 
-        return getattr(self._client, method.lower())(url, **kwargs)
+        return getattr(self._client, method.lower())(url, headers=headers)
 
-    def get_as(self, user: User, url: str, **kwargs: Any) -> Response:
+    def get_as(self, user: User, url: str) -> Response:
         """
         Make authenticated GET request as specific user.
 
@@ -132,9 +124,9 @@ class IdentityAwareTestClient:
             response = client.get_as(admin_user, "/admin/users")
 
         """
-        return self._make_authenticated_request("GET", user, url, **kwargs)
+        return self._make_authenticated_request("GET", user, url)
 
-    def post_as(self, user: User, url: str, **kwargs: Any) -> Response:
+    def post_as(self, user: User, url: str) -> Response:
         """
         Make authenticated POST request as specific user.
 
@@ -150,9 +142,9 @@ class IdentityAwareTestClient:
             response = client.post_as(editor_user, "/posts", json={"title": "New Post"})
 
         """
-        return self._make_authenticated_request("POST", user, url, **kwargs)
+        return self._make_authenticated_request("POST", user, url)
 
-    def put_as(self, user: User, url: str, **kwargs: Any) -> Response:
+    def put_as(self, user: User, url: str) -> Response:
         """
         Make authenticated PUT request as specific user.
 
@@ -165,9 +157,9 @@ class IdentityAwareTestClient:
             Response object
 
         """
-        return self._make_authenticated_request("PUT", user, url, **kwargs)
+        return self._make_authenticated_request("PUT", user, url)
 
-    def patch_as(self, user: User, url: str, **kwargs: Any) -> Response:
+    def patch_as(self, user: User, url: str) -> Response:
         """
         Make authenticated PATCH request as specific user.
 
@@ -180,9 +172,9 @@ class IdentityAwareTestClient:
             Response object
 
         """
-        return self._make_authenticated_request("PATCH", user, url, **kwargs)
+        return self._make_authenticated_request("PATCH", user, url)
 
-    def delete_as(self, user: User, url: str, **kwargs: Any) -> Response:
+    def delete_as(self, user: User, url: str) -> Response:
         """
         Make authenticated DELETE request as specific user.
 
@@ -195,13 +187,8 @@ class IdentityAwareTestClient:
             Response object
 
         """
-        return self._make_authenticated_request("DELETE", user, url, **kwargs)
+        return self._make_authenticated_request("DELETE", user, url)
 
     def clear_token_cache(self) -> None:
         """Clear the authentication token cache."""
         self._token_cache.clear()
-
-    # Delegate all other methods to the underlying client
-    def __getattr__(self, name: str) -> Any:
-        """Delegate unknown methods to the underlying TestClient."""
-        return getattr(self._client, name)

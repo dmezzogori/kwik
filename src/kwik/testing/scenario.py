@@ -52,7 +52,7 @@ class UserSpec:
     name: str
     surname: str = "Doe"
     email: str | None = None
-    password: str = "testpassword123"
+    password: str = "testpassword123"  # noqa: S105
     is_active: bool = True
     admin: bool = False
     roles: list[str] = field(default_factory=list)
@@ -76,17 +76,18 @@ class Scenario:
     """
 
     def __init__(self) -> None:
+        """Initialize a new scenario builder with empty specifications."""
         self._user_specs: list[UserSpec] = []
         self._role_specs: list[RoleSpec] = []
         self._custom_permissions: set[str] = set()
 
-    def with_user(
+    def with_user(  # noqa: PLR0913
         self,
         *,
         name: str,
         surname: str = "Doe",
         email: str | None = None,
-        password: str = "testpassword123",
+        password: str = "testpassword123",  # noqa: S107
         is_active: bool = True,
         admin: bool = False,
         roles: list[str] | None = None,
@@ -137,7 +138,7 @@ class Scenario:
         name: str = "admin",
         surname: str = "Admin",
         email: str | None = None,
-        password: str = "adminpassword123",
+        password: str = "adminpassword123",  # noqa: S107
     ) -> Scenario:
         """
         Add an admin user to the scenario (convenience method).
