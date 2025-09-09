@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2025-09-09
+
+### Added
+
+- **Enhanced Testing Infrastructure**: Complete overhaul of the testing system for improved developer experience
+  - **Fluent Scenario Builder**: Clean test data creation with `Scenario().with_user(admin=True).with_posts(5).build()` API
+  - **Identity-Aware TestClient**: Test authentication seamlessly with `client.get_as(user, "/protected")` 
+  - **Performance Test Suite**: Baseline performance metrics and parallel test execution setup
+  - **Enhanced Fixtures**: Centralized, reusable test fixtures and factories for consistent test patterns
+  - **100% Test Coverage**: All existing tests migrated and enhanced while maintaining complete coverage
+
+### Changed
+
+- **Developer Experience**: Significantly improved test creation speed and debugging capabilities
+- **Test Performance**: Parallel test execution with pytest-xdist for faster development cycles  
+- **Documentation**: Comprehensive testing documentation with practical examples and best practices
+- **Project Management**: Migrated development roadmap from static markdown to Linear project management with tracking, dependencies, and milestones
+
+### Improved
+
+- **Test Reliability**: Enhanced test isolation and session management for more stable test runs
+- **Code Quality**: Improved test patterns and factory implementations for better maintainability
+- **Framework Foundation**: Solid testing infrastructure ready for all future Kwik v1.x development
+
+### Technical Details
+
+- Added `src/kwik/testing/` package with scenario builder, identity-aware client, and fixture utilities
+- Enhanced pytest configuration with parallel execution and coverage optimization
+- Comprehensive test suite covering CRUD operations, API endpoints, dependencies, and framework components
+
 ## [1.2.1] - 2025-08-21
 
 ### Security
