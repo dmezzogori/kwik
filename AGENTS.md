@@ -18,11 +18,18 @@ src/kwik/
 ├── api/           # FastAPI routes and endpoints
 ├── core/          # Configuration and security
 ├── crud/          # Database operations (Create, Read, Update, Delete)
-├── database/      # Database connection and session management
+├── dependencies/  # Dependency injection and management
+├── exceptions/    # Custom exceptions and error handling
 ├── models/        # SQLAlchemy models
 ├── schemas/       # Pydantic schemas for API validation
+├── testing/       # Testing utilities and fixtures
 ├── utils/         # Utility functions
-└── applications/  # Application runners (uvicorn, gunicorn)
+├── applications/  # Application runners (uvicorn, gunicorn)
+├── database.py    # Database connection and session management
+├── logging.py     # Logging configuration
+├── routers.py     # API route class definitions
+├── security.py    # Security utilities and authentication
+└── settings.py    # Application settings and configuration
 ```
 
 ## Common Commands
@@ -41,29 +48,22 @@ kwik
 #### Local Testing Setup
 ```bash
 # Run all tests in parallel with coverage (default behavior - fast!)
-pytest
+uv run pytest
 
 # Run tests without parallel execution (for debugging)
-pytest -n 0
+uv run pytest -n 0
 
 # Run tests with detailed coverage report  
-pytest --cov=src/kwik --cov-report=term-missing
+uv run pytest --cov=src/kwik --cov-report=term-missing
 
 # Run specific test file
-pytest tests/crud/test_crud_users.py
+uv run pytest tests/crud/test_crud_users.py
 
 # Run specific test method
-pytest tests/crud/test_crud_users.py::TestUserCRUD::test_create_user
-
-# Run tests by category (using markers)
-pytest -m crud                    # Only CRUD tests
-pytest -m unit                    # Only unit tests  
-pytest -m integration             # Only integration tests
-pytest -m "not slow"              # Skip slow tests (fast feedback)
-pytest -m "crud and not slow"     # CRUD tests that aren't slow
+uv run pytest tests/crud/test_crud_users.py::TestUserCRUD::test_create_user
 
 # Disable coverage for even faster execution during development
-pytest --disable-warnings --tb=short
+uv run pytest --disable-warnings --tb=short
 ```
 
 #### Test Database
@@ -75,14 +75,35 @@ pytest --disable-warnings --tb=short
 #### Test Structure
 ```
 tests/
-├── conftest.py              # Pytest configuration and fixtures
-├── utils/                   # Test utilities and factories
-│   ├── __init__.py
-│   ├── factories.py         # Factory Boy factories for test data
-│   └── helpers.py           # Helper functions for tests
-├── test_crud_users.py       # CRUD operation tests
-├── test_crud_roles.py       # Role CRUD tests
-├── test_api_endpoints.py    # API endpoint tests
+├── conftest.py                          # Pytest configuration and fixtures
+├── api/                                 # API endpoint tests
+│   ├── conftest.py                      # API-specific fixtures
+│   ├── test_login_router.py            # Authentication endpoint tests
+│   ├── test_permissions_router.py      # Permissions API tests
+│   ├── test_roles_router.py            # Roles API tests
+│   └── test_users_router.py            # Users API tests
+├── applications/                        # Application runner tests
+│   └── test_kwik.py                     # Main application tests
+├── crud/                                # CRUD operation tests
+│   ├── test_autocrud_validation.py     # AutoCRUD validation tests
+│   ├── test_crud_permissions.py        # Permission CRUD tests
+│   ├── test_crud_roles.py              # Role CRUD tests
+│   └── test_crud_users.py              # User CRUD tests
+├── dependencies/                        # Dependency injection tests
+│   ├── test_filter_query.py            # Filter query dependency tests
+│   ├── test_session.py                 # Database session dependency tests
+│   └── test_sorting_query.py           # Sorting query dependency tests
+├── security/                            # Security module tests
+│   └── test_security.py                # Security utilities tests
+├── testing/                             # Testing framework tests
+│   ├── conftest.py                      # Testing-specific fixtures
+│   ├── test_client_auth.py             # Test client authentication tests
+│   ├── test_client.py                  # Test client tests
+│   ├── test_factories.py               # Test factory tests
+│   └── test_scenario.py                # Test scenario tests
+└── utils/                               # Test utilities
+    ├── helpers.py                       # Helper functions for tests
+    └── test_files.py                    # File utility tests
 ```
 
 #### Continuous Integration
@@ -95,21 +116,21 @@ tests/
 ### Code Quality & Common Commands
 ```bash
 # Run linter and formatter
-ruff check
-ruff format
+uv run ruff check
+uv run ruff format
 
 # Fix auto-fixable issues
-ruff check --fix
+uv run ruff check --fix
 
 # Apply unsafe fixes (use carefully)
-ruff check --fix --unsafe-fixes
+uv run ruff check --fix --unsafe-fixes
 
 # Update dependencies (after testing)
 # Update pyproject.toml manually, then:
 uv sync
 
 # Run tests to check current status
-pytest --cov=src/kwik --cov-report=term-missing
+uv run pytest
 ```
 
 ### Documentation
@@ -120,7 +141,7 @@ pytest --cov=src/kwik --cov-report=term-missing
 cd docs
 docker compose up
 
-# Access at http://localhost:8000
+# Access at http://localhost:8000 using curl or playwright MCP
 ```
 
 #### Documentation Hosting & Deployment
@@ -166,76 +187,76 @@ docker compose up
 1. **Setup**: Install dependencies with `uv sync`
 2. **Development**: Run `kwik` for hot-reload server
 3. **Git Workflow**: Use feature branches (`feature/your-feature-name`)
-4. **Before starting work**: Run `pytest` to have a reference for existing tests results and coverage
-5. **After changes**: Run `pytest` to ensure tests pass
-6. **Linting**: Run `ruff check` and fix issues
-7. **Format**: Run `ruff format` to apply code style
+4. **Before starting work**: Run `uv run pytest` to have a reference for existing tests results and coverage
+5. **After changes**: Run `uv run pytest` to ensure tests pass
+6. **Linting**: Run `uv run ruff check` and fix issues
+7. **Format**: Run `uv run ruff format` to apply code style
 
 ## Release Workflow
 
-Kwik uses an automated release process with GitHub Actions and PyPI trusted publishing.
+Kwik uses an automated release process with GitHub Actions, PyPI trusted publishing, and Linear project management integration.
 
-### Development Phase
-1. Work on feature branches (`feature/feature-name`)
-2. Make regular commits with descriptive messages
-3. Run tests and linting locally during development
+### Pre-Release Planning (Linear)
+1. **Feature Development**: Work on feature branches with Linear issue tracking
+2. **Issue Management**: Update Linear issues to "Done" status when features are complete
+3. **Project Updates**: Post project updates in Linear celebrating milestone completion
 
 ### Release Preparation
-1. **Update Version:**
-   - Update version in `pyproject.toml` to match the intended release version
-   - **CRITICAL**: This must match the tag version (e.g., if tagging `v1.2.0`, set version to `"1.2.0"`)
+1. **Update Version FIRST:**
+   - **CRITICAL**: Update version in `pyproject.toml` to match the intended release version BEFORE creating any PR
+   - This must match the tag version (e.g., if tagging `v1.3.0`, set version to `"1.3.0"`)
+   - Version update must be committed before proceeding
+   - You MUST run `uv sync` after updating the version to ensure lock file is updated
 
 2. **Update Documentation:**
    - Move `CHANGELOG.md` [Unreleased] content to new versioned section with release date
-   - Update `ROADMAP.md` by removing completed tasks (git history preserves them)
+   - Add comprehensive release notes with features, improvements, and technical details
    - Document any breaking changes or migration steps
+   - Update any roadmap references (if using markdown roadmaps)
 
 3. **Pre-release Validation:**
    ```bash
    # Run full test suite
-   pytest
+   uv run pytest
    
    # Check code quality
-   ruff check
-   ruff format
+   uv run ruff check
+   uv run ruff format
    ```
 
-4. **Rebase Feature Branch:**
+4. **Commit Release Preparation:**
    ```bash
-   # Ensure main branch is up to date
-   git checkout main
-   git pull origin main
-   
-   # Rebase feature branch onto main to maintain linear history
-   git checkout feature/your-feature-name
-   git rebase main
-   ```
-
-5. **Commit All Updates:**
-   ```bash
-   git add pyproject.toml CHANGELOG.md ROADMAP.md
-   git commit -m "docs: prepare v1.x.x release"
+   git add pyproject.toml CHANGELOG.md
+   git commit -m "docs: prepare vX.X.X release" -S
    ```
 
 ### Release Execution
-1. **Create Pull Request:**
+1. **Create PR from Feature Branch:**
    ```bash
-   gh pr create --title "Release v1.x.x" --body "Release preparation for v1.x.x"
+   # Push feature branch with release preparation commits
+   git push -u origin feature/your-feature-name
+   
+   # Create PR with comprehensive release information
+   gh pr create --title "Release vX.X.X" --body "Comprehensive release description..."
    ```
 
-2. **Merge to Main:**
-   - Use GitHub UI to merge PR maintaining linear history (rebase or squash merge)
-   - **CRITICAL**: Maintain linear history - no merge commits
+2. **Manual Rebase Merge (Required for Signed Commits):**
+   - **IMPORTANT**: `gh pr merge --rebase` fails with signed commit repositories
+   - **Manual Process Required:**
+   ```bash
+   # Manual rebase merge to maintain signed commits
+   git checkout main
+   git pull origin main
+   git rebase origin/feature/your-feature-name
+   git push origin main
+   ```
+   - GitHub will automatically detect and close the PR
 
 3. **Tag and Trigger Release:**
    ```bash
-   # Switch to main and pull latest
-   git checkout main
-   git pull origin main
-   
-   # Create and push version tag
-   git tag v1.x.x
-   git push origin v1.x.x
+   # Create and push version tag to trigger automated publishing
+   git tag vX.X.X
+   git push origin vX.X.X
    ```
 
 4. **Automated Publishing:**
@@ -244,16 +265,60 @@ Kwik uses an automated release process with GitHub Actions and PyPI trusted publ
    - Publishes to PyPI using trusted publishing (no manual credentials needed)
    - Monitor workflow execution in GitHub Actions tab
 
-### Post-Release
-- Verify package appears on PyPI: https://pypi.org/project/kwik/
-- Update any dependent projects or documentation
-- Monitor for issues or feedback
+### Post-Release (Linear Integration)
+1. **Verify Publishing:**
+   - Confirm package appears on PyPI: https://pypi.org/project/kwik/
+   - Check GitHub Actions workflow completed successfully
+
+2. **Update Linear Project Management:**
+   - Update main Linear project description with release celebration
+   - Mark completed features/epics with release version and PyPI links
+   - Post project update announcing successful release
+   - Plan next roadmap milestone (move next epic to "Planning" status)
+
+3. **Communication:**
+   - Update any dependent projects or documentation
+   - Monitor for issues or feedback
+   - Share release announcement with team/community
+
+### Critical Notes for Signed Commit Repositories
+- **Cannot use `gh pr merge --rebase`** due to GitHub's inability to automatically sign rebase merges
+- **Must perform manual rebase merge** to maintain signed commit history
+- **Repository rules** may prevent direct pushes to main, requiring PR workflow
+- **All commits must be signed** throughout the process
 
 ### Tools Used
-- **`git`**: Version control operations (add, commit, tag, push, pull, checkout)
+- **`git`**: Version control operations (add, commit, tag, push, pull, checkout, rebase)
 - **`gh`**: GitHub CLI for pull requests and repository management
 - **GitHub Actions**: Automated testing, building, and publishing
 - **PyPI Trusted Publishing**: Secure automated package publishing
+- **Linear**: Project management, issue tracking, and progress updates
+
+## Linear Project Management Integration
+
+### Project Structure
+- **Main Project**: "Kwik Framework Development" - https://linear.app/akirasakurai/project/kwik-framework-development-18329547cdb2
+- **Epic Issues**: Major features tracked as epics with detailed acceptance criteria
+- **Dependencies**: Cross-feature dependencies mapped between epics
+- **Milestones**: Key deliverables within projects tracked with milestones
+
+### GitHub Integration
+- **Auto-Updates**: Linear issues automatically update status based on PR lifecycle
+- **PR Linking**: Use "Resolves AKI-X" in PR descriptions to link Linear issues
+- **Status Flow**: In Progress → In Review (PR created) → Done (PR merged)
+- **Branch Naming**: Auto-generated branch names for seamless development workflow
+
+### Workflow Integration Best Practices
+1. **Feature Development**: Start with Linear issue, create feature branch
+2. **Development**: Regular commits with descriptive messages, link to Linear issue
+3. **PR Creation**: Always reference Linear issue in PR description with "Resolves AKI-X"
+4. **Completion**: Linear automatically updates issue status, celebrate in project updates
+5. **Release**: Update Linear project with release information and plan next milestone
+
+### Project Communication
+- **Project Updates**: Use Linear's project update feature for milestone announcements
+- **Progress Tracking**: Visual progress tracking with dependencies and timelines
+- **Team Coordination**: Shared visibility into development progress and priorities
 
 ## Repository Context
 

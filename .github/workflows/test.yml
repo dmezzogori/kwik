@@ -49,3 +49,37 @@ jobs:
       uses: codecov/codecov-action@v5
       with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  package-test:
+    name: Test clean package installation
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        version: "latest"
+        
+    - name: Build package
+      run: uv build
+      
+    - name: Create clean test environment
+      run: |
+        python -m venv test_env
+        source test_env/bin/activate
+        pip install dist/*.whl
+        
+    - name: Test package imports
+      run: |
+        source test_env/bin/activate
+        python -c "import kwik; print('✓ kwik import successful')"
+        python -c "import kwik.testing.fixtures.core_fixtures; print('✓ kwik.testing import successful')"
+        python -c "import kwik.testing.client; print('✓ kwik.testing.client import successful')"
+        python -c "import kwik.testing.scenario; print('✓ kwik.testing.scenario import successful')"

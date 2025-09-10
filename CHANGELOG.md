@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2025-09-10
+
+### Fixed
+
+- **Dependency Issue**: Fixed missing `testcontainers` dependency that prevented users from importing `kwik.testing` fixtures. Moved `testcontainers>=4.0.0` from dev dependencies to main dependencies to ensure proper availability for testing infrastructure.
+
 ## [1.3.0] - 2025-09-09
 
 ### Added
