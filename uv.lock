@@ -430,6 +430,7 @@ dependencies = [
     { name = "pydantic", extra = ["email"] },
     { name = "pydantic-settings" },
     { name = "pyjwt" },
+    { name = "pytest" },
     { name = "sqlalchemy" },
     { name = "testcontainers" },
 ]
@@ -455,6 +456,7 @@ requires-dist = [
     { name = "pydantic", extras = ["email"], specifier = ">=2.0.0,<3.0.0" },
     { name = "pydantic-settings", specifier = ">=2.10.1" },
     { name = "pyjwt", specifier = ">=2.10.0" },
+    { name = "pytest", specifier = ">=8.0.0" },
     { name = "sqlalchemy", specifier = ">=2.0.0,<3.0.0" },
     { name = "testcontainers", specifier = ">=4.0.0" },
 ]
