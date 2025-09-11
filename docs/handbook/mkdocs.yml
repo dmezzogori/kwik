@@ -26,7 +26,9 @@ plugins:
       minify_html: true
 nav:
   - Home: index.md
-  - Endpoints: writing-endpoints.md
+  - Introduction:
+    - Endpoints: writing-endpoints.md
+    - AutoCRUD: autocrud.md
   - Testing:
       - Overview: testing.md
       - Fixtures: testing-fixtures.md
