@@ -34,13 +34,16 @@ from decimal import Decimal
 from pydantic import BaseModel
 from sqlalchemy.orm import Mapped, mapped_column
 
-from kwik import Kwik
+from kwik import Kwik, api_router
 from kwik.models import Base, RecordInfoMixin
 from kwik.crud import AutoCRUD
+from kwik.crud.context import UserCtx
 from kwik.dependencies import UserContext, ListQuery, has_permission
 from kwik.routers import AuthenticatedRouter
-from kwik.schemas import AtLeastOneFieldMixin, BaseKwikSchema, Paginated
+from kwik.schemas import ORMMixin, Paginated
+from kwik.schemas.mixins import AtLeastOneFieldMixin
 from kwik.core.enum import Permissions
+from kwik.settings import BaseKwikSettings
 
 # 1. Define the Customer model
 class Customer(Base, RecordInfoMixin):
@@ -52,8 +55,7 @@ class Customer(Base, RecordInfoMixin):
     credit_limit: Mapped[Decimal] = mapped_column(default=Decimal('5000'))
 
 # 2. Define the schemas for input/output validation
-class CustomerProfile(BaseKwikSchema):
-    id: int
+class CustomerProfile(ORMMixin):
     name: str
     email: str
     credit_limit: Decimal
@@ -70,7 +72,7 @@ class CustomerUpdate(AtLeastOneFieldMixin):
 
 # 3. Create CRUD operations with automatic audit trails
 # AutoCRUD automatically provides: create(), create_if_not_exists(), get_multi(), get(), get_if_exist(), update(), delete()
-class CustomerCRUD(AutoCRUD[UserContext, Customer, CustomerCreate, CustomerUpdate, int]):
+class CustomerCRUD(AutoCRUD[UserCtx, Customer, CustomerCreate, CustomerUpdate, int]):
     pass
 
 crud_customers = CustomerCRUD(Customer)
@@ -79,7 +81,7 @@ crud_customers = CustomerCRUD(Customer)
 # AuthenticatedRouter ensures all endpoints require JWT authentication
 customers_router = AuthenticatedRouter(prefix="/customers")
 
-# For public endpoints, add permission dependencies
+# Add route-level permission dependencies as needed
 @customers_router.get(
     "/", 
     response_model=Paginated[CustomerProfile],
@@ -127,8 +129,9 @@ def delete_customer(customer_id: int, context: UserContext):
     return {"message": "Customer deleted successfully"}
 
 # 5. Register the router with your Kwik app
-app = Kwik()
-app.include_router(customers_router, prefix="/api/v1")
+# Include your router into the main API router, then build the Kwik app
+api_router.include_router(customers_router)
+app = Kwik(settings=BaseKwikSettings(), api_router=api_router)
 ```
 
 ### Key Features Explained
@@ -139,7 +142,7 @@ That's it! You now have a complete REST API with:
 
  - **AuthenticatedRouter**: Using `AuthenticatedRouter` instead of FastAPI's standard router automatically ensures all endpoints require JWT authentication. Users must provide a valid JWT token to access any endpoint on this router.
 
- - **Permission Dependencies**: The `has_permission()` dependency allows you to specify which permissions a user needs to access each endpoint. As shown in the example, you can require different permissions for different operations (`customers_read`, `customers_create`, `customers_update`, `customers_delete`). You can also combine multiple permissions by passing them as separate arguments to `has_permission()`.
+ - **Permission Dependencies**: The `has_permission()` dependency allows you to specify which permissions a user needs to access each endpoint. As shown in the example, you can require different permissions for different operations (`customers_read`, `customers_create`, `customers_update`, `customers_delete`). Define these names in `src/kwik/core/enum.py` under the `Permissions` enum so they can be granted to roles. You can also combine multiple permissions by passing them as separate arguments to `has_permission()`.
 
 ### ... and more:
 
