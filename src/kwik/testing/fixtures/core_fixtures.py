@@ -100,6 +100,17 @@ def admin_user(settings: BaseKwikSettings, engine: Engine) -> User:
     """Create a shared admin user and ensure an admin role with permissions exists."""
     _session = create_session(engine=engine)
     with session_scope(session=_session, commit=True) as scoped_session:
+        no_user_context = Context(session=scoped_session, user=None)
+
+        # Check if admin user already exists (idempotent for multi-conftest scenarios)
+        existing_user = crud_users.get_by_email(
+            email=settings.FIRST_SUPERUSER,
+            context=no_user_context,
+        )
+        if existing_user is not None:
+            scoped_session.refresh(existing_user)
+            return existing_user
+
         # Create admin user (email/password from settings)
         admin_user = crud_users.create(
             obj_in=UserRegistration(
@@ -109,7 +120,7 @@ def admin_user(settings: BaseKwikSettings, engine: Engine) -> User:
                 password=settings.FIRST_SUPERUSER_PASSWORD,
                 is_active=True,
             ),
-            context=Context(session=scoped_session, user=None),
+            context=no_user_context,
         )
 
         admin_context = Context(session=scoped_session, user=admin_user)
@@ -140,7 +151,7 @@ def regular_user(engine: Engine) -> User:
     """Create a shared regular user for impersonation and auth tests."""
     _session = create_session(engine=engine)
     with session_scope(session=_session, commit=True) as scoped_session:
-        regular_user = crud_users.create(
+        regular_user = crud_users.create_if_not_exist(
             obj_in=UserRegistration(
                 name="regular",
                 surname="user",
@@ -149,6 +160,7 @@ def regular_user(engine: Engine) -> User:
                 is_active=True,
             ),
             context=Context(session=scoped_session, user=None),
+            filters={"email": "regular@example.com"},
         )
         _ = (regular_user.id, regular_user.name, regular_user.surname, regular_user.email)
         return regular_user
