@@ -29,7 +29,7 @@ roles_router = AuthenticatedRouter(prefix="/roles")
 @roles_router.get(
     "/",
     response_model=Paginated[RoleProfile],
-    dependencies=(has_permission(Permissions.roles_management_read),),
+    dependencies=(has_permission(Permissions.role_read),),
 )
 def read_roles(q: ListQuery, context: UserContext) -> Paginated[RoleProfile]:
     """Retrieve roles."""
@@ -40,7 +40,7 @@ def read_roles(q: ListQuery, context: UserContext) -> Paginated[RoleProfile]:
 @roles_router.post(
     "/",
     response_model=RoleProfile,
-    dependencies=(has_permission(Permissions.roles_management_create),),
+    dependencies=(has_permission(Permissions.role_create),),
 )
 def create_role(role_in: RoleDefinition, context: UserContext) -> Role:
     """Create new role."""
@@ -54,7 +54,7 @@ def create_role(role_in: RoleDefinition, context: UserContext) -> Role:
 @roles_router.get(
     "/{role_id}",
     response_model=RoleProfile,
-    dependencies=(has_permission(Permissions.roles_management_read),),
+    dependencies=(has_permission(Permissions.role_read),),
 )
 def read_role_by_id(role_id: int, context: UserContext) -> Role:
     """Get a specific role by id."""
@@ -64,7 +64,7 @@ def read_role_by_id(role_id: int, context: UserContext) -> Role:
 @roles_router.put(
     "/{role_id}",
     response_model=RoleProfile,
-    dependencies=(has_permission(Permissions.roles_management_update),),
+    dependencies=(has_permission(Permissions.role_update),),
 )
 def update_role(role_id: int, role_in: RoleUpdate, context: UserContext) -> Role:
     """Update a role."""
@@ -74,7 +74,7 @@ def update_role(role_id: int, role_in: RoleUpdate, context: UserContext) -> Role
 @roles_router.delete(
     "/{role_id}",
     response_model=RoleProfile,
-    dependencies=(has_permission(Permissions.roles_management_delete),),
+    dependencies=(has_permission(Permissions.role_delete),),
 )
 def delete_role(role_id: int, context: UserContext) -> Role:
     """Delete a role."""
@@ -87,8 +87,8 @@ def delete_role(role_id: int, context: UserContext) -> Role:
     response_model=list[PermissionProfile],
     dependencies=(
         has_permission(
-            Permissions.roles_management_read,
-            Permissions.permissions_management_read,
+            Permissions.role_read,
+            Permissions.permission_read,
         ),
     ),
 )
@@ -103,8 +103,8 @@ def read_permissions_by_role(role_id: int, context: UserContext) -> list[Permiss
     response_model=list[PermissionProfile],
     dependencies=(
         has_permission(
-            Permissions.roles_management_read,
-            Permissions.permissions_management_read,
+            Permissions.role_read,
+            Permissions.permission_read,
         ),
     ),
 )
@@ -119,8 +119,8 @@ def read_available_permissions_for_role(role_id: int, context: UserContext) -> l
     response_model=list[UserProfile],
     dependencies=(
         has_permission(
-            Permissions.users_management_read,
-            Permissions.roles_management_read,
+            Permissions.user_read,
+            Permissions.role_read,
         ),
     ),
 )
@@ -135,8 +135,8 @@ def users_with_role(role_id: int, context: UserContext) -> list[User]:
     response_model=list[UserProfile],
     dependencies=(
         has_permission(
-            Permissions.users_management_read,
-            Permissions.roles_management_read,
+            Permissions.user_read,
+            Permissions.role_read,
         ),
     ),
 )
@@ -150,8 +150,8 @@ def available_users_for_role(role_id: int, context: UserContext) -> list[User]:
     response_model=RoleProfile,
     dependencies=(
         has_permission(
-            Permissions.roles_management_update,
-            Permissions.permissions_management_update,
+            Permissions.role_update,
+            Permissions.permission_update,
         ),
     ),
 )
@@ -163,8 +163,8 @@ def assign_permission_to_role(role_id: int, assignment: RolePermissionAssignment
         NotFound: If the provided role or permission does not exist
 
     Permissions required:
-        * `roles_management_update`
-        * `permissions_management_update`
+        * `role_update`
+        * `permission_update`
 
     """
     role = crud_roles.get_if_exist(entity_id=role_id, context=context)
@@ -177,8 +177,8 @@ def assign_permission_to_role(role_id: int, assignment: RolePermissionAssignment
     response_model=RoleProfile,
     dependencies=(
         has_permission(
-            Permissions.roles_management_update,
-            Permissions.permissions_management_update,
+            Permissions.role_update,
+            Permissions.permission_update,
         ),
     ),
 )
@@ -190,8 +190,8 @@ def remove_permission_from_role(role_id: int, permission_id: int, context: UserC
         NotFound: If the provided role or permission does not exist
 
     Permissions required:
-        * `roles_management_update`
-        * `permissions_management_update`
+        * `role_update`
+        * `permission_update`
 
     """
     role = crud_roles.get_if_exist(entity_id=role_id, context=context)
@@ -204,8 +204,8 @@ def remove_permission_from_role(role_id: int, permission_id: int, context: UserC
     response_model=RoleProfile,
     dependencies=(
         has_permission(
-            Permissions.roles_management_update,
-            Permissions.users_management_update,
+            Permissions.role_update,
+            Permissions.user_update,
         ),
     ),
 )
@@ -217,8 +217,8 @@ def assign_user_to_role(role_id: int, assignment: RoleUserAssignment, context: U
         NotFound: If the provided role or user does not exist
 
     Permissions required:
-        * `roles_management_update`
-        * `users_management_update`
+        * `role_update`
+        * `user_update`
 
     """
     role = crud_roles.get_if_exist(entity_id=role_id, context=context)
@@ -231,8 +231,8 @@ def assign_user_to_role(role_id: int, assignment: RoleUserAssignment, context: U
     response_model=RoleProfile,
     dependencies=(
         has_permission(
-            Permissions.roles_management_update,
-            Permissions.users_management_update,
+            Permissions.role_update,
+            Permissions.user_update,
         ),
     ),
 )
@@ -244,8 +244,8 @@ def remove_user_from_role(role_id: int, user_id: int, context: UserContext) -> R
         NotFound: If the provided role or user does not exist
 
     Permissions required:
-        * `roles_management_update`
-        * `users_management_update`
+        * `role_update`
+        * `user_update`
 
     """
     role = crud_roles.get_if_exist(entity_id=role_id, context=context)
@@ -258,8 +258,8 @@ def remove_user_from_role(role_id: int, user_id: int, context: UserContext) -> R
     response_model=RoleProfile,
     dependencies=(
         has_permission(
-            Permissions.roles_management_delete,
-            Permissions.permissions_management_delete,
+            Permissions.role_delete,
+            Permissions.permission_delete,
         ),
     ),
 )
@@ -273,8 +273,8 @@ def remove_all_permissions_from_role(role_id: int, context: UserContext) -> Role
         NotFound: If the provided role does not exist
 
     Permissions required:
-        * `roles_management_delete`
-        * `permissions_management_delete`
+        * `role_delete`
+        * `permission_delete`
 
     """
     role = crud_roles.get_if_exist(entity_id=role_id, context=context)
@@ -286,8 +286,8 @@ def remove_all_permissions_from_role(role_id: int, context: UserContext) -> Role
     response_model=RoleProfile,
     dependencies=(
         has_permission(
-            Permissions.roles_management_delete,
-            Permissions.users_management_delete,
+            Permissions.role_delete,
+            Permissions.user_delete,
         ),
     ),
 )
@@ -301,8 +301,8 @@ def remove_all_users_from_role(role_id: int, context: UserContext) -> Role:
         NotFound: If the provided role does not exist
 
     Permissions required:
-        * `roles_management_delete`
-        * `users_management_delete`
+        * `role_delete`
+        * `user_delete`
 
     """
     role = crud_roles.get_if_exist(entity_id=role_id, context=context)

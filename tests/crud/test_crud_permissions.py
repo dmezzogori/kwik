@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from kwik.core.enum import Permissions
 from kwik.crud import UserCtx, crud_permissions, crud_roles
 from kwik.exceptions import DuplicatedEntityError, EntityNotFoundError
 from kwik.schemas import PermissionDefinition, PermissionUpdate
@@ -109,7 +110,7 @@ class TestPermissionCRUD:
 
     def test_get_multi_permissions(self, admin_context: UserCtx) -> None:
         """Test getting multiple permissions with pagination."""
-        total_permissions = 14  # All permissions from Permissions enum are associated with admin_user
+        total_permissions = len(Permissions)
         page_limit = 5
 
         # Test first page

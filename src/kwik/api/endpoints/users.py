@@ -28,7 +28,7 @@ users_router = AuthenticatedRouter(prefix="/users")
 @users_router.get(
     "/",
     response_model=Paginated[UserProfile],
-    dependencies=(has_permission(Permissions.users_management_read),),
+    dependencies=(has_permission(Permissions.user_read),),
 )
 def read_users(q: ListQuery, context: UserContext) -> Paginated[UserProfile]:
     """Retrieve users."""
@@ -39,7 +39,7 @@ def read_users(q: ListQuery, context: UserContext) -> Paginated[UserProfile]:
 @users_router.post(
     "/",
     response_model=UserProfile,
-    dependencies=(has_permission(Permissions.users_management_create),),
+    dependencies=(has_permission(Permissions.user_create),),
 )
 def create_user(user_in: UserRegistration, context: UserContext) -> User:
     """Create new user."""
@@ -83,7 +83,7 @@ def update_my_password(user: current_user, obj_in: UserPasswordChange, context: 
 @users_router.get(
     "/{user_id}",
     response_model=UserProfile,
-    dependencies=(has_permission(Permissions.users_management_read),),
+    dependencies=(has_permission(Permissions.user_read),),
 )
 def read_user_by_id(user_id: int, context: UserContext) -> User:
     """Get a specific user by id."""
@@ -93,7 +93,7 @@ def read_user_by_id(user_id: int, context: UserContext) -> User:
 @users_router.put(
     "/{user_id}",
     response_model=UserProfile,
-    dependencies=(has_permission(Permissions.users_management_update),),
+    dependencies=(has_permission(Permissions.user_update),),
 )
 def update_user(user_id: int, user_in: UserProfileUpdate, context: UserContext) -> User:
     """Update a user."""
@@ -104,8 +104,8 @@ def update_user(user_id: int, user_in: UserProfileUpdate, context: UserContext) 
     "/{user_id}/permissions",
     response_model=list[PermissionProfile],
     dependencies=(
-        has_permission(Permissions.users_management_read),
-        has_permission(Permissions.permissions_management_read),
+        has_permission(Permissions.user_read),
+        has_permission(Permissions.permission_read),
     ),
 )
 def read_user_permissions(user_id: int, context: UserContext) -> list[Permission]:
@@ -119,8 +119,8 @@ def read_user_permissions(user_id: int, context: UserContext) -> list[Permission
     response_model=list[RoleProfile],
     dependencies=(
         has_permission(
-            Permissions.users_management_read,
-            Permissions.roles_management_read,
+            Permissions.user_read,
+            Permissions.role_read,
         ),
     ),
 )
@@ -133,7 +133,7 @@ def read_user_roles(user_id: int, context: UserContext) -> list[Role]:
 @users_router.put(
     "/{user_id}/password",
     response_model=UserProfile,
-    dependencies=(has_permission(Permissions.password_management_update),),
+    dependencies=(has_permission(Permissions.user_update),),
 )
 def update_password(user_id: int, obj_in: UserPasswordChange, context: UserContext) -> User:
     """Update user's password (admin operation)."""
