@@ -69,7 +69,7 @@ from kwik.dependencies import has_permission
 @projects_router.get(
     "/",
     response_model=Paginated[ProjectProfile],
-    dependencies=(has_permission(Permissions.projects_management_read),),
+    dependencies=(has_permission(Permissions.project_read),),
 )
 def read_projects(q: ListQuery, context: UserContext) -> Paginated[ProjectProfile]:
     ...
@@ -80,7 +80,7 @@ Multiple permissions can be checked at once:
 ```python
 @projects_router.post(
     "/{project_id}/archive",
-    dependencies=(has_permission(Permissions.projects_management_update, Permissions.projects_management_read),),
+    dependencies=(has_permission(Permissions.project_update, Permissions.project_read),),
 )
 def archive_project(...):
     ...
@@ -93,10 +93,10 @@ System permission names live in `src/kwik/core/enum.py` as the `Permissions` enu
 ```python
 class Permissions(StrEnum):
     # ...existing entries
-    projects_management_create = "projects_management_create"
-    projects_management_read = "projects_management_read"
-    projects_management_update = "projects_management_update"
-    projects_management_delete = "projects_management_delete"
+    project_create = "project_create"
+    project_read = "project_read"
+    project_update = "project_update"
+    project_delete = "project_delete"
 ```
 
 Ensure your seeds/migrations create these permissions so roles can grant them.
@@ -152,7 +152,7 @@ Example:
 from kwik.core.enum import Permissions
 from kwik.dependencies import has_permission
 
-dependencies=(has_permission(Permissions.projects_management_read),)
+dependencies=(has_permission(Permissions.project_read),)
 ```
 
 ### ListQuery (pagination, sorting, filters)
@@ -245,7 +245,7 @@ projects_router = AuthenticatedRouter(prefix="/projects")
 @projects_router.get(
     "/",
     response_model=Paginated[ProjectProfile],
-    dependencies=(has_permission(Permissions.projects_management_read),),
+    dependencies=(has_permission(Permissions.project_read),),
 )
 def read_projects(q: ListQuery, context: UserContext) -> Paginated[ProjectProfile]:
     total, data = crud_projects.get_multi(context=context, **q)
@@ -254,7 +254,7 @@ def read_projects(q: ListQuery, context: UserContext) -> Paginated[ProjectProfil
 @projects_router.post(
     "/",
     response_model=ProjectProfile,
-    dependencies=(has_permission(Permissions.projects_management_create),),
+    dependencies=(has_permission(Permissions.project_create),),
 )
 def create_project(project_in: ProjectDefinition, context: UserContext) -> Project:
     existing = crud_projects.get_by_name(name=project_in.name, context=context)
@@ -265,7 +265,7 @@ def create_project(project_in: ProjectDefinition, context: UserContext) -> Proje
 @projects_router.get(
     "/{project_id}",
     response_model=ProjectProfile,
-    dependencies=(has_permission(Permissions.projects_management_read),),
+    dependencies=(has_permission(Permissions.project_read),),
 )
 def read_project(project_id: int, context: UserContext) -> Project:
     return crud_projects.get_if_exist(entity_id=project_id, context=context)
@@ -273,14 +273,14 @@ def read_project(project_id: int, context: UserContext) -> Project:
 @projects_router.put(
     "/{project_id}",
     response_model=ProjectProfile,
-    dependencies=(has_permission(Permissions.projects_management_update),),
+    dependencies=(has_permission(Permissions.project_update),),
 )
 def update_project(project_id: int, project_in: ProjectUpdate, context: UserContext) -> Project:
     return crud_projects.update(entity_id=project_id, obj_in=project_in, context=context)
  @projects_router.delete(
      "/{project_id}",
      response_model=ProjectProfile,
-     dependencies=(has_permission(Permissions.projects_management_delete),),
+     dependencies=(has_permission(Permissions.project_delete),),
  )
  def delete_project(project_id: int, context: UserContext) -> Project:
      return crud_projects.delete(entity_id=project_id, context=context)
