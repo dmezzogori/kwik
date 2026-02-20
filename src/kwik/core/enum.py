@@ -14,19 +14,17 @@ class Permissions(StrEnum):
 
     impersonification = "impersonification"
 
-    users_management_create = "users_management_create"
-    users_management_read = "users_management_read"
-    users_management_update = "users_management_update"
-    users_management_delete = "users_management_delete"
+    user_create = "user_create"
+    user_read = "user_read"
+    user_update = "user_update"
+    user_delete = "user_delete"
 
-    permissions_management_create = "permissions_management_create"
-    permissions_management_read = "permissions_management_read"
-    permissions_management_update = "permissions_management_update"
-    permissions_management_delete = "permissions_management_delete"
+    permission_create = "permission_create"
+    permission_read = "permission_read"
+    permission_update = "permission_update"
+    permission_delete = "permission_delete"
 
-    roles_management_create = "roles_management_create"
-    roles_management_read = "roles_management_read"
-    roles_management_update = "roles_management_update"
-    roles_management_delete = "roles_management_delete"
-
-    password_management_update = "password_management_update"  # noqa: S105
+    role_create = "role_create"
+    role_read = "role_read"
+    role_update = "role_update"
+    role_delete = "role_delete"

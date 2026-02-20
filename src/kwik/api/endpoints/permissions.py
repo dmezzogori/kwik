@@ -20,7 +20,7 @@ permissions_router = AuthenticatedRouter(prefix="/permissions")
 @permissions_router.get(
     "/",
     response_model=Paginated[PermissionProfile],
-    dependencies=(has_permission(Permissions.permissions_management_read),),
+    dependencies=(has_permission(Permissions.permission_read),),
 )
 def read_permissions(q: ListQuery, context: UserContext) -> Paginated[PermissionProfile]:
     """Retrieve permissions."""
@@ -31,7 +31,7 @@ def read_permissions(q: ListQuery, context: UserContext) -> Paginated[Permission
 @permissions_router.post(
     "/",
     response_model=PermissionProfile,
-    dependencies=(has_permission(Permissions.permissions_management_create),),
+    dependencies=(has_permission(Permissions.permission_create),),
 )
 def create_permission(permission_in: PermissionDefinition, context: UserContext) -> Permission:
     """Create new permission."""
@@ -45,7 +45,7 @@ def create_permission(permission_in: PermissionDefinition, context: UserContext)
 @permissions_router.get(
     "/{permission_id}",
     response_model=PermissionProfile,
-    dependencies=(has_permission(Permissions.permissions_management_read),),
+    dependencies=(has_permission(Permissions.permission_read),),
 )
 def read_permission_by_id(permission_id: int, context: UserContext) -> Permission:
     """Get a specific permission by id."""
@@ -55,7 +55,7 @@ def read_permission_by_id(permission_id: int, context: UserContext) -> Permissio
 @permissions_router.put(
     "/{permission_id}",
     response_model=PermissionProfile,
-    dependencies=(has_permission(Permissions.permissions_management_update),),
+    dependencies=(has_permission(Permissions.permission_update),),
 )
 def update_permission(permission_id: int, permission_in: PermissionUpdate, context: UserContext) -> Permission:
     """Update a permission."""
@@ -67,8 +67,8 @@ def update_permission(permission_id: int, permission_in: PermissionUpdate, conte
     response_model=list[RoleProfile],
     dependencies=(
         has_permission(
-            Permissions.permissions_management_read,
-            Permissions.roles_management_read,
+            Permissions.permission_read,
+            Permissions.role_read,
         ),
     ),
 )
@@ -83,8 +83,8 @@ def read_roles_by_permission(permission_id: int, context: UserContext) -> list[R
     response_model=list[RoleProfile],
     dependencies=(
         has_permission(
-            Permissions.permissions_management_read,
-            Permissions.roles_management_read,
+            Permissions.permission_read,
+            Permissions.role_read,
         ),
     ),
 )
@@ -97,7 +97,7 @@ def read_available_roles_for_permission(permission_id: int, context: UserContext
 @permissions_router.delete(
     "/{permission_id}/roles",
     response_model=PermissionProfile,
-    dependencies=(has_permission(Permissions.permissions_management_delete),),
+    dependencies=(has_permission(Permissions.permission_delete),),
 )
 def purge_all_roles(permission_id: int, context: UserContext) -> Permission:
     """
@@ -109,7 +109,7 @@ def purge_all_roles(permission_id: int, context: UserContext) -> Permission:
         NotFound: If the provided permission does not exist
 
     Permissions required:
-        * `permissions_management_delete`
+        * `permission_delete`
 
     """
     return crud_permissions.purge_all_roles(permission_id=permission_id, context=context)
@@ -118,7 +118,7 @@ def purge_all_roles(permission_id: int, context: UserContext) -> Permission:
 @permissions_router.delete(
     "/{permission_id}",
     response_model=PermissionProfile,
-    dependencies=(has_permission(Permissions.permissions_management_delete),),
+    dependencies=(has_permission(Permissions.permission_delete),),
 )
 def delete_permission(permission_id: int, context: UserContext) -> Permission:
     """
@@ -128,7 +128,7 @@ def delete_permission(permission_id: int, context: UserContext) -> Permission:
         NotFound: If the provided permission does not exist
 
     Permissions required:
-        * `permissions_management_delete`
+        * `permission_delete`
 
     """
     return crud_permissions.delete(entity_id=permission_id, context=context)
