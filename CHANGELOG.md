@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-02-20
+
+### Changed
+
+- **BREAKING: Permission naming convention** — Renamed all built-in permission enum members from `{domain}s_management_{action}` to `{domain}_{action}` for consistency with downstream applications:
+  - `users_management_create/read/update/delete` → `user_create/read/update/delete`
+  - `roles_management_create/read/update/delete` → `role_create/read/update/delete`
+  - `permissions_management_create/read/update/delete` → `permission_create/read/update/delete`
+  - `password_management_update` removed — admin password endpoint now uses `user_update`
+- Updated documentation examples to reflect new `{domain}_{action}` naming convention.
+
 ## [1.3.2] - 2026-01-26
 
 ### Fixed
