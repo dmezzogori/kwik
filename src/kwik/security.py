@@ -13,6 +13,9 @@ from kwik import schemas
 from kwik.exceptions.base import TokenValidationError
 
 if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
+
+    from kwik.models import User
     from kwik.settings import BaseKwikSettings
 
 ALGORITHM: Final[str] = "HS256"
@@ -78,3 +81,42 @@ def verify_password_reset_token(token: str, settings: BaseKwikSettings) -> str |
     """Verify password reset token and return email if valid."""
     decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
     return decoded_token.get("sub", None)
+
+
+def authenticate_from_token(
+    *,
+    token: str,
+    settings: BaseKwikSettings,
+    session: Session,
+) -> User:
+    """
+    Validate a JWT token and return the corresponding user.
+
+    Convenience function for authenticating outside FastAPI's dependency injection
+    (e.g., SSE endpoints, Celery tasks, CLI scripts).
+
+    Args:
+        token: Raw JWT string.
+        settings: Application settings (provides SECRET_KEY and ALGORITHM).
+        session: SQLAlchemy session for user lookup.
+
+    Returns:
+        The authenticated User ORM object.
+
+    Raises:
+        AccessDeniedError: If the token is invalid or the user does not exist.
+
+    """
+    # Local imports to avoid circular dependency: crud.users imports security for hashing
+    from kwik.crud import crud_users  # noqa: PLC0415
+    from kwik.crud.context import Context  # noqa: PLC0415
+    from kwik.exceptions import AccessDeniedError  # noqa: PLC0415
+
+    payload = decode_token(token=token, settings=settings)
+    if payload.sub is None:
+        raise AccessDeniedError
+    context = Context(session=session, user=None)
+    user = crud_users.get(entity_id=int(payload.sub), context=context)
+    if user is None:
+        raise AccessDeniedError
+    return user
