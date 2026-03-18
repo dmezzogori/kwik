@@ -517,3 +517,41 @@ class TestUserCRUD:
         activeb_idx = active_names.index("ActiveB")
         activea_idx = active_names.index("ActiveA")
         assert activeb_idx < activea_idx
+
+    def test_admin_reset_password_with_valid_user(
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+    ) -> None:
+        """Test admin reset password for existing active user by user ID."""
+        old_password = "oldpassword123"
+        user = user_factory(email="adminreset@example.com", password=old_password, is_active=True)
+        original_hash = user.hashed_password
+
+        new_password = "adminresetpassword456"
+        reset_user = crud_users.admin_reset_password(user_id=user.id, password=new_password, context=no_user_context)
+
+        assert reset_user.id == user.id
+        assert reset_user.hashed_password != original_hash
+
+        # Verify new password works
+        authenticated_user = crud_users.authenticate(
+            email="adminreset@example.com", password=new_password, context=no_user_context
+        )
+        assert authenticated_user.id == user.id
+
+        # Verify old password no longer works
+        with pytest.raises(AuthenticationFailedError):
+            crud_users.authenticate(email="adminreset@example.com", password=old_password, context=no_user_context)
+
+    def test_admin_reset_password_nonexistent_user_raises_error(self, no_user_context: NoUserCtx) -> None:
+        """Test admin reset password for non-existent user raises UserNotFoundError."""
+        with pytest.raises(UserNotFoundError):
+            crud_users.admin_reset_password(user_id=99999, password="anypassword", context=no_user_context)
+
+    def test_admin_reset_password_inactive_user_raises_error(
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+    ) -> None:
+        """Test admin reset password for inactive user raises InactiveUserError."""
+        user = user_factory(email="inactivereset@example.com", is_active=False)
+
+        with pytest.raises(InactiveUserError):
+            crud_users.admin_reset_password(user_id=user.id, password="anypassword", context=no_user_context)

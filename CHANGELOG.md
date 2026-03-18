@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-03-18
+
+### Added
+
+- **Admin Password Reset**: New `PUT /users/{user_id}/reset-password` endpoint for admin-initiated password resets without requiring the old password. Protected by new `password_reset` permission.
+- **`password_reset` permission**: New built-in permission in `Permissions` enum for controlling access to admin password reset functionality.
+- **`AdminPasswordReset` schema**: New Pydantic schema with a single `new_password` field for the admin reset endpoint.
+
 ## [1.4.0] - 2026-02-20
 
 ### Changed

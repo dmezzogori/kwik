@@ -110,6 +110,21 @@ class _CRUDUsers(AutoCRUD[MaybeUserCtx, User, UserRegistration, UserProfileUpdat
 
         return user_db
 
+    def admin_reset_password(self, *, user_id: int, password: str, context: MaybeUserCtx) -> User:
+        """Reset user password by user ID (admin operation, no old password required)."""
+        user_db = self.get(entity_id=user_id, context=context)
+
+        if user_db is None:
+            raise UserNotFoundError
+
+        self.is_active(user_db)
+
+        user_db.hashed_password = get_password_hash(password)
+        context.session.add(user_db)
+        context.session.flush()
+
+        return user_db
+
     @staticmethod
     def is_active(user: User) -> User:
         """Check if user is active, raise exception if not."""

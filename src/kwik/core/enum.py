@@ -19,6 +19,8 @@ class Permissions(StrEnum):
     user_update = "user_update"
     user_delete = "user_delete"
 
+    password_reset = "password_reset"  # noqa: S105
+
     permission_create = "permission_create"
     permission_read = "permission_read"
     permission_update = "permission_update"
