@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from sqlalchemy import Boolean, ForeignKey, String
+from sqlalchemy import Boolean, ForeignKey, String, func, select
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
 
 from .base import Base
 from .mixins import RecordInfoMixin
@@ -71,6 +71,12 @@ class UserRole(Base, RecordInfoMixin):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
+
+
+# Deferred column_property: must be defined after UserRole to avoid forward reference.
+Role.user_count = column_property(
+    select(func.count(UserRole.id)).where(UserRole.role_id == Role.id).correlate_except(UserRole).scalar_subquery()
+)
 
 
 class Permission(Base, RecordInfoMixin):

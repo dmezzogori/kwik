@@ -36,6 +36,7 @@ class RoleProfile(ORMMixin):
 
     name: _RoleName
     is_active: bool
+    user_count: int
 
 
 class RolePermissionAssignment(BaseModel):
