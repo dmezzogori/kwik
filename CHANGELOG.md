@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-03-18
+
 ### Added
 
 - **Admin Password Reset**: New `PUT /users/{user_id}/reset-password` endpoint for admin-initiated password resets without requiring the old password. Protected by new `password_reset` permission.
