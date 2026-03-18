@@ -704,3 +704,67 @@ class TestUsersRouter:
         }
         response = identity_aware_client.put_as(admin_user, "/api/v1/users/invalid-id/password", json=password_data)
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    # Tests for PUT /users/{user_id}/reset-password - Admin password reset
+    def test_admin_reset_password_with_permission(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User, regular_user: User
+    ) -> None:
+        """Test admin reset password with password_reset permission."""
+        password_data = {"new_password": "adminresetpassword123"}
+        response = identity_aware_client.put_as(
+            admin_user, f"/api/v1/users/{regular_user.id}/reset-password", json=password_data
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        data = response.json()
+        assert data["id"] == regular_user.id
+        assert "name" in data
+        assert "email" in data
+
+    def test_admin_reset_password_nonexistent_user(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
+        """Test admin reset password for non-existent user fails."""
+        password_data = {"new_password": "anypassword123"}
+        response = identity_aware_client.put_as(
+            admin_user, f"/api/v1/users/{NONEXISTENT_USER_ID}/reset-password", json=password_data
+        )
+
+        assert response.status_code == HTTPStatus.NOT_FOUND
+
+    def test_admin_reset_password_missing_field(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User, regular_user: User
+    ) -> None:
+        """Test admin reset password with missing new_password fails."""
+        response = identity_aware_client.put_as(admin_user, f"/api/v1/users/{regular_user.id}/reset-password", json={})
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    def test_admin_reset_password_without_permission(
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: User, admin_user: User
+    ) -> None:
+        """Test admin reset password without password_reset permission fails."""
+        password_data = {"new_password": "anypassword123"}
+        response = identity_aware_client.put_as(
+            regular_user, f"/api/v1/users/{admin_user.id}/reset-password", json=password_data
+        )
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+    def test_admin_reset_password_without_authentication(self, client: TestClient, regular_user: User) -> None:
+        """Test admin reset password without authentication fails."""
+        password_data = {"new_password": "anypassword123"}
+        response = client.put(f"/api/v1/users/{regular_user.id}/reset-password", json=password_data)
+
+        assert response.status_code == HTTPStatus.UNAUTHORIZED
+
+    def test_admin_reset_password_invalid_id(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+    ) -> None:
+        """Test admin reset password with invalid ID format."""
+        password_data = {"new_password": "anypassword123"}
+        response = identity_aware_client.put_as(
+            admin_user, "/api/v1/users/invalid-id/reset-password", json=password_data
+        )
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY

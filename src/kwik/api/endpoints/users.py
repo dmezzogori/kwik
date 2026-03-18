@@ -10,6 +10,7 @@ from kwik.dependencies import ListQuery, UserContext, current_user, has_permissi
 from kwik.exceptions import DuplicatedEntityError
 from kwik.routers import AuthenticatedRouter
 from kwik.schemas import (
+    AdminPasswordReset,
     Paginated,
     PermissionProfile,
     RoleProfile,
@@ -138,6 +139,16 @@ def read_user_roles(user_id: int, context: UserContext) -> list[Role]:
 def update_password(user_id: int, obj_in: UserPasswordChange, context: UserContext) -> User:
     """Update user's password (admin operation)."""
     return crud_users.change_password(user_id=user_id, obj_in=obj_in, context=context)
+
+
+@users_router.put(
+    "/{user_id}/reset-password",
+    response_model=UserProfile,
+    dependencies=(has_permission(Permissions.password_reset),),
+)
+def admin_reset_password(user_id: int, obj_in: AdminPasswordReset, context: UserContext) -> User:
+    """Reset user's password (admin operation, no old password required)."""
+    return crud_users.admin_reset_password(user_id=user_id, password=obj_in.new_password, context=context)
 
 
 __all__ = ["users_router"]

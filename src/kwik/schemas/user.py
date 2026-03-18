@@ -39,6 +39,12 @@ class UserPasswordChange(BaseModel):
     new_password: str
 
 
+class AdminPasswordReset(BaseModel):
+    """Schema for admin-initiated password reset (no old password required)."""
+
+    new_password: str
+
+
 class UserProfile(ORMMixin):
     """Schema for user profile data."""
 
