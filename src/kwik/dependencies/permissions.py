@@ -7,21 +7,23 @@ from fastapi import Depends
 from kwik.crud import crud_users
 from kwik.exceptions import AccessDeniedError
 
-from .users import current_user  # noqa: TC001
+from .users import resolved_user  # noqa: TC001
 
 
 def has_permission(*permissions: str) -> Depends:
     """
     Endpoint dependency to check if the current user has the required permissions.
 
-    Implemented as a decorator to allow passing multiple permissions as arguments.
+    Works transparently on both ``AuthenticatedRouter`` (JWT) and
+    ``ApiKeyRouter`` (API key) endpoints. Uses ``resolved_user`` which
+    checks ``request.state.api_key_user`` first, then falls back to JWT.
 
     Raises:
-        Forbidden: if the user does not have the required permissions
+        AccessDeniedError: if the user does not have the required permissions.
 
     """
 
-    def check_permissions(user: current_user) -> None:
+    def check_permissions(user: resolved_user) -> None:
         if not crud_users.has_permissions(user=user, permissions=permissions):
             raise AccessDeniedError
 
