@@ -7,6 +7,7 @@ database access, and other common API requirements.
 
 from __future__ import annotations
 
+from .api_key import ApiKeyContext, verify_api_key
 from .context import NoUserContext, UserContext
 from .filter_query import Filters
 from .list_query import ListQuery
@@ -16,9 +17,10 @@ from .session import Session
 from .settings import Settings
 from .sorting_query import Sorting
 from .token import current_token
-from .users import current_user
+from .users import current_user, resolved_user
 
 __all__ = [
+    "ApiKeyContext",
     "Filters",
     "ListQuery",
     "NoUserContext",
@@ -30,4 +32,6 @@ __all__ = [
     "current_token",
     "current_user",
     "has_permission",
+    "resolved_user",
+    "verify_api_key",
 ]
