@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-04-01
+
+### Changed
+
+- **FastAPI upgraded from 0.116.1 to 0.135.2** — Includes 2x JSON response performance (Pydantic/Rust serialization), SSE support, streaming JSON Lines, dependency scopes, and Starlette 1.0.0 compatibility.
+- **Upstream breaking changes**:
+  - FastAPI security classes now return `401` instead of `403` when credentials are missing (since FastAPI 0.122.0).
+  - Strict `Content-Type` checking for JSON requests is now enabled by default (since FastAPI 0.132.0). Disable with `strict_content_type=False` if needed.
+
+### Security
+
+- Resolved 12 Dependabot security alerts (6 high, 5 medium, 1 low):
+  - **PyJWT** 2.10.1 → 2.12.1 — accepts unknown `crit` header extensions (high)
+  - **python-multipart** 0.0.20 → 0.0.22 — arbitrary file write via non-default config (high)
+  - **urllib3** 1.26.20 → 2.6.3 — decompression-bomb bypass, unbounded decompression chain, highly compressed data handling (high)
+  - **starlette** 0.47.2 → 1.0.0 — O(n²) DoS via Range header merging (high)
+  - **requests** 2.32.4 → 2.33.1 — insecure temp file reuse (medium)
+  - **virtualenv** 20.31.2 → 21.2.0 — TOCTOU in directory creation (medium)
+  - **filelock** 3.18.0 → 3.25.2 — TOCTOU symlink vulnerabilities (medium)
+  - **Pygments** 2.19.2 → 2.20.0 — ReDoS via GUID matching (low)
+
+### Fixed
+
+- Updated ruff pre-commit hook from v0.12.7 to v0.15.8 to match project dependency.
+- Fixed new ruff lint findings (RUF059 unused unpacked variables, E501 line length) in test files.
+
 ## [1.7.0] - 2026-03-18
 
 ### Added

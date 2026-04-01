@@ -412,7 +412,7 @@ class TestUserCRUD:
         user_factory(name="Charlie", email="charlie@test.com")
 
         sort_params = [("name", "asc")]
-        count, sorted_users = crud_users.get_multi(sort=sort_params, context=no_user_context)
+        _count, sorted_users = crud_users.get_multi(sort=sort_params, context=no_user_context)
 
         user_names = [user.name for user in sorted_users]
 
@@ -431,7 +431,7 @@ class TestUserCRUD:
         user_factory(name="Charlie", email="charlie2@test.com")
 
         sort_params = [("name", "desc")]
-        count, sorted_users = crud_users.get_multi(sort=sort_params, context=no_user_context)
+        _count, sorted_users = crud_users.get_multi(sort=sort_params, context=no_user_context)
 
         user_names = [user.name for user in sorted_users]
 
@@ -450,7 +450,7 @@ class TestUserCRUD:
         user_factory(name="Bob", email="bob1@test.com")
 
         sort_params = [("name", "desc"), ("id", "asc")]
-        count, sorted_users = crud_users.get_multi(sort=sort_params, context=no_user_context)
+        _count, sorted_users = crud_users.get_multi(sort=sort_params, context=no_user_context)
 
         filtered_users = [u for u in sorted_users if u.name in ["Alice", "Bob"]]
 
@@ -476,8 +476,8 @@ class TestUserCRUD:
         sort_params = [("name", "asc")]
         page_size = 2
 
-        count, first_page = crud_users.get_multi(skip=0, limit=page_size, sort=sort_params, context=no_user_context)
-        count, second_page = crud_users.get_multi(
+        _count, first_page = crud_users.get_multi(skip=0, limit=page_size, sort=sort_params, context=no_user_context)
+        _count, second_page = crud_users.get_multi(
             skip=page_size, limit=page_size, sort=sort_params, context=no_user_context
         )
 
@@ -503,7 +503,7 @@ class TestUserCRUD:
         user_factory(name="InactiveC", email="inactivec@test.com", is_active=False)
 
         sort_params = [("name", "desc")]
-        count, filtered_sorted_users = crud_users.get_multi(sort=sort_params, is_active=True, context=no_user_context)
+        _count, filtered_sorted_users = crud_users.get_multi(sort=sort_params, is_active=True, context=no_user_context)
 
         active_test_users = [u for u in filtered_sorted_users if u.name.startswith("Active")]
 
