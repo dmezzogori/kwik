@@ -1,6 +1,6 @@
 [project]
 name = "kwik"
-version = "1.8.0"
+version = "1.9.0"
 description = "Fast, batteries-included, business-oriented, opinionated REST APIs framework"
 readme = "README.md"
 authors = [
@@ -10,7 +10,7 @@ requires-python = ">=3.12"
 dependencies = [
     "aiofiles==24.1.0",
     "bcrypt==4.0.1",
-    "fastapi[standard]==0.116.1",
+    "fastapi[standard]==0.135.2",
     "gunicorn==23.0.0",
     "httptools==0.6.4",
     "psycopg2-binary==2.9.10",
@@ -107,4 +107,6 @@ unfixable = []
 "tests/*.py" = ["S101", "S105", "S106", "S107", "SLF001", "N805"]
 "*/tests/*.py" = ["S101", "S105", "S106", "S107", "S311", "SLF001", "N805"]
 "src/kwik/core/settings.py" = ["N805", "FBT001"]
+"src/kwik/utils/files.py" = ["ASYNC240"]
+"tests/utils/test_files.py" = ["ASYNC240"]
 "src/kwik/schemas/*.py" = ["N805", "FBT001"]

@@ -385,7 +385,7 @@ class TestPermissionCRUD:
         permission_factory(name="gamma_permission")
 
         sort_params = [("name", "asc")]
-        count, sorted_permissions = crud_permissions.get_multi(sort=sort_params, context=admin_context)
+        _count, sorted_permissions = crud_permissions.get_multi(sort=sort_params, context=admin_context)
 
         permission_names = [perm.name for perm in sorted_permissions]
 
@@ -404,7 +404,7 @@ class TestPermissionCRUD:
         permission_factory(name="gamma_permission_2")
 
         sort_params = [("name", "desc")]
-        count, sorted_permissions = crud_permissions.get_multi(sort=sort_params, context=admin_context)
+        _count, sorted_permissions = crud_permissions.get_multi(sort=sort_params, context=admin_context)
 
         permission_names = [perm.name for perm in sorted_permissions]
 
@@ -423,7 +423,7 @@ class TestPermissionCRUD:
         permission_factory(name="different_name_permission")
 
         sort_params = [("name", "desc"), ("id", "asc")]
-        count, sorted_permissions = crud_permissions.get_multi(sort=sort_params, context=admin_context)
+        _count, sorted_permissions = crud_permissions.get_multi(sort=sort_params, context=admin_context)
 
         test_permissions = [
             p for p in sorted_permissions if p.name in ["same_name_permission", "different_name_permission"]
@@ -451,8 +451,10 @@ class TestPermissionCRUD:
         sort_params = [("name", "asc")]
         page_size = 2
 
-        count, first_page = crud_permissions.get_multi(skip=0, limit=page_size, sort=sort_params, context=admin_context)
-        count, second_page = crud_permissions.get_multi(
+        _count, first_page = crud_permissions.get_multi(
+            skip=0, limit=page_size, sort=sort_params, context=admin_context
+        )
+        _count, second_page = crud_permissions.get_multi(
             skip=page_size, limit=page_size, sort=sort_params, context=admin_context
         )
 

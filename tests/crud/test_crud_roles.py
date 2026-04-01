@@ -715,7 +715,7 @@ class TestRoleCRUD:
         role_factory(name="gamma_role")
 
         sort_params = [("name", "asc")]
-        count, sorted_roles = crud_roles.get_multi(sort=sort_params, context=admin_context)
+        _count, sorted_roles = crud_roles.get_multi(sort=sort_params, context=admin_context)
 
         role_names = [role.name for role in sorted_roles]
 
@@ -732,7 +732,7 @@ class TestRoleCRUD:
         role_factory(name="gamma_role_2")
 
         sort_params = [("name", "desc")]
-        count, sorted_roles = crud_roles.get_multi(sort=sort_params, context=admin_context)
+        _count, sorted_roles = crud_roles.get_multi(sort=sort_params, context=admin_context)
 
         role_names = [role.name for role in sorted_roles]
 
@@ -749,7 +749,7 @@ class TestRoleCRUD:
         role_factory(name="different_name")
 
         sort_params = [("name", "desc"), ("id", "asc")]
-        count, sorted_roles = crud_roles.get_multi(sort=sort_params, context=admin_context)
+        _count, sorted_roles = crud_roles.get_multi(sort=sort_params, context=admin_context)
 
         test_roles = [r for r in sorted_roles if r.name in ["same_name", "different_name"]]
 
@@ -800,7 +800,7 @@ class TestRoleCRUD:
         role_factory(name="inactive_b", is_active=False)
 
         sort_params = [("name", "desc")]
-        count, filtered_sorted_roles = crud_roles.get_multi(sort=sort_params, is_active=True, context=admin_context)
+        _count, filtered_sorted_roles = crud_roles.get_multi(sort=sort_params, is_active=True, context=admin_context)
 
         active_test_roles = [r for r in filtered_sorted_roles if r.name.startswith("active")]
 
