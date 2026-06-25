@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
@@ -23,16 +24,18 @@ if TYPE_CHECKING:
     from kwik.settings import BaseKwikSettings
 
 EMAIL = "test@example.com"
+PASSWORD_HASH = get_password_hash("initial-password-123")
 
 
 def test_generate_password_reset_token(settings: BaseKwikSettings) -> None:
-    """Test that a password reset token is generated correctly."""
-    token = generate_password_reset_token(EMAIL, settings=settings)
+    """Token embeds sub/exp/nbf and a pwd fingerprint of the current hash."""
+    token = generate_password_reset_token(email=EMAIL, settings=settings, password_hash=PASSWORD_HASH)
     assert isinstance(token, str)
     decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
     assert decoded_token["sub"] == EMAIL
     assert "exp" in decoded_token
     assert "nbf" in decoded_token
+    assert decoded_token["pwd"] == hashlib.sha256(PASSWORD_HASH.encode("utf-8")).hexdigest()[:16]
 
 
 def test_verify_password_reset_token(settings: BaseKwikSettings) -> None:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Final
 
@@ -64,14 +65,19 @@ def get_password_hash(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def generate_password_reset_token(email: str, settings: BaseKwikSettings) -> str:
-    """Generate JWT token for password reset with expiration."""
+def generate_password_reset_token(*, email: str, settings: BaseKwikSettings, password_hash: str) -> str:
+    """Generate a self-invalidating JWT password reset token.
+
+    Embeds a fingerprint ("pwd") of the user's current hashed password so the
+    token stops verifying once the password changes.
+    """
     delta = timedelta(hours=48)  # Default 48 hours for password reset token
     now = datetime.now(tz=UTC)
     expires = now + delta
     exp = expires.timestamp()
+    fingerprint = hashlib.sha256(password_hash.encode("utf-8")).hexdigest()[:16]
     return jwt.encode(
-        {"exp": exp, "nbf": now, "sub": email},
+        {"exp": exp, "nbf": now, "sub": email, "pwd": fingerprint},
         settings.SECRET_KEY,
         algorithm=ALGORITHM,
     )
