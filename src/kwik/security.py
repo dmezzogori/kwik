@@ -16,6 +16,7 @@ from kwik.exceptions.base import TokenValidationError
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
+    from kwik.crud.context import Context
     from kwik.models import User
     from kwik.settings import BaseKwikSettings
 
@@ -83,10 +84,36 @@ def generate_password_reset_token(*, email: str, settings: BaseKwikSettings, pas
     )
 
 
-def verify_password_reset_token(token: str, settings: BaseKwikSettings) -> str | None:
-    """Verify password reset token and return email if valid."""
-    decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
-    return decoded_token.get("sub", None)
+def verify_password_reset_token(token: str, settings: BaseKwikSettings, context: Context) -> str | None:
+    """Verify a password reset token against the user's current password hash.
+
+    Decodes the token, looks up the user by the ``sub`` email claim, and returns
+    the email only when the user exists, is active, and the ``pwd`` fingerprint
+    matches a freshly recomputed fingerprint of the current ``hashed_password``.
+    Returns ``None`` on any JWT error, unknown/inactive user, or mismatch.
+    """
+    # Local imports to avoid circular dependency: crud.users imports security for hashing
+    from kwik.crud import crud_users  # noqa: PLC0415
+
+    try:
+        decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+    except jwt.PyJWTError:
+        return None
+
+    email = decoded_token.get("sub")
+    fingerprint = decoded_token.get("pwd")
+    if email is None or fingerprint is None:
+        return None
+
+    user = crud_users.get_by_email(email=email, context=context)
+    if user is None or not user.is_active:
+        return None
+
+    current_fingerprint = hashlib.sha256(user.hashed_password.encode("utf-8")).hexdigest()[:16]
+    if current_fingerprint != fingerprint:
+        return None
+
+    return email
 
 
 def authenticate_from_token(
