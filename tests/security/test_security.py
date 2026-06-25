@@ -24,6 +24,8 @@ from kwik.security import (
 )
 
 if TYPE_CHECKING:
+    from kwik.crud import NoUserCtx
+    from kwik.models import User
     from kwik.settings import BaseKwikSettings
 
 EMAIL = "test@example.com"
@@ -41,7 +43,7 @@ def test_generate_password_reset_token(settings: BaseKwikSettings) -> None:
     assert decoded_token["pwd"] == hashlib.sha256(PASSWORD_HASH.encode("utf-8")).hexdigest()[:16]
 
 
-def _make_user(context, *, email: str, password: str, is_active: bool = True):
+def _make_user(context: NoUserCtx, *, email: str, password: str, is_active: bool = True) -> User:
     """Create a user in the given context and return it."""
     return crud_users.create(
         obj_in=UserRegistration(
@@ -55,7 +57,7 @@ def _make_user(context, *, email: str, password: str, is_active: bool = True):
     )
 
 
-def test_verify_password_reset_token_roundtrip(settings: BaseKwikSettings, no_user_context) -> None:
+def test_verify_password_reset_token_roundtrip(settings: BaseKwikSettings, no_user_context: NoUserCtx) -> None:
     """A freshly generated token verifies back to the user's email."""
     email = f"rt-{uuid.uuid4().hex}@example.com"
     user = _make_user(no_user_context, email=email, password="initial-pass-123")
@@ -63,7 +65,9 @@ def test_verify_password_reset_token_roundtrip(settings: BaseKwikSettings, no_us
     assert verify_password_reset_token(token, settings=settings, context=no_user_context) == email
 
 
-def test_verify_password_reset_token_rejected_after_change(settings: BaseKwikSettings, no_user_context) -> None:
+def test_verify_password_reset_token_rejected_after_change(
+    settings: BaseKwikSettings, no_user_context: NoUserCtx
+) -> None:
     """Token stops verifying once the user's password (hash) changes."""
     email = f"chg-{uuid.uuid4().hex}@example.com"
     user = _make_user(no_user_context, email=email, password="initial-pass-123")
@@ -74,7 +78,7 @@ def test_verify_password_reset_token_rejected_after_change(settings: BaseKwikSet
     assert verify_password_reset_token(token, settings=settings, context=no_user_context) is None
 
 
-def test_verify_password_reset_token_unknown_user(settings: BaseKwikSettings, no_user_context) -> None:
+def test_verify_password_reset_token_unknown_user(settings: BaseKwikSettings, no_user_context: NoUserCtx) -> None:
     """Token for an email with no matching user returns None."""
     token = generate_password_reset_token(
         email="ghost@example.com", settings=settings, password_hash=get_password_hash("x")
@@ -82,7 +86,7 @@ def test_verify_password_reset_token_unknown_user(settings: BaseKwikSettings, no
     assert verify_password_reset_token(token, settings=settings, context=no_user_context) is None
 
 
-def test_verify_password_reset_token_inactive_user(settings: BaseKwikSettings, no_user_context) -> None:
+def test_verify_password_reset_token_inactive_user(settings: BaseKwikSettings, no_user_context: NoUserCtx) -> None:
     """Token for an inactive user returns None even with a matching fingerprint."""
     email = f"inact-{uuid.uuid4().hex}@example.com"
     user = _make_user(no_user_context, email=email, password="initial-pass-123", is_active=False)
@@ -90,7 +94,7 @@ def test_verify_password_reset_token_inactive_user(settings: BaseKwikSettings, n
     assert verify_password_reset_token(token, settings=settings, context=no_user_context) is None
 
 
-def test_verify_password_reset_token_invalid_signature(settings: BaseKwikSettings, no_user_context) -> None:
+def test_verify_password_reset_token_invalid_signature(settings: BaseKwikSettings, no_user_context: NoUserCtx) -> None:
     """A tampered token returns None (caller maps this to TokenValidationError)."""
     token = generate_password_reset_token(
         email="any@example.com", settings=settings, password_hash=get_password_hash("x")
@@ -98,7 +102,7 @@ def test_verify_password_reset_token_invalid_signature(settings: BaseKwikSetting
     assert verify_password_reset_token(token + "tamper", settings=settings, context=no_user_context) is None
 
 
-def test_verify_password_reset_token_expired(settings: BaseKwikSettings, no_user_context) -> None:
+def test_verify_password_reset_token_expired(settings: BaseKwikSettings, no_user_context: NoUserCtx) -> None:
     """An expired token returns None."""
     now = datetime.now(tz=UTC)
     token = jwt.encode(

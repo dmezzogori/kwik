@@ -67,7 +67,8 @@ def get_password_hash(password: str) -> str:
 
 
 def generate_password_reset_token(*, email: str, settings: BaseKwikSettings, password_hash: str) -> str:
-    """Generate a self-invalidating JWT password reset token.
+    """
+    Generate a self-invalidating JWT password reset token.
 
     Embeds a fingerprint ("pwd") of the user's current hashed password so the
     token stops verifying once the password changes.
@@ -85,7 +86,8 @@ def generate_password_reset_token(*, email: str, settings: BaseKwikSettings, pas
 
 
 def verify_password_reset_token(token: str, settings: BaseKwikSettings, context: Context) -> str | None:
-    """Verify a password reset token against the user's current password hash.
+    """
+    Verify a password reset token against the user's current password hash.
 
     Decodes the token, looks up the user by the ``sub`` email claim, and returns
     the email only when the user exists, is active, and the ``pwd`` fingerprint
