@@ -81,10 +81,10 @@ def reset_password(
     token: Annotated[str, Body()],
     password: Annotated[str, Body()],
     settings: Settings,
-    context: UserContext,
+    context: NoUserContext,
 ) -> dict:
-    """Reset password."""
-    email = verify_password_reset_token(token=token, settings=settings)
+    """Reset password using a self-service reset token (no authentication required)."""
+    email = verify_password_reset_token(token=token, settings=settings, context=context)
     if not email:
         raise TokenValidationError
 

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-06-25
+
+### Changed
+
+- **BREAKING: `generate_password_reset_token` now requires a `password_hash` keyword** — signature is now `generate_password_reset_token(*, email: str, settings: BaseKwikSettings, password_hash: str) -> str`. The token embeds a `pwd` fingerprint claim (`sha256(password_hash).hexdigest()[:16]`) alongside `sub`/`exp` (48h)/`nbf`, so any outstanding reset token is invalidated the moment the user's password changes.
+- **BREAKING: `verify_password_reset_token` now requires a CRUD `context`** — signature is now `verify_password_reset_token(token, settings, context) -> str | None`. It looks up the user by the token's `sub`, recomputes the fingerprint from the current `hashed_password`, and returns the email only when the fingerprint matches **and** the user is active; otherwise `None`. JWT errors return `None` instead of raising.
+- **BREAKING: `POST /login/reset-password` is now unauthenticated** — the endpoint dependency changed from `UserContext` to `NoUserContext` so a logged-out user holding a valid reset token can complete the flow (it previously returned `401`). Request body (`{token, password}`) and response (`{"msg": ...}`) are unchanged.
+
+### Security
+
+- **FastAPI 0.135.2 → 0.138.0**, pulling fixed transitives **Starlette 1.3.1** and **python-multipart 0.0.32**.
+- Cleared the remaining Dependabot alerts via lockfile upgrade: **urllib3** 2.6.3 → 2.7.0, **PyJWT** 2.12.1 → 2.13.0, **pydantic-settings** 2.13.1 → 2.14.2, **idna** → 3.15, **pytest** 9.0.2 → 9.1.1.
+- **CI:** bumped `actions/checkout` 6 → 7 (Dependabot #35). `bcrypt==4.0.1` remains pinned (not flagged).
+
 ## [1.9.0] - 2026-04-01
 
 ### Changed
