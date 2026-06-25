@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING
 
 import jwt
 
-from kwik.security import generate_password_reset_token
+from kwik.security import generate_password_reset_token, get_password_hash
 
 if TYPE_CHECKING:
     from fastapi.testclient import TestClient
@@ -274,43 +274,28 @@ class TestLoginRouter:
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "invalid literal for int()" in response.json()["detail"]
 
-    def test_reset_password_valid_token(
+    def test_reset_password_unauthenticated_valid_token(
         self,
         client: TestClient,
         regular_user: User,
         settings: BaseKwikSettings,
     ) -> None:
-        """Test password reset with valid token."""
-        # Generate password reset token
-        reset_token = generate_password_reset_token(email=regular_user.email, settings=settings)
-
-        # Need to authenticate as admin for UserContext
-        login_response = client.post(
-            "/api/v1/login/access-token",
-            data={
-                "username": settings.FIRST_SUPERUSER,
-                "password": settings.FIRST_SUPERUSER_PASSWORD,
-            },
+        """Reset password works with NO Authorization header (unauthenticated)."""
+        reset_token = generate_password_reset_token(
+            email=regular_user.email,
+            settings=settings,
+            password_hash=regular_user.hashed_password,
         )
-        admin_token = login_response.json()["access_token"]
-        client.headers = {"Authorization": f"Bearer {admin_token}"}
+        # Explicitly ensure the client carries no auth header.
+        client.headers = {}
 
-        new_password = "newpassword123"
         response = client.post(
             "/api/v1/login/reset-password",
-            json={
-                "token": reset_token,
-                "password": new_password,
-            },
+            json={"token": reset_token, "password": "newpassword123"},
         )
 
         assert response.status_code == HTTPStatus.OK
-        data = response.json()
-        assert data["msg"] == "Password updated successfully"
-
-        # Note: Password verification via login might fail due to session isolation
-        # in the non-committing test environment. The API call succeeded, which is
-        # the main thing we're testing.
+        assert response.json()["msg"] == "Password updated successfully"
 
     def test_reset_password_invalid_token(self, client: TestClient) -> None:
         """Test password reset with invalid token."""
@@ -322,8 +307,8 @@ class TestLoginRouter:
             },
         )
 
-        # Invalid JWT tokens cause TokenValidationError which returns 401
-        assert response.status_code == HTTPStatus.UNAUTHORIZED
+        # Invalid JWT tokens cause TokenValidationError which returns 400
+        assert response.status_code == HTTPStatus.BAD_REQUEST
 
     def test_reset_password_expired_token(
         self, client: TestClient, regular_user: User, settings: BaseKwikSettings
@@ -332,7 +317,11 @@ class TestLoginRouter:
         # Create token that expired 1 hour ago
         expired_time = datetime.now(tz=UTC) - timedelta(hours=1)
         expired_token = jwt.encode(
-            {"exp": expired_time.timestamp(), "sub": regular_user.email},
+            {
+                "exp": expired_time.timestamp(),
+                "sub": regular_user.email,
+                "pwd": get_password_hash("anything")[:16],
+            },
             settings.SECRET_KEY,
             algorithm="HS256",
         )
@@ -345,5 +334,5 @@ class TestLoginRouter:
             },
         )
 
-        # Expired tokens cause TokenValidationError which returns 401
-        assert response.status_code == HTTPStatus.UNAUTHORIZED
+        # Expired tokens cause TokenValidationError which returns 400
+        assert response.status_code == HTTPStatus.BAD_REQUEST
