@@ -19,7 +19,7 @@ class TimeStampsMixin:
     )
 
 
-class UserMixin:
+class UserTrackingMixin:
     """Mixin providing user tracking fields for record creation and modification."""
 
     @declared_attr
@@ -33,8 +33,8 @@ class UserMixin:
         return mapped_column(BigInteger, ForeignKey("users.id"))
 
 
-class RecordInfoMixin(TimeStampsMixin, UserMixin):
+class RecordInfoMixin(TimeStampsMixin, UserTrackingMixin):
     """Combined mixin providing both timestamps and user tracking functionality."""
 
 
-__all__ = ["RecordInfoMixin", "TimeStampsMixin", "UserMixin"]
+__all__ = ["RecordInfoMixin", "TimeStampsMixin", "UserTrackingMixin"]

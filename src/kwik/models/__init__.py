@@ -7,7 +7,7 @@ functionality within the kwik web framework.
 
 from .api_key import ApiKey
 from .base import Base
-from .mixins import RecordInfoMixin, TimeStampsMixin, UserMixin
+from .mixins import RecordInfoMixin, TimeStampsMixin, UserTrackingMixin
 from .user import Permission, Role, RolePermission, User, UserRole
 
 __all__ = [
@@ -19,6 +19,6 @@ __all__ = [
     "RolePermission",
     "TimeStampsMixin",
     "User",
-    "UserMixin",
     "UserRole",
+    "UserTrackingMixin",
 ]
