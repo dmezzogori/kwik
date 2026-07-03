@@ -9,6 +9,7 @@ from .api_key import ApiKey
 from .base import Base
 from .mixins import RecordInfoMixin, TimeStampsMixin, UserTrackingMixin
 from .user import Permission, Role, RolePermission, User, UserRole
+from .user_mixin import UserMixin
 
 __all__ = [
     "ApiKey",
@@ -19,6 +20,7 @@ __all__ = [
     "RolePermission",
     "TimeStampsMixin",
     "User",
+    "UserMixin",
     "UserRole",
     "UserTrackingMixin",
 ]

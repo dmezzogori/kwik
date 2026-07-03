@@ -3,40 +3,11 @@
 from __future__ import annotations
 
 from sqlalchemy import Boolean, ForeignKey, String, func, select
-from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
 
 from .base import Base
 from .mixins import RecordInfoMixin
-
-
-class User(Base):
-    """Database model for user accounts with authentication and authorization."""
-
-    __tablename__ = "users"
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String, index=True, nullable=False)
-    surname: Mapped[str] = mapped_column(String, index=True, nullable=False)
-    email: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
-    hashed_password: Mapped[str] = mapped_column(String, nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-
-    roles: Mapped[list[Role]] = relationship(
-        "Role",
-        secondary="users_roles",
-        primaryjoin="User.id==UserRole.user_id",
-        secondaryjoin="UserRole.role_id==Role.id",
-        viewonly=True,
-    )
-
-    @hybrid_property
-    def permissions(self) -> list[Permission]:
-        """Get all permissions for this user through their roles."""
-        permissions = []
-        for role in self.roles:
-            permissions.extend(role.permissions)
-        return permissions
+from .user_mixin import UserMixin
 
 
 class Role(Base, RecordInfoMixin):
@@ -102,6 +73,12 @@ class RolePermission(Base, RecordInfoMixin):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
     permission_id: Mapped[int] = mapped_column(ForeignKey("permissions.id"), nullable=False)
+
+
+class User(Base, UserMixin):
+    """Database model for user accounts with authentication and authorization."""
+
+    __tablename__ = "users"
 
 
 __all__ = ["Permission", "Role", "RolePermission", "User", "UserRole"]
