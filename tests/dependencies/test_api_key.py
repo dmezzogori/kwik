@@ -19,8 +19,8 @@ from kwik.dependencies.api_key import ApiKeyContext
 from kwik.dependencies.permissions import has_permission
 from kwik.dependencies.session import _get_session
 from kwik.exceptions import KwikError, kwik_exception_handler
+from kwik.models import Permission, Role, RolePermission, User, UserRole
 from kwik.models.api_key import ApiKey
-from kwik.models.user import Permission, Role, RolePermission, User, UserRole
 from kwik.routers import ApiKeyRouter
 from kwik.security import get_password_hash
 from kwik.settings import BaseKwikSettings

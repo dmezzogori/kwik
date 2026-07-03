@@ -95,3 +95,11 @@ class TestKernelSlot:
         Kernel(user_model=User)
         kwik.kernel._reset_for_testing()
         assert kwik.kernel._active_kernel is None
+
+    def test_default_kernel_materializes_default_user(self, clean_slot: None) -> None:  # noqa: ARG002
+        """get_kernel() with no active kernel materializes one wired to DefaultUser."""
+        from kwik.models.default_user import DefaultUser  # noqa: PLC0415 — local: asserts the module-level singleton
+
+        kernel = get_kernel()
+        assert kernel.user_model is DefaultUser
+        assert kwik.kernel._active_kernel is kernel

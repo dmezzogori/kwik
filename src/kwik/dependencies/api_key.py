@@ -23,8 +23,8 @@ from fastapi import Depends, Header, HTTPException, Request, status
 from sqlalchemy import select
 
 from kwik.crud.context import Context, UserCtx
+from kwik.models import User
 from kwik.models.api_key import ApiKey
-from kwik.models.user import User
 
 from .session import Session  # noqa: TC001
 

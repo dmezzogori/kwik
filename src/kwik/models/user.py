@@ -7,7 +7,14 @@ from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
 
 from .base import Base
 from .mixins import RecordInfoMixin
-from .user_mixin import UserMixin
+from .user_mixin import UserMixin  # noqa: TC001 — runtime import: _user_model()'s return type
+
+
+def _user_model() -> type[UserMixin]:
+    """Resolve the registered user model; deferred until mapper configuration."""
+    from kwik.kernel import get_kernel  # noqa: PLC0415 — deferred to avoid circular import
+
+    return get_kernel().user_model
 
 
 class Role(Base, RecordInfoMixin):
@@ -19,11 +26,11 @@ class Role(Base, RecordInfoMixin):
     name: Mapped[str] = mapped_column(String, index=True, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    users: Mapped[list[User]] = relationship(
-        "User",
+    users = relationship(
+        _user_model,
         secondary="users_roles",
-        primaryjoin="Role.id==UserRole.role_id",
-        secondaryjoin="UserRole.user_id==User.id",
+        primaryjoin=lambda: Role.id == UserRole.role_id,
+        secondaryjoin=lambda: UserRole.user_id == _user_model().id,
         viewonly=True,
     )
 
@@ -75,10 +82,4 @@ class RolePermission(Base, RecordInfoMixin):
     permission_id: Mapped[int] = mapped_column(ForeignKey("permissions.id"), nullable=False)
 
 
-class User(Base, UserMixin):
-    """Database model for user accounts with authentication and authorization."""
-
-    __tablename__ = "users"
-
-
-__all__ = ["Permission", "Role", "RolePermission", "User", "UserRole"]
+__all__ = ["Permission", "Role", "RolePermission", "UserRole"]

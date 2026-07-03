@@ -9,15 +9,18 @@ without a login session.
 from __future__ import annotations
 
 from datetime import datetime  # noqa: TC003
-from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
-if TYPE_CHECKING:
-    from .user import User
+
+def _user_model() -> type:
+    """Resolve the registered user model; deferred until mapper configuration."""
+    from kwik.kernel import get_kernel  # noqa: PLC0415 — deferred to avoid circular import
+
+    return get_kernel().user_model
 
 
 class ApiKey(Base):
@@ -40,7 +43,7 @@ class ApiKey(Base):
         revoked_at: Timestamp when revoked; null means active.
         last_used_at: Updated on each successful authentication.
         created_at: Auto-set on row creation.
-        user: Relationship to the owning ``User``.
+        user: Relationship to the registered user model.
 
     """
 
@@ -57,7 +60,7 @@ class ApiKey(Base):
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
 
-    user: Mapped[User] = relationship("User", lazy="joined")
+    user = relationship(_user_model, lazy="joined")
 
 
 __all__ = ["ApiKey"]
