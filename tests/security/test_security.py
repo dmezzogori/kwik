@@ -25,7 +25,7 @@ from kwik.security import (
 
 if TYPE_CHECKING:
     from kwik.crud import NoUserCtx
-    from kwik.models import User
+    from kwik.models import UserMixin
     from kwik.settings import BaseKwikSettings
 
 crud_users = get_kernel().crud_users
@@ -45,7 +45,7 @@ def test_generate_password_reset_token(settings: BaseKwikSettings) -> None:
     assert decoded_token["pwd"] == hashlib.sha256(PASSWORD_HASH.encode("utf-8")).hexdigest()[:16]
 
 
-def _make_user(context: NoUserCtx, *, email: str, password: str, is_active: bool = True) -> User:
+def _make_user(context: NoUserCtx, *, email: str, password: str, is_active: bool = True) -> UserMixin:
     """Create a user in the given context and return it."""
     return crud_users.create(
         obj_in=UserRegistration(

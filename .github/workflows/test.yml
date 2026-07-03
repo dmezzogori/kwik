@@ -83,3 +83,4 @@ jobs:
         python -c "import kwik.testing.fixtures.core_fixtures; print('✓ kwik.testing import successful')"
         python -c "import kwik.testing.client; print('✓ kwik.testing.client import successful')"
         python -c "import kwik.testing.scenario; print('✓ kwik.testing.scenario import successful')"
+        python -c "import kwik; from kwik.models import Base; assert 'users' not in Base.metadata.tables, 'DefaultUser must not be eagerly mapped'"

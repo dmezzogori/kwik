@@ -8,7 +8,7 @@ from kwik.testing import Scenario
 
 if TYPE_CHECKING:
     from kwik.crud import NoUserCtx
-    from kwik.models import User
+    from kwik.models import UserMixin
 
 
 def create_test_user(  # noqa: PLR0913
@@ -19,7 +19,7 @@ def create_test_user(  # noqa: PLR0913
     password: str = "testpassword123",
     is_active: bool = True,
     context: NoUserCtx,
-) -> User:
+) -> UserMixin:
     """Create a test user with the specified parameters."""
     scenario = Scenario().with_user(
         name=name,

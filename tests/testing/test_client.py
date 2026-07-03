@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from kwik.testing import IdentityAwareTestClient
 
 if TYPE_CHECKING:
-    from kwik.models import User
+    from kwik.models import UserMixin
 
 
 class TestIdentityAwareClientErrorHandling:
@@ -21,7 +21,7 @@ class TestIdentityAwareClientErrorHandling:
 
     def test_authentication_failure_http_error(
         self,
-        test_user_for_testing: User,
+        test_user_for_testing: UserMixin,
     ) -> None:
         """
         Test authentication failure when HTTP status is not 200.
@@ -47,7 +47,7 @@ class TestIdentityAwareClientErrorHandling:
 
     def test_authentication_invalid_json_response(
         self,
-        test_user_for_testing: User,
+        test_user_for_testing: UserMixin,
     ) -> None:
         """
         Test authentication failure when JSON response is malformed.
@@ -71,7 +71,7 @@ class TestIdentityAwareClientErrorHandling:
 
     def test_authentication_json_decode_error(
         self,
-        test_user_for_testing: User,
+        test_user_for_testing: UserMixin,
     ) -> None:
         """
         Test authentication failure when response cannot be decoded as JSON.
@@ -98,7 +98,7 @@ class TestIdentityAwareClientAuth:
 
     def test_unrecognized_user_fallback_password(
         self,
-        test_user_for_testing: User,
+        test_user_for_testing: UserMixin,
     ) -> None:
         """
         Test fallback password behavior for unrecognized user emails.
@@ -194,7 +194,7 @@ class TestIdentityAwareClientAuth:
     def test_successful_authentication_and_request(
         self,
         identity_client_no_settings: IdentityAwareTestClient,  # noqa: ARG002
-        test_user_for_testing: User,
+        test_user_for_testing: UserMixin,
     ) -> None:
         """Test successful authentication and subsequent request."""
         # Mock the test endpoint
@@ -220,7 +220,7 @@ class TestIdentityAwareClientAuth:
     def test_token_caching_behavior(
         self,
         identity_client_no_settings: IdentityAwareTestClient,  # noqa: ARG002
-        test_user_for_testing: User,
+        test_user_for_testing: UserMixin,
     ) -> None:
         """Test that authentication tokens are cached and reused."""
         call_count = 0
@@ -257,7 +257,7 @@ class TestIdentityAwareClientMethods:
 
     def test_patch_as_method(
         self,
-        test_user_for_testing: User,
+        test_user_for_testing: UserMixin,
     ) -> None:
         """
         Test the patch_as method functionality.
@@ -287,7 +287,7 @@ class TestIdentityAwareClientMethods:
 
     def test_clear_token_cache_method(
         self,
-        test_user_for_testing: User,
+        test_user_for_testing: UserMixin,
     ) -> None:
         """
         Test the clear_token_cache method functionality.

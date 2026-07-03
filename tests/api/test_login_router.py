@@ -21,7 +21,7 @@ from kwik.security import generate_password_reset_token, get_password_hash
 if TYPE_CHECKING:
     from fastapi.testclient import TestClient
 
-    from kwik.models import User
+    from kwik.models import UserMixin
     from kwik.settings import BaseKwikSettings
     from kwik.testing import IdentityAwareTestClient
 
@@ -74,7 +74,7 @@ class TestLoginRouter:
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
     def test_test_token_valid_token(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User, settings: BaseKwikSettings
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin, settings: BaseKwikSettings
     ) -> None:
         """Test token validation with valid token."""
         response = identity_aware_client.post_as(admin_user, "/api/v1/login/test-token")
@@ -100,7 +100,7 @@ class TestLoginRouter:
     def test_impersonate_with_permission(
         self,
         client: TestClient,
-        regular_user: User,
+        regular_user: UserMixin,
         settings: BaseKwikSettings,
     ) -> None:
         """Test successful user impersonation with proper permissions."""
@@ -138,7 +138,7 @@ class TestLoginRouter:
     def test_impersonate_without_permission(
         self,
         client: TestClient,
-        regular_user: User,
+        regular_user: UserMixin,
     ) -> None:
         """Test impersonation fails without proper permissions."""
         # Login as regular user without impersonation permissions
@@ -185,7 +185,7 @@ class TestLoginRouter:
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_is_impersonating_regular_token(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test is_impersonating returns False for regular token."""
         response = identity_aware_client.post_as(admin_user, "/api/v1/login/is_impersonating")
@@ -196,7 +196,7 @@ class TestLoginRouter:
     def test_is_impersonating_impersonation_token(
         self,
         client: TestClient,
-        regular_user: User,
+        regular_user: UserMixin,
         settings: BaseKwikSettings,
     ) -> None:
         """Test is_impersonating returns True for impersonation token."""
@@ -228,7 +228,7 @@ class TestLoginRouter:
     def test_stop_impersonating(
         self,
         client: TestClient,
-        regular_user: User,
+        regular_user: UserMixin,
         settings: BaseKwikSettings,
     ) -> None:
         """Test stopping impersonation and returning to original user."""
@@ -266,7 +266,7 @@ class TestLoginRouter:
         assert user_data["email"] == settings.FIRST_SUPERUSER
 
     def test_stop_impersonating_regular_token(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test stop_impersonating with regular (non-impersonation) token."""
         # Regular tokens have empty kwik_impersonate field, which should return HTTP 400
@@ -277,7 +277,7 @@ class TestLoginRouter:
     def test_reset_password_unauthenticated_valid_token(
         self,
         client: TestClient,
-        regular_user: User,
+        regular_user: UserMixin,
         settings: BaseKwikSettings,
     ) -> None:
         """Reset password works with NO Authorization header (unauthenticated)."""
@@ -311,7 +311,7 @@ class TestLoginRouter:
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
     def test_reset_password_expired_token(
-        self, client: TestClient, regular_user: User, settings: BaseKwikSettings
+        self, client: TestClient, regular_user: UserMixin, settings: BaseKwikSettings
     ) -> None:
         """Test password reset with expired token."""
         # Create token that expired 1 hour ago

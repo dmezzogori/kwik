@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from kwik.crud import UserCtx
-    from kwik.models import Permission, Role, User
+    from kwik.models import Permission, Role, UserMixin
 
 
 class TestUserFactory:
@@ -17,7 +17,7 @@ class TestUserFactory:
 
     def test_user_factory_basic_creation(
         self,
-        user_factory: Callable[..., User],
+        user_factory: Callable[..., UserMixin],
     ) -> None:
         """Test basic user creation with default parameters."""
         _user = user_factory()
@@ -29,7 +29,7 @@ class TestUserFactory:
 
     def test_user_factory_custom_parameters(
         self,
-        user_factory: Callable[..., User],
+        user_factory: Callable[..., UserMixin],
     ) -> None:
         """Test user creation with custom parameters."""
         _user = user_factory(
@@ -47,7 +47,7 @@ class TestUserFactory:
 
     def test_user_factory_email_auto_generation(
         self,
-        user_factory: Callable[..., User],
+        user_factory: Callable[..., UserMixin],
     ) -> None:
         """Test automatic email generation when email is None."""
         _user = user_factory(name="alice", email=None)
@@ -57,7 +57,7 @@ class TestUserFactory:
 
     def test_user_factory_admin_context_path(
         self,
-        user_factory: Callable[..., User],
+        user_factory: Callable[..., UserMixin],
         admin_context: UserCtx,
     ) -> None:
         """
@@ -98,7 +98,7 @@ class TestUserFactory:
 
     def test_user_factory_roles_context_path(
         self,
-        user_factory: Callable[..., User],
+        user_factory: Callable[..., UserMixin],
         admin_context: UserCtx,
     ) -> None:
         """
@@ -139,7 +139,7 @@ class TestUserFactory:
 
     def test_user_factory_no_admin_context_path(
         self,
-        user_factory: Callable[..., User],
+        user_factory: Callable[..., UserMixin],
         admin_context: UserCtx,
     ) -> None:
         """

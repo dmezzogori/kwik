@@ -15,7 +15,7 @@ from kwik.schemas import RoleDefinition, RoleUpdate
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from kwik.models import Permission, Role, User
+    from kwik.models import Permission, Role, UserMixin
 
 crud_users = get_kernel().crud_users
 
@@ -155,7 +155,7 @@ class TestRoleCRUD:
         assert retrieved_role is None
 
     def test_get_users_with_role_having_users(
-        self, role_factory: Callable[..., Role], user_factory: Callable[..., User], admin_context: UserCtx
+        self, role_factory: Callable[..., Role], user_factory: Callable[..., UserMixin], admin_context: UserCtx
     ) -> None:
         """Test getting users associated with a role that has users."""
         role = role_factory(name="Role With Users")
@@ -191,7 +191,7 @@ class TestRoleCRUD:
     def test_get_users_without_specific_role(
         self,
         role_factory: Callable[..., Role],
-        user_factory: Callable[..., User],
+        user_factory: Callable[..., UserMixin],
         admin_context: UserCtx,
     ) -> None:
         """Test getting users not associated with a specific role."""
@@ -215,7 +215,7 @@ class TestRoleCRUD:
         assert len(users_without_target_role) >= minimum_expected_users
 
     def test_get_users_without_all_users_have_no_roles(
-        self, role_factory: Callable[..., Role], user_factory: Callable[..., User], admin_context: UserCtx
+        self, role_factory: Callable[..., Role], user_factory: Callable[..., UserMixin], admin_context: UserCtx
     ) -> None:
         """Test getting users not associated with a role when all users have no roles."""
         target_role = role_factory(name="Unused Role")
@@ -232,7 +232,7 @@ class TestRoleCRUD:
         assert len(users_without_role) >= minimum_expected_users
 
     def test_get_users_without_nonexistent_role_id(
-        self, user_factory: Callable[..., User], admin_context: UserCtx
+        self, user_factory: Callable[..., UserMixin], admin_context: UserCtx
     ) -> None:
         """Test getting users not associated with a non-existent role ID."""
         nonexistent_role_id = 99999
@@ -307,7 +307,7 @@ class TestRoleCRUD:
     def test_deprecate_role_with_multiple_users(
         self,
         role_factory: Callable[..., Role],
-        user_factory: Callable[..., User],
+        user_factory: Callable[..., UserMixin],
         admin_context: UserCtx,
     ) -> None:
         """Test deprecating role that has multiple users assigned."""
@@ -361,7 +361,7 @@ class TestRoleCRUD:
     def test_deprecate_role_still_exists_after_deprecation(
         self,
         role_factory: Callable[..., Role],
-        user_factory: Callable[..., User],
+        user_factory: Callable[..., UserMixin],
         admin_context: UserCtx,
     ) -> None:
         """Test that role still exists after deprecation but with no users."""
@@ -470,7 +470,7 @@ class TestRoleCRUD:
         assert permission_to_keep2.id in permission_ids
 
     def test_remove_user_from_role_with_user(
-        self, role_factory: Callable[..., Role], user_factory: Callable[..., User], admin_context: UserCtx
+        self, role_factory: Callable[..., Role], user_factory: Callable[..., UserMixin], admin_context: UserCtx
     ) -> None:
         """Test removing existing user from role."""
         role = role_factory(name="role_with_user")
@@ -494,7 +494,7 @@ class TestRoleCRUD:
         assert user.id not in user_ids_after
 
     def test_remove_user_from_role_without_user_idempotent(
-        self, role_factory: Callable[..., Role], user_factory: Callable[..., User], admin_context: UserCtx
+        self, role_factory: Callable[..., Role], user_factory: Callable[..., UserMixin], admin_context: UserCtx
     ) -> None:
         """Test removing user from role that doesn't have it (idempotent operation)."""
         role = role_factory(name="role_without_user")
@@ -516,7 +516,7 @@ class TestRoleCRUD:
         assert len(users_after) == len(users_before)
 
     def test_remove_user_user_still_exists_after_removal(
-        self, role_factory: Callable[..., Role], user_factory: Callable[..., User], admin_context: UserCtx
+        self, role_factory: Callable[..., Role], user_factory: Callable[..., UserMixin], admin_context: UserCtx
     ) -> None:
         """Test that user still exists after removal from role."""
         role = role_factory(name="role_to_remove_user_from")
@@ -532,7 +532,7 @@ class TestRoleCRUD:
         assert retrieved_user.name == "User That Still Exists"
 
     def test_remove_user_role_with_multiple_users(
-        self, role_factory: Callable[..., Role], user_factory: Callable[..., User], admin_context: UserCtx
+        self, role_factory: Callable[..., Role], user_factory: Callable[..., UserMixin], admin_context: UserCtx
     ) -> None:
         """Test removing one user from role that has multiple users."""
         expected_remaining_users = 2

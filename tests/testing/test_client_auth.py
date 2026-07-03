@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from kwik.testing import IdentityAwareTestClient
 
 if TYPE_CHECKING:
-    from kwik.models import User
+    from kwik.models import UserMixin
 
 
 class TestIdentityAwareClientPasswordLogic:
@@ -18,7 +18,7 @@ class TestIdentityAwareClientPasswordLogic:
 
     def test_unrecognized_user_fallback_password(
         self,
-        test_user_for_testing: User,
+        test_user_for_testing: UserMixin,
     ) -> None:
         """
         Test fallback password behavior for unrecognized user emails.

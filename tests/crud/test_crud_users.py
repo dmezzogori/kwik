@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from kwik.crud import NoUserCtx
-    from kwik.models import User
+    from kwik.models import UserMixin
 
 crud_users = get_kernel().crud_users
 
@@ -23,7 +23,7 @@ crud_users = get_kernel().crud_users
 class TestUserCRUD:
     """Test cases for user CRUD operations."""
 
-    def test_create_user(self, user_factory: Callable[..., User]) -> None:
+    def test_create_user(self, user_factory: Callable[..., UserMixin]) -> None:
         """Test creating a new user."""
         created_user = user_factory(
             name="Test",
@@ -55,7 +55,7 @@ class TestUserCRUD:
         with pytest.raises(IntegrityError):
             crud_users.create(obj_in=user_data, context=no_user_context)
 
-    def test_get_user_by_id(self, no_user_context: NoUserCtx, user_factory: Callable[..., User]) -> None:
+    def test_get_user_by_id(self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]) -> None:
         """Test getting a user by ID."""
         # Create a test user
         user = user_factory()
@@ -75,7 +75,7 @@ class TestUserCRUD:
         with pytest.raises(EntityNotFoundError):
             crud_users.get_if_exist(entity_id=99999, context=no_user_context)
 
-    def test_get_user_by_email(self, no_user_context: NoUserCtx, user_factory: Callable[..., User]) -> None:
+    def test_get_user_by_email(self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]) -> None:
         """Test getting a user by email."""
         # Create a test user
         user = user_factory()
@@ -92,7 +92,7 @@ class TestUserCRUD:
         retrieved_user = crud_users.get_by_email(email="nonexistent@example.com", context=no_user_context)
         assert retrieved_user is None
 
-    def test_update_user(self, no_user_context: NoUserCtx, user_factory: Callable[..., User]) -> None:
+    def test_update_user(self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]) -> None:
         """Test updating a user."""
         # Create a test user
         user = user_factory()
@@ -113,7 +113,7 @@ class TestUserCRUD:
         assert updated_user.is_active is False
 
     def test_get_if_exist_with_existing_user(
-        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]
     ) -> None:
         """Test get_if_exist with an existing user."""
         # Create a test user
@@ -129,7 +129,7 @@ class TestUserCRUD:
         with pytest.raises(EntityNotFoundError):
             crud_users.get_if_exist(entity_id=99999, context=no_user_context)
 
-    def test_get_multi_users(self, no_user_context: NoUserCtx, user_factory: Callable[..., User]) -> None:
+    def test_get_multi_users(self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]) -> None:
         """Test getting multiple users with pagination."""
         # Get current user count first
         initial_count, _ = crud_users.get_multi(skip=0, limit=100, context=no_user_context)
@@ -157,7 +157,7 @@ class TestUserCRUD:
         expected_remaining = min(page_limit, expected_total - page_limit)
         assert len(second_page) == expected_remaining  # Remaining users up to limit
 
-    def test_get_multi_with_filters(self, no_user_context: NoUserCtx, user_factory: Callable[..., User]) -> None:
+    def test_get_multi_with_filters(self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]) -> None:
         """Test getting multiple users with filters."""
         # Get initial active user count (includes session-scoped admin user who is active)
         initial_active_count, _ = crud_users.get_multi(is_active=True, context=no_user_context)
@@ -175,7 +175,7 @@ class TestUserCRUD:
         assert count == 1  # Only the inactive user we just created
         assert inactive_users[0].is_active is False
 
-    def test_delete_user(self, no_user_context: NoUserCtx, user_factory: Callable[..., User]) -> None:
+    def test_delete_user(self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]) -> None:
         """Test deleting a user."""
         # Create a test user
         user = user_factory()
@@ -192,7 +192,7 @@ class TestUserCRUD:
         assert retrieved_user is None
 
     def test_authenticate_with_valid_credentials(
-        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]
     ) -> None:
         """Test authenticating with valid email and password."""
         # Create a test user with known password
@@ -214,7 +214,7 @@ class TestUserCRUD:
             crud_users.authenticate(email="nonexistent@example.com", password="anypassword", context=no_user_context)
 
     def test_authenticate_with_invalid_password_raises_error(
-        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]
     ) -> None:
         """Test authenticating with invalid password raises AuthenticationFailedError."""
         # Create a test user
@@ -225,7 +225,7 @@ class TestUserCRUD:
             crud_users.authenticate(email="auth@example.com", password="wrongpassword", context=no_user_context)
 
     def test_change_password_with_valid_old_password(
-        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]
     ) -> None:
         """Test changing password with valid old password."""
         # Create a test user with known password
@@ -251,7 +251,7 @@ class TestUserCRUD:
         assert authenticated_user.id == user.id
 
     def test_change_password_with_invalid_old_password_raises_error(
-        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]
     ) -> None:
         """Test changing password with invalid old password raises AuthenticationFailedError."""
         # Create a test user
@@ -276,7 +276,7 @@ class TestUserCRUD:
             crud_users.change_password(user_id=99999, obj_in=password_change, context=no_user_context)
 
     def test_reset_password_with_valid_email(
-        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]
     ) -> None:
         """Test resetting password for existing active user."""
         # Create an active test user
@@ -304,7 +304,7 @@ class TestUserCRUD:
             crud_users.reset_password(email="nonexistent@example.com", password="anypassword", context=no_user_context)
 
     def test_reset_password_with_inactive_user_raises_error(
-        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]
     ) -> None:
         """Test resetting password for inactive user raises InactiveUserError."""
         # Create an inactive user
@@ -332,7 +332,7 @@ class TestUserCRUD:
         assert created_user.id is not None
 
     def test_create_if_not_exist_returns_existing_user(
-        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]
     ) -> None:
         """Test create_if_not_exist returns existing user when found."""
         # Create an existing user
@@ -354,7 +354,7 @@ class TestUserCRUD:
         assert returned_user.email == "existing@example.com"  # Original email preserved
         assert returned_user.name != "Duplicate"  # New data not used
 
-    def test_is_active_with_active_user(self, user_factory: Callable[..., User]) -> None:
+    def test_is_active_with_active_user(self, user_factory: Callable[..., UserMixin]) -> None:
         """Test is_active returns user when user is active."""
         # Create an active user
         user = user_factory(is_active=True)
@@ -363,7 +363,7 @@ class TestUserCRUD:
         result = crud_users.is_active(user)
         assert result.id == user.id
 
-    def test_is_active_with_inactive_user_raises_error(self, user_factory: Callable[..., User]) -> None:
+    def test_is_active_with_inactive_user_raises_error(self, user_factory: Callable[..., UserMixin]) -> None:
         """Test is_active raises InactiveUserError when user is inactive."""
         # Create an inactive user
         user = user_factory(is_active=False)
@@ -372,7 +372,7 @@ class TestUserCRUD:
         with pytest.raises(InactiveUserError):
             crud_users.is_active(user)
 
-    def test_get_permissions_for_user_without_roles(self, user_factory: Callable[..., User]) -> None:
+    def test_get_permissions_for_user_without_roles(self, user_factory: Callable[..., UserMixin]) -> None:
         """Test getting permissions for user with no roles returns empty list."""
         # Create test user with no roles
         user = user_factory()
@@ -381,7 +381,7 @@ class TestUserCRUD:
         user_permissions = crud_users.get_permissions(user=user)
         assert len(user_permissions) == 0
 
-    def test_get_roles_for_user_without_roles(self, user_factory: Callable[..., User]) -> None:
+    def test_get_roles_for_user_without_roles(self, user_factory: Callable[..., UserMixin]) -> None:
         """Test getting roles for user with no roles returns empty list."""
         # Create test user with no roles
         user = user_factory()
@@ -390,7 +390,7 @@ class TestUserCRUD:
         user_roles = crud_users.get_roles(user=user)
         assert len(user_roles) == 0
 
-    def test_has_permissions_for_user_without_roles(self, user_factory: Callable[..., User]) -> None:
+    def test_has_permissions_for_user_without_roles(self, user_factory: Callable[..., UserMixin]) -> None:
         """Test has_permissions for user with no roles returns False."""
         # Create test user with no roles
         user = user_factory()
@@ -399,7 +399,7 @@ class TestUserCRUD:
         result = crud_users.has_permissions(user=user, permissions=["some_permission"])
         assert not result
 
-    def test_has_roles_for_user_without_roles(self, user_factory: Callable[..., User]) -> None:
+    def test_has_roles_for_user_without_roles(self, user_factory: Callable[..., UserMixin]) -> None:
         """Test has_roles for user with no roles returns False."""
         # Create test user with no roles
         user = user_factory()
@@ -408,7 +408,9 @@ class TestUserCRUD:
         result = crud_users.has_roles(user=user, roles=["some_role"])
         assert not result
 
-    def test_get_multi_with_sort_ascending(self, no_user_context: NoUserCtx, user_factory: Callable[..., User]) -> None:
+    def test_get_multi_with_sort_ascending(
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]
+    ) -> None:
         """Test get_multi with ascending sort on name field."""
         user_factory(name="Alice", email="alice@test.com")
         user_factory(name="Bob", email="bob@test.com")
@@ -426,7 +428,7 @@ class TestUserCRUD:
         assert alice_idx < bob_idx < charlie_idx
 
     def test_get_multi_with_sort_descending(
-        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]
     ) -> None:
         """Test get_multi with descending sort on name field."""
         user_factory(name="Alice", email="alice2@test.com")
@@ -445,7 +447,7 @@ class TestUserCRUD:
         assert charlie_idx < bob_idx < alice_idx
 
     def test_get_multi_with_multi_field_sort(
-        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]
     ) -> None:
         """Test get_multi with multi-field sorting (name desc, then id asc)."""
         user_factory(name="Alice", email="alice1@test.com")
@@ -467,7 +469,7 @@ class TestUserCRUD:
         assert alice_users[0].id < alice_users[1].id
 
     def test_get_multi_with_sort_and_pagination(
-        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]
     ) -> None:
         """Test get_multi with sorting combined with pagination."""
         user_names = ["Alpha", "Beta", "Gamma", "Delta"]
@@ -498,7 +500,7 @@ class TestUserCRUD:
         assert first_expected_idx < beta_idx
 
     def test_get_multi_with_sort_and_filters(
-        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]
     ) -> None:
         """Test get_multi with sorting combined with filters."""
         user_factory(name="ActiveA", email="activea@test.com", is_active=True)
@@ -522,7 +524,7 @@ class TestUserCRUD:
         assert activeb_idx < activea_idx
 
     def test_admin_reset_password_with_valid_user(
-        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]
     ) -> None:
         """Test admin reset password for existing active user by user ID."""
         old_password = "oldpassword123"
@@ -551,7 +553,7 @@ class TestUserCRUD:
             crud_users.admin_reset_password(user_id=99999, password="anypassword", context=no_user_context)
 
     def test_admin_reset_password_inactive_user_raises_error(
-        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., UserMixin]
     ) -> None:
         """Test admin reset password for inactive user raises InactiveUserError."""
         user = user_factory(email="inactivereset@example.com", is_active=False)

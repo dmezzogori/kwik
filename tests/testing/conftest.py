@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
     from kwik.crud import UserCtx
-    from kwik.models import User
+    from kwik.models import UserMixin
     from kwik.settings import BaseKwikSettings
 
 
@@ -81,7 +81,7 @@ def malformed_mock_client(mock_malformed_auth_app: FastAPI) -> TestClient:
 
 
 @pytest.fixture
-def test_user_for_testing(session: Session, admin_context: UserCtx) -> User:  # noqa: ARG001
+def test_user_for_testing(session: Session, admin_context: UserCtx) -> UserMixin:  # noqa: ARG001
     """
     Create a test user specifically for testing the testing infrastructure.
 

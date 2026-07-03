@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fastapi.testclient import TestClient
 
-    from kwik.models import User
+    from kwik.models import UserMixin
     from kwik.testing import IdentityAwareTestClient
 
 
@@ -33,7 +33,7 @@ class TestRolesRouter:
     def _create_test_role_via_api(
         self,
         identity_aware_client: IdentityAwareTestClient,
-        admin_user: User,
+        admin_user: UserMixin,
         name: str,
         *,
         is_active: bool = True,
@@ -47,7 +47,7 @@ class TestRolesRouter:
     def _create_test_user_via_api(  # noqa: PLR0913
         self,
         identity_aware_client: IdentityAwareTestClient,
-        admin_user: User,
+        admin_user: UserMixin,
         email: str,
         name: str = "testuser",
         surname: str = "testsurname",
@@ -70,7 +70,7 @@ class TestRolesRouter:
     def _create_test_permission_via_api(
         self,
         identity_aware_client: IdentityAwareTestClient,
-        admin_user: User,
+        admin_user: UserMixin,
         name: str,
     ) -> dict:
         """Create a permission via API for testing purposes."""
@@ -81,7 +81,7 @@ class TestRolesRouter:
 
     # Tests for GET /roles/ - List roles
     def test_list_roles_with_admin_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test listing roles with admin permissions."""
         response = identity_aware_client.get_as(admin_user, "/api/v1/roles/")
@@ -103,7 +103,9 @@ class TestRolesRouter:
             assert "name" in role
             assert "is_active" in role
 
-    def test_list_roles_with_pagination(self, identity_aware_client: IdentityAwareTestClient, admin_user: User) -> None:
+    def test_list_roles_with_pagination(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
+    ) -> None:
         """Test listing roles with pagination parameters."""
         response = identity_aware_client.get_as(admin_user, "/api/v1/roles/?skip=0&limit=10")
 
@@ -114,7 +116,7 @@ class TestRolesRouter:
         assert len(data["data"]) <= PAGINATION_DEFAULT_LIMIT
 
     def test_list_roles_without_permission(
-        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: UserMixin
     ) -> None:
         """Test listing roles without required permission fails."""
         response = identity_aware_client.get_as(regular_user, "/api/v1/roles/")
@@ -127,7 +129,7 @@ class TestRolesRouter:
 
     # Tests for POST /roles/ - Create role
     def test_create_role_with_admin_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test creating a new role with admin permissions."""
         role_data = {"name": "test_role_create", "is_active": True}
@@ -139,7 +141,9 @@ class TestRolesRouter:
         assert data["is_active"] == role_data["is_active"]
         assert "id" in data
 
-    def test_create_role_duplicate_name(self, identity_aware_client: IdentityAwareTestClient, admin_user: User) -> None:
+    def test_create_role_duplicate_name(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
+    ) -> None:
         """Test creating role with duplicate name fails."""
         role_data = {"name": "test_role_duplicate", "is_active": True}
 
@@ -151,28 +155,32 @@ class TestRolesRouter:
         response2 = identity_aware_client.post_as(admin_user, "/api/v1/roles/", json=role_data)
         assert response2.status_code == HTTPStatus.CONFLICT
 
-    def test_create_role_missing_name(self, identity_aware_client: IdentityAwareTestClient, admin_user: User) -> None:
+    def test_create_role_missing_name(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
+    ) -> None:
         """Test creating role with missing required name field fails."""
         role_data = {"is_active": True}
         response = identity_aware_client.post_as(admin_user, "/api/v1/roles/", json=role_data)
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_create_role_missing_is_active(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test creating role with missing required is_active field fails."""
         role_data = {"name": "test_role_missing_active"}
         response = identity_aware_client.post_as(admin_user, "/api/v1/roles/", json=role_data)
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
-    def test_create_role_empty_name(self, identity_aware_client: IdentityAwareTestClient, admin_user: User) -> None:
+    def test_create_role_empty_name(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
+    ) -> None:
         """Test creating role with empty name fails."""
         role_data = {"name": "", "is_active": True}
         response = identity_aware_client.post_as(admin_user, "/api/v1/roles/", json=role_data)
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_create_role_without_permission(
-        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: UserMixin
     ) -> None:
         """Test creating role without required permission fails."""
         role_data = {"name": "test_role_no_perm", "is_active": True}
@@ -187,7 +195,7 @@ class TestRolesRouter:
 
     # Tests for GET /roles/{role_id} - Get role by ID
     def test_get_role_by_id_with_admin_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting role by ID with admin permissions."""
         # Create test role first
@@ -203,20 +211,22 @@ class TestRolesRouter:
         assert "is_active" in data
 
     def test_get_role_by_id_nonexistent_role(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting non-existent role by ID fails."""
         response = identity_aware_client.get_as(admin_user, f"/api/v1/roles/{NONEXISTENT_ROLE_ID}")
 
         assert response.status_code == HTTPStatus.NOT_FOUND
 
-    def test_get_role_by_id_invalid_id(self, identity_aware_client: IdentityAwareTestClient, admin_user: User) -> None:
+    def test_get_role_by_id_invalid_id(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
+    ) -> None:
         """Test getting role with invalid ID format."""
         response = identity_aware_client.get_as(admin_user, "/api/v1/roles/invalid-id")
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_get_role_by_id_without_permission(
-        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: UserMixin
     ) -> None:
         """Test getting role by ID without required permission fails."""
         response = identity_aware_client.get_as(regular_user, "/api/v1/roles/1")
@@ -229,7 +239,7 @@ class TestRolesRouter:
 
     # Tests for PUT /roles/{role_id} - Update role
     def test_update_role_with_admin_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test updating role with admin permissions."""
         # Create test role first
@@ -245,7 +255,9 @@ class TestRolesRouter:
         assert data["name"] == "test_role_update_after"
         assert data["is_active"] is False
 
-    def test_update_role_partial_fields(self, identity_aware_client: IdentityAwareTestClient, admin_user: User) -> None:
+    def test_update_role_partial_fields(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
+    ) -> None:
         """Test updating role with only some fields."""
         # Create test role first
         created_role = self._create_test_role_via_api(identity_aware_client, admin_user, "test_role_update_partial")
@@ -262,7 +274,7 @@ class TestRolesRouter:
         assert data["is_active"] == created_role["is_active"]
 
     def test_update_role_nonexistent_role(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test updating non-existent role by ID fails."""
         update_data = {"name": "test_role_should_fail"}
@@ -270,7 +282,9 @@ class TestRolesRouter:
 
         assert response.status_code == HTTPStatus.NOT_FOUND
 
-    def test_update_role_empty_data(self, identity_aware_client: IdentityAwareTestClient, admin_user: User) -> None:
+    def test_update_role_empty_data(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
+    ) -> None:
         """Test updating role with empty data fails (at least one field must be provided)."""
         # Create test role first
         created_role = self._create_test_role_via_api(identity_aware_client, admin_user, "test_role_update_empty")
@@ -284,7 +298,9 @@ class TestRolesRouter:
         error_data = response.json()
         assert "detail" in error_data  # Validation error response format
 
-    def test_update_role_empty_name(self, identity_aware_client: IdentityAwareTestClient, admin_user: User) -> None:
+    def test_update_role_empty_name(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
+    ) -> None:
         """Test updating role with empty name fails."""
         # Create test role first
         created_role = self._create_test_role_via_api(identity_aware_client, admin_user, "test_role_update_empty_name")
@@ -295,14 +311,16 @@ class TestRolesRouter:
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
-    def test_update_role_invalid_id(self, identity_aware_client: IdentityAwareTestClient, admin_user: User) -> None:
+    def test_update_role_invalid_id(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
+    ) -> None:
         """Test updating role with invalid ID format."""
         update_data = {"name": "test_role_should_fail"}
         response = identity_aware_client.put_as(admin_user, "/api/v1/roles/invalid-id", json=update_data)
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_update_role_without_permission(
-        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: UserMixin
     ) -> None:
         """Test updating role without required permission fails."""
         update_data = {"name": "test_role_should_fail"}
@@ -317,7 +335,7 @@ class TestRolesRouter:
 
     # Tests for DELETE /roles/{role_id} - Delete role
     def test_delete_role_with_admin_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test deleting a role with admin permissions."""
         # Create test role
@@ -336,20 +354,22 @@ class TestRolesRouter:
         assert get_response.status_code == HTTPStatus.NOT_FOUND
 
     def test_delete_role_nonexistent_role(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test deleting non-existent role fails."""
         response = identity_aware_client.delete_as(admin_user, f"/api/v1/roles/{NONEXISTENT_ROLE_ID}")
 
         assert response.status_code == HTTPStatus.NOT_FOUND
 
-    def test_delete_role_invalid_id(self, identity_aware_client: IdentityAwareTestClient, admin_user: User) -> None:
+    def test_delete_role_invalid_id(
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
+    ) -> None:
         """Test deleting role with invalid ID format."""
         response = identity_aware_client.delete_as(admin_user, "/api/v1/roles/invalid-id")
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_delete_role_without_permission(
-        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: UserMixin
     ) -> None:
         """Test deleting role without required permission fails."""
         response = identity_aware_client.delete_as(regular_user, "/api/v1/roles/1")
@@ -362,7 +382,7 @@ class TestRolesRouter:
 
     # Tests for GET /roles/{role_id}/permissions - Get role permissions
     def test_get_role_permissions_with_admin_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting role permissions with admin permissions."""
         # Create test role and permission
@@ -395,7 +415,7 @@ class TestRolesRouter:
         assert found_permission["name"] == "test_permission_for_role"
 
     def test_get_role_permissions_empty_role(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting permissions for role with no permissions."""
         # Create test role without permissions
@@ -410,7 +430,7 @@ class TestRolesRouter:
         assert len(data) == 0
 
     def test_get_role_permissions_nonexistent_role(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting permissions for non-existent role fails."""
         response = identity_aware_client.get_as(admin_user, f"/api/v1/roles/{NONEXISTENT_ROLE_ID}/permissions")
@@ -418,14 +438,14 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_get_role_permissions_invalid_id(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting role permissions with invalid ID format."""
         response = identity_aware_client.get_as(admin_user, "/api/v1/roles/invalid-id/permissions")
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_get_role_permissions_without_permission(
-        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: UserMixin
     ) -> None:
         """Test getting role permissions without required permissions fails."""
         response = identity_aware_client.get_as(regular_user, "/api/v1/roles/1/permissions")
@@ -438,7 +458,7 @@ class TestRolesRouter:
 
     # Tests for GET /roles/{role_id}/available-permissions - Get available permissions for role
     def test_get_role_available_permissions_with_admin_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting available permissions for a role."""
         # Create test role and permission
@@ -460,7 +480,7 @@ class TestRolesRouter:
             assert "name" in permission
 
     def test_get_role_available_permissions_nonexistent_role(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting available permissions for non-existent role fails."""
         response = identity_aware_client.get_as(
@@ -470,14 +490,14 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_get_role_available_permissions_invalid_id(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting role available permissions with invalid ID format."""
         response = identity_aware_client.get_as(admin_user, "/api/v1/roles/invalid-id/available-permissions")
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_get_role_available_permissions_without_permission(
-        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: UserMixin
     ) -> None:
         """Test getting role available permissions without required permissions fails."""
         response = identity_aware_client.get_as(regular_user, "/api/v1/roles/1/available-permissions")
@@ -490,7 +510,7 @@ class TestRolesRouter:
 
     # Tests for POST /roles/{role_id}/permissions - Assign permission to role
     def test_assign_permission_to_role_with_admin_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test assigning permission to role with admin permissions."""
         # Create test role and permission
@@ -518,7 +538,7 @@ class TestRolesRouter:
         assert permission_id in permission_ids
 
     def test_assign_permission_to_role_nonexistent_role(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test assigning permission to non-existent role fails."""
         # Create permission first
@@ -535,7 +555,7 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_assign_permission_to_role_nonexistent_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test assigning non-existent permission to role fails."""
         # Create role first
@@ -550,7 +570,7 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_assign_permission_to_role_missing_permission_id(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test assigning permission with missing permission_id fails."""
         # Create role first
@@ -565,7 +585,7 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_assign_permission_to_role_invalid_role_id(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test assigning permission with invalid role ID format."""
         assignment_data = {"permission_id": 1}
@@ -575,7 +595,7 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_assign_permission_to_role_without_permission(
-        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: UserMixin
     ) -> None:
         """Test assigning permission to role without required permissions fails."""
         assignment_data = {"permission_id": 1}
@@ -590,7 +610,7 @@ class TestRolesRouter:
 
     # Tests for DELETE /roles/{role_id}/permissions/{permission_id} - Remove permission from role
     def test_remove_permission_from_role_with_admin_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing permission from role with admin permissions."""
         # Create test role and permission, then assign it
@@ -623,7 +643,7 @@ class TestRolesRouter:
         assert permission_id not in permission_ids
 
     def test_remove_permission_from_role_nonexistent_role(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing permission from non-existent role fails."""
         response = identity_aware_client.delete_as(admin_user, f"/api/v1/roles/{NONEXISTENT_ROLE_ID}/permissions/1")
@@ -631,7 +651,7 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_remove_permission_from_role_nonexistent_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing non-existent permission from role fails."""
         # Create role first
@@ -645,14 +665,14 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_remove_permission_from_role_invalid_role_id(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing permission with invalid role ID format."""
         response = identity_aware_client.delete_as(admin_user, "/api/v1/roles/invalid-id/permissions/1")
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_remove_permission_from_role_invalid_permission_id(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing permission with invalid permission ID format."""
         # Create role first
@@ -665,7 +685,7 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_remove_permission_from_role_without_permission(
-        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: UserMixin
     ) -> None:
         """Test removing permission from role without required permissions fails."""
         response = identity_aware_client.delete_as(regular_user, "/api/v1/roles/1/permissions/1")
@@ -678,7 +698,7 @@ class TestRolesRouter:
 
     # Tests for DELETE /roles/{role_id}/permissions - Remove all permissions from role
     def test_remove_all_permissions_from_role_with_admin_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing all permissions from role with admin permissions."""
         # Create test role and permissions, then assign them
@@ -715,7 +735,7 @@ class TestRolesRouter:
         assert len(permissions_data) == 0
 
     def test_remove_all_permissions_from_role_no_permissions(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing all permissions from role that has no permissions."""
         # Create role without permissions
@@ -729,7 +749,7 @@ class TestRolesRouter:
         assert data["id"] == role_id
 
     def test_remove_all_permissions_from_role_nonexistent_role(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing all permissions from non-existent role fails."""
         response = identity_aware_client.delete_as(admin_user, f"/api/v1/roles/{NONEXISTENT_ROLE_ID}/permissions")
@@ -737,14 +757,14 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_remove_all_permissions_from_role_invalid_id(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing all permissions with invalid role ID format."""
         response = identity_aware_client.delete_as(admin_user, "/api/v1/roles/invalid-id/permissions")
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_remove_all_permissions_from_role_without_permission(
-        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: UserMixin
     ) -> None:
         """Test removing all permissions from role without required permissions fails."""
         response = identity_aware_client.delete_as(regular_user, "/api/v1/roles/1/permissions")
@@ -757,7 +777,7 @@ class TestRolesRouter:
 
     # Tests for GET /roles/{role_id}/users - Get users with role
     def test_get_users_with_role_with_admin_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting users with role with admin permissions."""
         # Create test role and user
@@ -788,7 +808,7 @@ class TestRolesRouter:
         assert found_user["email"] == "testuser@role.com"
 
     def test_get_users_with_role_empty_role(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting users for role with no users."""
         # Create test role without users
@@ -803,7 +823,7 @@ class TestRolesRouter:
         assert len(data) == 0
 
     def test_get_users_with_role_nonexistent_role(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting users for non-existent role fails."""
         response = identity_aware_client.get_as(admin_user, f"/api/v1/roles/{NONEXISTENT_ROLE_ID}/users")
@@ -811,14 +831,14 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_get_users_with_role_invalid_id(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting users with role with invalid ID format."""
         response = identity_aware_client.get_as(admin_user, "/api/v1/roles/invalid-id/users")
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_get_users_with_role_without_permission(
-        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: UserMixin
     ) -> None:
         """Test getting users with role without required permissions fails."""
         response = identity_aware_client.get_as(regular_user, "/api/v1/roles/1/users")
@@ -831,7 +851,7 @@ class TestRolesRouter:
 
     # Tests for GET /roles/{role_id}/available-users - Get available users for role
     def test_get_role_available_users_with_admin_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting available users for a role."""
         # Create test role and user
@@ -853,7 +873,7 @@ class TestRolesRouter:
             assert "surname" in user
 
     def test_get_role_available_users_nonexistent_role(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting available users for non-existent role returns empty list."""
         response = identity_aware_client.get_as(admin_user, f"/api/v1/roles/{NONEXISTENT_ROLE_ID}/available-users")
@@ -864,14 +884,14 @@ class TestRolesRouter:
         assert isinstance(data, list)
 
     def test_get_role_available_users_invalid_id(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test getting role available users with invalid ID format."""
         response = identity_aware_client.get_as(admin_user, "/api/v1/roles/invalid-id/available-users")
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_get_role_available_users_without_permission(
-        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: UserMixin
     ) -> None:
         """Test getting role available users without required permissions fails."""
         response = identity_aware_client.get_as(regular_user, "/api/v1/roles/1/available-users")
@@ -884,7 +904,7 @@ class TestRolesRouter:
 
     # Tests for POST /roles/{role_id}/users - Assign user to role
     def test_assign_user_to_role_with_admin_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test assigning user to role with admin permissions."""
         # Create test role and user
@@ -908,7 +928,7 @@ class TestRolesRouter:
         assert user_id in user_ids
 
     def test_assign_user_to_role_nonexistent_role(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test assigning user to non-existent role fails."""
         # Create user first
@@ -923,7 +943,7 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_assign_user_to_role_nonexistent_user(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test assigning non-existent user to role fails."""
         # Create role first
@@ -936,7 +956,7 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_assign_user_to_role_missing_user_id(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test assigning user with missing user_id fails."""
         # Create role first
@@ -949,7 +969,7 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_assign_user_to_role_invalid_role_id(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test assigning user with invalid role ID format."""
         assignment_data = {"user_id": 1}
@@ -957,7 +977,7 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_assign_user_to_role_without_permission(
-        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: UserMixin
     ) -> None:
         """Test assigning user to role without required permissions fails."""
         assignment_data = {"user_id": 1}
@@ -972,7 +992,7 @@ class TestRolesRouter:
 
     # Tests for DELETE /roles/{role_id}/users/{user_id} - Remove user from role
     def test_remove_user_from_role_with_admin_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing user from role with admin permissions."""
         # Create test role and user, then assign user to role
@@ -1003,7 +1023,7 @@ class TestRolesRouter:
         assert user_id not in user_ids
 
     def test_remove_user_from_role_nonexistent_role(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing user from non-existent role fails."""
         response = identity_aware_client.delete_as(admin_user, f"/api/v1/roles/{NONEXISTENT_ROLE_ID}/users/1")
@@ -1011,7 +1031,7 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_remove_user_from_role_nonexistent_user(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing non-existent user from role fails."""
         # Create role first
@@ -1023,14 +1043,14 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_remove_user_from_role_invalid_role_id(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing user with invalid role ID format."""
         response = identity_aware_client.delete_as(admin_user, "/api/v1/roles/invalid-id/users/1")
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_remove_user_from_role_invalid_user_id(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing user with invalid user ID format."""
         # Create role first
@@ -1043,7 +1063,7 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_remove_user_from_role_without_permission(
-        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: UserMixin
     ) -> None:
         """Test removing user from role without required permissions fails."""
         response = identity_aware_client.delete_as(regular_user, "/api/v1/roles/1/users/1")
@@ -1056,7 +1076,7 @@ class TestRolesRouter:
 
     # Tests for DELETE /roles/{role_id}/users - Remove all users from role
     def test_remove_all_users_from_role_with_admin_permission(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing all users from role with admin permissions."""
         # Create test role and users, then assign them
@@ -1087,7 +1107,7 @@ class TestRolesRouter:
         assert len(users_data) == 0
 
     def test_remove_all_users_from_role_no_users(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing all users from role that has no users."""
         # Create role without users
@@ -1101,7 +1121,7 @@ class TestRolesRouter:
         assert data["id"] == role_id
 
     def test_remove_all_users_from_role_nonexistent_role(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing all users from non-existent role fails."""
         response = identity_aware_client.delete_as(admin_user, f"/api/v1/roles/{NONEXISTENT_ROLE_ID}/users")
@@ -1109,14 +1129,14 @@ class TestRolesRouter:
         assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_remove_all_users_from_role_invalid_id(
-        self, identity_aware_client: IdentityAwareTestClient, admin_user: User
+        self, identity_aware_client: IdentityAwareTestClient, admin_user: UserMixin
     ) -> None:
         """Test removing all users with invalid role ID format."""
         response = identity_aware_client.delete_as(admin_user, "/api/v1/roles/invalid-id/users")
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_remove_all_users_from_role_without_permission(
-        self, identity_aware_client: IdentityAwareTestClient, regular_user: User
+        self, identity_aware_client: IdentityAwareTestClient, regular_user: UserMixin
     ) -> None:
         """Test removing all users from role without required permissions fails."""
         response = identity_aware_client.delete_as(regular_user, "/api/v1/roles/1/users")
