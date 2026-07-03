@@ -23,7 +23,6 @@ from fastapi import Depends, Header, HTTPException, Request, status
 from sqlalchemy import select
 
 from kwik.crud.context import Context, UserCtx
-from kwik.models import User
 from kwik.models.api_key import ApiKey
 
 from .session import Session  # noqa: TC001
@@ -91,7 +90,9 @@ def _verify_api_key(
             detail="API key has expired",
         )
 
-    user = session.get(User, api_key.user_id)
+    from kwik.kernel import get_kernel  # noqa: PLC0415 — deferred: kernel imports kwik.dependencies
+
+    user = session.get(get_kernel().user_model, api_key.user_id)
     if user is None or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

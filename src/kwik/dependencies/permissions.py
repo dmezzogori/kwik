@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from fastapi import Depends
 
-from kwik.crud import crud_users
 from kwik.exceptions import AccessDeniedError
 
 from .users import resolved_user  # noqa: TC001
@@ -24,7 +23,9 @@ def has_permission(*permissions: str) -> Depends:
     """
 
     def check_permissions(user: resolved_user) -> None:
-        if not crud_users.has_permissions(user=user, permissions=permissions):
+        from kwik.kernel import get_kernel  # noqa: PLC0415 — deferred: kernel imports kwik.dependencies
+
+        if not get_kernel().crud_users.has_permissions(user=user, permissions=permissions):
             raise AccessDeniedError
 
     return Depends(check_permissions)

@@ -7,10 +7,9 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 
-from kwik.crud import crud_users
 from kwik.crud.context import Context
 from kwik.exceptions import AccessDeniedError
-from kwik.models import User
+from kwik.models.user_mixin import UserMixin
 from kwik.security import decode_token
 
 from .session import Session  # noqa: TC001
@@ -26,7 +25,7 @@ _oauth2_optional = OAuth2PasswordBearer(
 )
 
 
-def _get_current_user(token: current_token, session: Session) -> User:
+def _get_current_user(token: current_token, session: Session) -> UserMixin:
     """
     Get the user associated with the token.
 
@@ -37,8 +36,10 @@ def _get_current_user(token: current_token, session: Session) -> User:
     if token.sub is None:
         raise AccessDeniedError
 
+    from kwik.kernel import get_kernel  # noqa: PLC0415 — deferred: kernel imports kwik.dependencies
+
     context = Context(session=session, user=None)
-    user = crud_users.get(entity_id=token.sub, context=context)
+    user = get_kernel().crud_users.get(entity_id=token.sub, context=context)
     if user is None:
         raise AccessDeniedError
 
@@ -50,7 +51,7 @@ def _resolve_current_user(
     raw_token: Annotated[str | None, Depends(_oauth2_optional)],
     settings: Settings,
     session: Session,
-) -> User:
+) -> UserMixin:
     """
     Resolve the current user from either an API key or a JWT.
 
@@ -89,15 +90,17 @@ def _resolve_current_user(
     if token.sub is None:
         raise AccessDeniedError
 
+    from kwik.kernel import get_kernel  # noqa: PLC0415 — deferred: kernel imports kwik.dependencies
+
     context = Context(session=session, user=None)
-    user = crud_users.get(entity_id=token.sub, context=context)
+    user = get_kernel().crud_users.get(entity_id=token.sub, context=context)
     if user is None:
         raise AccessDeniedError
 
     return user
 
 
-current_user = Annotated[User, Depends(_get_current_user)]
-resolved_user = Annotated[User, Depends(_resolve_current_user)]
+current_user = Annotated[UserMixin, Depends(_get_current_user)]
+resolved_user = Annotated[UserMixin, Depends(_resolve_current_user)]
 
 __all__ = ["current_user", "resolved_user"]

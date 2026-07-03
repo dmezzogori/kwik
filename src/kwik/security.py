@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
     from kwik.crud.context import Context
-    from kwik.models import User
+    from kwik.models.user_mixin import UserMixin
     from kwik.settings import BaseKwikSettings
 
 ALGORITHM: Final[str] = "HS256"
@@ -94,8 +94,8 @@ def verify_password_reset_token(token: str, settings: BaseKwikSettings, context:
     matches a freshly recomputed fingerprint of the current ``hashed_password``.
     Returns ``None`` on any JWT error, unknown/inactive user, or mismatch.
     """
-    # Local imports to avoid circular dependency: crud.users imports security for hashing
-    from kwik.crud import crud_users  # noqa: PLC0415
+    # Local import to avoid circular dependency: crud.users imports security for hashing
+    from kwik.kernel import get_kernel  # noqa: PLC0415
 
     try:
         decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
@@ -107,7 +107,7 @@ def verify_password_reset_token(token: str, settings: BaseKwikSettings, context:
     if email is None or fingerprint is None:
         return None
 
-    user = crud_users.get_by_email(email=email, context=context)
+    user = get_kernel().crud_users.get_by_email(email=email, context=context)
     if user is None or not user.is_active:
         return None
 
@@ -123,7 +123,7 @@ def authenticate_from_token(
     token: str,
     settings: BaseKwikSettings,
     session: Session,
-) -> User:
+) -> UserMixin:
     """
     Validate a JWT token and return the corresponding user.
 
@@ -136,22 +136,22 @@ def authenticate_from_token(
         session: SQLAlchemy session for user lookup.
 
     Returns:
-        The authenticated User ORM object.
+        The authenticated user ORM object (instance of the registered user model).
 
     Raises:
         AccessDeniedError: If the token is invalid or the user does not exist.
 
     """
     # Local imports to avoid circular dependency: crud.users imports security for hashing
-    from kwik.crud import crud_users  # noqa: PLC0415
     from kwik.crud.context import Context  # noqa: PLC0415
     from kwik.exceptions import AccessDeniedError  # noqa: PLC0415
+    from kwik.kernel import get_kernel  # noqa: PLC0415
 
     payload = decode_token(token=token, settings=settings)
     if payload.sub is None:
         raise AccessDeniedError
     context = Context(session=session, user=None)
-    user = crud_users.get(entity_id=int(payload.sub), context=context)
+    user = get_kernel().crud_users.get(entity_id=int(payload.sub), context=context)
     if user is None:
         raise AccessDeniedError
     return user

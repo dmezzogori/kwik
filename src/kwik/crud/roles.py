@@ -6,7 +6,8 @@ from typing import ClassVar
 
 from sqlalchemy import or_, select
 
-from kwik.models import Permission, Role, RolePermission, User, UserRole
+from kwik.models import Permission, Role, RolePermission, UserRole
+from kwik.models.user_mixin import UserMixin  # noqa: TC001 — kept runtime for consistency with context.py
 from kwik.schemas import RoleDefinition, RoleUpdate
 
 from .autocrud import AutoCRUD
@@ -19,20 +20,28 @@ class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
     # Expose only safe/public fields for list filtering/sorting
     list_allowed_fields: ClassVar[set[str]] = {"id", "name", "is_active"}
 
+    @staticmethod
+    def _user_model() -> type[UserMixin]:
+        """Resolve the registered user model for direct user queries."""
+        from kwik.kernel import get_kernel  # noqa: PLC0415 — deferred to avoid circular import
+
+        return get_kernel().user_model
+
     def get_by_name(self, *, name: str, context: UserCtx) -> Role | None:
         """Get role by name."""
         stmt = select(Role).where(Role.name == name)
         return context.session.execute(stmt).scalar_one_or_none()
 
-    def get_users_with(self, *, role: Role) -> list[User]:
+    def get_users_with(self, *, role: Role) -> list[UserMixin]:
         """Get all users associated with a specific role."""
         return role.users
 
-    def get_users_without(self, *, role_id: int, context: UserCtx) -> list[User]:
+    def get_users_without(self, *, role_id: int, context: UserCtx) -> list[UserMixin]:
         """Get all users not involved in the given role, including users with no role."""
+        user_model = self._user_model()
         stmt = (
-            select(User)
-            .outerjoin(UserRole, User.id == UserRole.user_id)
+            select(user_model)
+            .outerjoin(UserRole, user_model.id == UserRole.user_id)
             .filter(or_(UserRole.role_id.is_(None), UserRole.role_id != role_id))
         )
         return list(context.session.execute(stmt).scalars().all())
@@ -99,7 +108,7 @@ class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
 
         return role
 
-    def assign_user(self, *, role: Role, user: User, context: UserCtx) -> Role:
+    def assign_user(self, *, role: Role, user: UserMixin, context: UserCtx) -> Role:
         """Assign a user to a role. Idempotent operation."""
         # Check if association already exists
         existing = (
@@ -123,7 +132,7 @@ class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
 
         return role
 
-    def remove_user(self, *, role: Role, user: User, context: UserCtx) -> Role:
+    def remove_user(self, *, role: Role, user: UserMixin, context: UserCtx) -> Role:
         """Remove a user from a role. Idempotent operation."""
         # Find and remove the association
         association = (
