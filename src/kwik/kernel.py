@@ -11,14 +11,19 @@ signatures added here must evaluate eagerly.
 """
 
 from dataclasses import dataclass
-from typing import Final
+from typing import Annotated, Final, cast
 
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import inspect
 
+from kwik.crud.context import Context
 from kwik.crud.users import CRUDUsers
+from kwik.dependencies.session import Session
+from kwik.dependencies.users import _get_current_user, _resolve_current_user
 from kwik.models.base import Base
 from kwik.models.user_mixin import UserMixin
+from kwik.routers import AuthenticatedRouter
 from kwik.schemas import UserProfile, UserProfileUpdate, UserRegistration
 
 _REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset({"id", "name", "surname", "email", "hashed_password", "is_active"})
@@ -85,6 +90,62 @@ class Kernel[UserT: UserMixin]:
             else UserSchemas(profile=UserProfile, registration=UserRegistration, update=UserProfileUpdate)
         )
         self.crud_users = CRUDUsers(model=user_model)
+
+    def get_current_user(self, user: Annotated[UserMixin, Depends(_get_current_user)]) -> UserT:
+        """FastAPI dependency: the JWT-authenticated user, typed as the registered model."""
+        return cast("UserT", user)
+
+    def get_resolved_user(self, user: Annotated[UserMixin, Depends(_resolve_current_user)]) -> UserT:
+        """FastAPI dependency: the JWT-or-API-key authenticated user, typed as the registered model."""
+        return cast("UserT", user)
+
+    def get_user_context(
+        self,
+        session: Session,
+        user: Annotated[UserMixin, Depends(_get_current_user)],
+    ) -> Context[UserT]:
+        """FastAPI dependency: an authenticated CRUD context typed against the registered model."""
+        return Context(session=session, user=cast("UserT", user))
+
+    def create_users_router(self) -> AuthenticatedRouter:
+        """Build the /users router bound to this kernel's model and schemas."""
+        from kwik.api.endpoints.users import create_users_router  # noqa: PLC0415 — deferred: endpoints import kwik deps
+
+        return create_users_router(self)
+
+    def create_login_router(self) -> APIRouter:
+        """Build the /login router bound to this kernel's model and schemas."""
+        from kwik.api.endpoints.login import create_login_router  # noqa: PLC0415 — deferred: endpoints import kwik deps
+
+        return create_login_router(self)
+
+    def create_roles_router(self) -> AuthenticatedRouter:
+        """Build the /roles router bound to this kernel's model and schemas."""
+        from kwik.api.endpoints.roles import create_roles_router  # noqa: PLC0415 — deferred: endpoints import kwik deps
+
+        return create_roles_router(self)
+
+    def create_api_router(
+        self,
+        *,
+        login: bool = True,
+        users: bool = True,
+        roles: bool = True,
+        permissions: bool = True,
+    ) -> APIRouter:
+        """Assemble kwik's built-in routers; each is individually opt-out-able."""
+        router = APIRouter()
+        if login:
+            router.include_router(self.create_login_router())
+        if users:
+            router.include_router(self.create_users_router())
+        if roles:
+            router.include_router(self.create_roles_router())
+        if permissions:
+            from kwik.api.endpoints.permissions import permissions_router  # noqa: PLC0415
+
+            router.include_router(permissions_router)
+        return router
 
 
 _active_kernel: Kernel[UserMixin] | None = None

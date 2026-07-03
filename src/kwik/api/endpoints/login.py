@@ -1,95 +1,98 @@
-"""Authentication and login API endpoints."""
+"""Authentication and login API endpoints (kernel-bound factory)."""
 
-from __future__ import annotations
+# NOTE: no `from __future__ import annotations` — the profile response schema is
+# resolved from the kernel at factory-call time and must evaluate eagerly.
 
 from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Body, Depends
-from fastapi.security import OAuth2PasswordRequestForm  # noqa: TC002
+from fastapi.security import OAuth2PasswordRequestForm
 
 from kwik.core.enum import Permissions
-from kwik.crud import crud_users
 from kwik.dependencies import NoUserContext, Settings, UserContext, current_token, current_user, has_permission
 from kwik.exceptions.base import TokenValidationError
-from kwik.schemas import Token, UserProfile
+from kwik.models.user_mixin import UserMixin
+from kwik.schemas import Token
 from kwik.security import create_token, verify_password_reset_token
 
 if TYPE_CHECKING:
-    from kwik.models import User
-
-login_router = APIRouter(prefix="/login", tags=["login"])
+    from kwik.kernel import Kernel
 
 
-@login_router.post("/access-token", response_model=Token)
-def login_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    settings: Settings,
-    context: NoUserContext,
-) -> Token:
-    """
-    OAuth2 compatible token login, get an access token for future requests.
+def create_login_router(kernel: "Kernel[UserMixin]") -> APIRouter:
+    """Build the /login router bound to the kernel's registered model and schemas."""
+    crud_users = kernel.crud_users
+    profile_schema = kernel.schemas.profile
 
-    Raises:
-        IncorrectCredentials: If the provided credentials are incorrect
+    router = APIRouter(prefix="/login", tags=["login"])
 
-    """
-    user = crud_users.authenticate(email=form_data.username, password=form_data.password, context=context)
-    return create_token(user_id=user.id, settings=settings)
+    @router.post("/access-token", response_model=Token)
+    def login_access_token(
+        form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+        settings: Settings,
+        context: NoUserContext,
+    ) -> Token:
+        """
+        OAuth2 compatible token login, get an access token for future requests.
+
+        Raises:
+            IncorrectCredentials: If the provided credentials are incorrect
+
+        """
+        user = crud_users.authenticate(email=form_data.username, password=form_data.password, context=context)
+        return create_token(user_id=user.id, settings=settings)
+
+    @router.post("/test-token", response_model=profile_schema)
+    def test_token(user: current_user) -> UserMixin:
+        """Test access token."""
+        return user
+
+    @router.post(
+        "/impersonate",
+        response_model=Token,
+        dependencies=(has_permission(Permissions.impersonification),),
+    )
+    def impersonate(
+        user_id: int,
+        user: current_user,
+        settings: Settings,
+        context: UserContext,
+    ) -> Token:
+        """Impersonate a user."""
+        user_to_impersonate = crud_users.get_if_exist(entity_id=user_id, context=context)
+        return create_token(user_id=user_to_impersonate.id, impersonator_user_id=user.id, settings=settings)
+
+    @router.post("/is_impersonating", response_model=bool)
+    def is_impersonating(token: current_token) -> bool:
+        return token.kwik_impersonate != ""
+
+    @router.post("/stop_impersonating", response_model=Token)
+    def stop_impersonating(token: current_token, settings: Settings) -> Token:
+        """
+        Stop impersonating and return the original token.
+
+        Raises:
+            InvalidToken: If the token is invalid
+
+        """
+        return create_token(user_id=int(token.kwik_impersonate), settings=settings)
+
+    @router.post("/reset-password")
+    def reset_password(
+        token: Annotated[str, Body()],
+        password: Annotated[str, Body()],
+        settings: Settings,
+        context: NoUserContext,
+    ) -> dict:
+        """Reset password using a self-service reset token (no authentication required)."""
+        email = verify_password_reset_token(token=token, settings=settings, context=context)
+        if not email:
+            raise TokenValidationError
+
+        crud_users.reset_password(email=email, password=password, context=context)
+        return {"msg": "Password updated successfully"}
+
+    return router
 
 
-@login_router.post("/test-token", response_model=UserProfile)
-def test_token(user: current_user) -> User:
-    """Test access token."""
-    return user
-
-
-@login_router.post(
-    "/impersonate",
-    response_model=Token,
-    dependencies=(has_permission(Permissions.impersonification),),
-)
-def impersonate(
-    user_id: int,
-    user: current_user,
-    settings: Settings,
-    context: UserContext,
-) -> Token:
-    """Impersonate a user."""
-    user_to_impersonate = crud_users.get_if_exist(entity_id=user_id, context=context)
-    return create_token(user_id=user_to_impersonate.id, impersonator_user_id=user.id, settings=settings)
-
-
-@login_router.post("/is_impersonating", response_model=bool)
-def is_impersonating(token: current_token) -> bool:
-    return token.kwik_impersonate != ""
-
-
-@login_router.post("/stop_impersonating", response_model=Token)
-def stop_impersonating(token: current_token, settings: Settings) -> Token:
-    """
-    Stop impersonating and return the original token.
-
-    Raises:
-        InvalidToken: If the token is invalid
-
-    """
-    return create_token(user_id=int(token.kwik_impersonate), settings=settings)
-
-
-@login_router.post("/reset-password")
-def reset_password(
-    token: Annotated[str, Body()],
-    password: Annotated[str, Body()],
-    settings: Settings,
-    context: NoUserContext,
-) -> dict:
-    """Reset password using a self-service reset token (no authentication required)."""
-    email = verify_password_reset_token(token=token, settings=settings, context=context)
-    if not email:
-        raise TokenValidationError
-
-    crud_users.reset_password(email=email, password=password, context=context)
-    return {"msg": "Password updated successfully"}
-
-
-__all__ = ["login_router"]
+__all__ = ["create_login_router"]

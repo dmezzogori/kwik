@@ -6,7 +6,7 @@ It supports two modes of operation:
 
 1. Default mode (no arguments):
    - Creates a Kwik application with default settings (BaseKwikSettings)
-   - Uses the standard API router from kwik.api.api
+   - Builds the standard API router from the default kernel
    - Ideal for quick development and testing
 
 2. Custom module mode (with arguments):
@@ -29,7 +29,7 @@ Usage Examples:
 import sys
 
 from kwik import Kwik, run
-from kwik.api.api import api_router
+from kwik.kernel import get_kernel
 from kwik.settings import BaseKwikSettings
 
 
@@ -59,7 +59,7 @@ def main() -> None:
         settings = BaseKwikSettings()
 
         # Initialize Kwik application with default settings and standard API router
-        kwik_app = Kwik(settings=settings, api_router=api_router)
+        kwik_app = Kwik(settings=settings, api_router=get_kernel().create_api_router())
         # Run the application (uvicorn will be used in development mode)
         run(kwik_app)
     else:

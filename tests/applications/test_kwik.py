@@ -9,16 +9,19 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from kwik.api.api import api_router
 from kwik.applications import Kwik
-from kwik.crud import Context, crud_users
+from kwik.crud import Context
 from kwik.database import create_session, session_scope
+from kwik.kernel import get_kernel
 from kwik.schemas import UserRegistration
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
 
     from kwik.settings import BaseKwikSettings
+
+api_router = get_kernel().create_api_router()
+crud_users = get_kernel().crud_users
 
 
 class TestKwikApplicationCreation:

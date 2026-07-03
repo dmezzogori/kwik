@@ -8,7 +8,6 @@ from pydantic import BaseModel
 from sqlalchemy import select
 
 from kwik.exceptions import AuthenticationFailedError, InactiveUserError, UserNotFoundError
-from kwik.models import User
 from kwik.models.user_mixin import UserMixin
 from kwik.security import get_password_hash, verify_password
 
@@ -155,8 +154,4 @@ class CRUDUsers[UserT: UserMixin](AutoCRUD[MaybeUserCtx, UserT, BaseModel, BaseM
         return user.roles
 
 
-# TRANSITIONAL singleton (deleted in the router-factory task): keeps existing import
-# sites working while internals migrate to get_kernel().crud_users.
-crud_users = CRUDUsers(model=User)
-
-__all__ = ["CRUDUsers", "crud_users"]
+__all__ = ["CRUDUsers"]

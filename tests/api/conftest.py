@@ -9,10 +9,10 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm.session import Session
 
-from kwik.api.api import api_router
 from kwik.applications import Kwik
 from kwik.database import create_session
 from kwik.dependencies.session import _get_session
+from kwik.kernel import get_kernel
 from kwik.testing import IdentityAwareTestClient
 
 if TYPE_CHECKING:
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 @pytest.fixture(scope="session")
 def kwik_app(settings: BaseKwikSettings) -> Kwik:
     """Create and return a Kwik application instance for testing."""
-    return Kwik(settings=settings, api_router=api_router)
+    return Kwik(settings=settings, api_router=get_kernel().create_api_router())
 
 
 @pytest.fixture

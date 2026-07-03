@@ -88,8 +88,10 @@ def test_user_for_testing(session: Session, admin_context: UserCtx) -> User:  # 
     This user has a unique email pattern that doesn't match the standard
     patterns in IdentityAwareTestClient, allowing us to test the fallback behavior.
     """
-    from kwik.crud import crud_users  # noqa: PLC0415
+    from kwik.kernel import get_kernel  # noqa: PLC0415
     from kwik.schemas import UserRegistration  # noqa: PLC0415
+
+    crud_users = get_kernel().crud_users
 
     no_user_context = Context(session=session, user=None)
 

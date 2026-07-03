@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING
 import jwt
 import pytest
 
-from kwik.crud import crud_users
 from kwik.exceptions.base import TokenValidationError
+from kwik.kernel import get_kernel
 from kwik.schemas import UserRegistration
 from kwik.security import (
     ALGORITHM,
@@ -27,6 +27,8 @@ if TYPE_CHECKING:
     from kwik.crud import NoUserCtx
     from kwik.models import User
     from kwik.settings import BaseKwikSettings
+
+crud_users = get_kernel().crud_users
 
 EMAIL = "test@example.com"
 PASSWORD_HASH = get_password_hash("initial-password-123")

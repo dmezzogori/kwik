@@ -7,14 +7,17 @@ from typing import TYPE_CHECKING
 import pytest
 
 from kwik.core.enum import Permissions
-from kwik.crud import UserCtx, crud_roles, crud_users
+from kwik.crud import UserCtx, crud_roles
 from kwik.exceptions import DuplicatedEntityError, EntityNotFoundError
+from kwik.kernel import get_kernel
 from kwik.schemas import RoleDefinition, RoleUpdate
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from kwik.models import Permission, Role, User
+
+crud_users = get_kernel().crud_users
 
 
 class TestRoleCRUD:

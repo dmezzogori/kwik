@@ -7,14 +7,17 @@ from typing import TYPE_CHECKING
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from kwik.crud import NoUserCtx, crud_users
 from kwik.exceptions import AuthenticationFailedError, EntityNotFoundError, InactiveUserError, UserNotFoundError
+from kwik.kernel import get_kernel
 from kwik.schemas import UserPasswordChange, UserProfileUpdate, UserRegistration
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from kwik.crud import NoUserCtx
     from kwik.models import User
+
+crud_users = get_kernel().crud_users
 
 
 class TestUserCRUD:
