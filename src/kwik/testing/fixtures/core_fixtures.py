@@ -29,11 +29,11 @@ from typing import TYPE_CHECKING
 import pytest
 from testcontainers.postgres import PostgresContainer
 
-from kwik.core.enum import Permissions
-from kwik.crud import Context, NoUserCtx, UserCtx, crud_permissions, crud_roles, crud_users
+from kwik.crud import Context, NoUserCtx, UserCtx
 from kwik.database import create_engine, create_session, session_scope
+from kwik.kernel import get_kernel
 from kwik.models import Base
-from kwik.schemas import PermissionDefinition, RoleDefinition, UserRegistration
+from kwik.seeding import create_first_superuser
 from kwik.settings import BaseKwikSettings
 
 if TYPE_CHECKING:
@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
     from sqlalchemy.orm import Session
 
-    from kwik.models import User
+    from kwik.models.user_mixin import UserMixin
 
 
 @pytest.fixture(scope="session")
@@ -86,6 +86,7 @@ def settings(postgres: PostgresContainer) -> BaseKwikSettings:
 @pytest.fixture(scope="session", autouse=True)
 def engine(settings: BaseKwikSettings) -> Generator[Engine, None, None]:
     """Create a database engine and manage schema lifecycle for tests."""
+    get_kernel()  # ensure the active user model is mapped before create_all
     engine = create_engine(settings)
     Base.metadata.create_all(bind=engine)
     try:
@@ -96,63 +97,22 @@ def engine(settings: BaseKwikSettings) -> Generator[Engine, None, None]:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def admin_user(settings: BaseKwikSettings, engine: Engine) -> User:
-    """Create a shared admin user and ensure an admin role with permissions exists."""
+def admin_user(settings: BaseKwikSettings, engine: Engine) -> UserMixin:
+    """Create a shared admin user via the seeding battery (idempotent)."""
     _session = create_session(engine=engine)
     with session_scope(session=_session, commit=True) as scoped_session:
-        no_user_context = Context(session=scoped_session, user=None)
-
-        # Check if admin user already exists (idempotent for multi-conftest scenarios)
-        existing_user = crud_users.get_by_email(
-            email=settings.FIRST_SUPERUSER,
-            context=no_user_context,
-        )
-        if existing_user is not None:
-            scoped_session.refresh(existing_user)
-            return existing_user
-
-        # Create admin user (email/password from settings)
-        admin_user = crud_users.create(
-            obj_in=UserRegistration(
-                name="admin",
-                surname="admin",
-                email=settings.FIRST_SUPERUSER,
-                password=settings.FIRST_SUPERUSER_PASSWORD,
-                is_active=True,
-            ),
-            context=no_user_context,
-        )
-
-        admin_context = Context(session=scoped_session, user=admin_user)
-
-        # Create admin role
-        admin_role = crud_roles.create(
-            obj_in=RoleDefinition(name="admin", is_active=True),
-            context=admin_context,
-        )
-
-        # Assign all permissions to admin role
-        for permission_name in Permissions:
-            permission = crud_permissions.create(
-                obj_in=PermissionDefinition(name=permission_name.value),
-                context=admin_context,
-            )
-            crud_roles.assign_permission(role=admin_role, permission=permission, context=admin_context)
-
-        # Assign admin user to the role
-        crud_roles.assign_user(role=admin_role, user=admin_user, context=admin_context)
-
-        scoped_session.refresh(admin_user)
-        return admin_user
+        user = create_first_superuser(session=scoped_session, settings=settings)
+        scoped_session.refresh(user)
+        return user
 
 
 @pytest.fixture(scope="session", autouse=True)
-def regular_user(engine: Engine) -> User:
+def regular_user(engine: Engine) -> UserMixin:
     """Create a shared regular user for impersonation and auth tests."""
     _session = create_session(engine=engine)
     with session_scope(session=_session, commit=True) as scoped_session:
-        regular_user = crud_users.create_if_not_exist(
-            obj_in=UserRegistration(
+        regular_user = get_kernel().crud_users.create_if_not_exist(
+            obj_in=get_kernel().schemas.registration(
                 name="regular",
                 surname="user",
                 email="regular@example.com",
@@ -181,6 +141,6 @@ def no_user_context(session: Session) -> NoUserCtx:
 
 
 @pytest.fixture
-def admin_context(session: Session, admin_user: User) -> UserCtx:
+def admin_context(session: Session, admin_user: UserMixin) -> UserCtx:
     """Context with admin user for privileged CRUD operations."""
     return Context(session=session, user=admin_user)

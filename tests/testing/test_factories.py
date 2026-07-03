@@ -93,6 +93,7 @@ class TestUserFactory:
                 is_active=True,
                 admin=True,
                 roles=[],
+                extra_fields=None,
             )
 
     def test_user_factory_roles_context_path(
@@ -133,6 +134,7 @@ class TestUserFactory:
                 is_active=True,
                 admin=False,
                 roles=["editor", "viewer"],
+                extra_fields=None,
             )
 
     def test_user_factory_no_admin_context_path(

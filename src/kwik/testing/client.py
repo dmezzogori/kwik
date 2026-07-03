@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from fastapi.testclient import TestClient
     from requests import Response
 
-    from kwik.models import User
+    from kwik.models.user_mixin import UserMixin
     from kwik.settings import BaseKwikSettings
 
 
@@ -55,8 +55,18 @@ class IdentityAwareTestClient:
         self._client = client
         self._token_cache: dict[int, str] = {}
         self._settings = settings
+        self._passwords: dict[str, str] = {}
 
-    def _get_auth_token(self, user: User) -> str:
+    def register_passwords(self, passwords: dict[str, str]) -> None:
+        """
+        Register email -> plaintext password pairs for authentication.
+
+        Pass ``ScenarioResult.passwords`` so the client can authenticate scenario
+        users created with non-default passwords.
+        """
+        self._passwords.update(passwords)
+
+    def _get_auth_token(self, user: UserMixin) -> str:
         """
         Get authentication token for a user, caching for efficiency.
 
@@ -73,13 +83,15 @@ class IdentityAwareTestClient:
         if user.id in self._token_cache:
             return self._token_cache[user.id]
 
-        # Determine the correct password based on user email
-        if user.email == "regular@example.com":
-            password = "regularpassword123"  # noqa: S105
-        elif self._settings and user.email == self._settings.FIRST_SUPERUSER:
-            password = self._settings.FIRST_SUPERUSER_PASSWORD
-        else:
-            password = "testpassword123"  # Default test password  # noqa: S105
+        # Registered passwords first (ScenarioResult.passwords), then legacy fallbacks
+        password = self._passwords.get(user.email)
+        if password is None:
+            if user.email == "regular@example.com":
+                password = "regularpassword123"  # noqa: S105
+            elif self._settings and user.email == self._settings.FIRST_SUPERUSER:
+                password = self._settings.FIRST_SUPERUSER_PASSWORD
+            else:
+                password = "testpassword123"  # Default test password  # noqa: S105
 
         response = self._client.post(
             "/api/v1/login/access-token",
@@ -105,7 +117,7 @@ class IdentityAwareTestClient:
     def _make_authenticated_request(
         self,
         method: str,
-        user: User,
+        user: UserMixin,
         url: str,
         **kwargs,  # noqa: ANN003
     ) -> Response:
@@ -130,7 +142,7 @@ class IdentityAwareTestClient:
 
         return getattr(self._client, method.lower())(url, headers=headers, **kwargs)
 
-    def get_as(self, user: User, url: str, **kwargs) -> Response:  # noqa: ANN003
+    def get_as(self, user: UserMixin, url: str, **kwargs) -> Response:  # noqa: ANN003
         """
         Make authenticated GET request as specific user.
 
@@ -148,7 +160,7 @@ class IdentityAwareTestClient:
         """
         return self._make_authenticated_request("GET", user, url, **kwargs)
 
-    def post_as(self, user: User, url: str, **kwargs) -> Response:  # noqa: ANN003
+    def post_as(self, user: UserMixin, url: str, **kwargs) -> Response:  # noqa: ANN003
         """
         Make authenticated POST request as specific user.
 
@@ -166,7 +178,7 @@ class IdentityAwareTestClient:
         """
         return self._make_authenticated_request("POST", user, url, **kwargs)
 
-    def put_as(self, user: User, url: str, **kwargs) -> Response:  # noqa: ANN003
+    def put_as(self, user: UserMixin, url: str, **kwargs) -> Response:  # noqa: ANN003
         """
         Make authenticated PUT request as specific user.
 
@@ -181,7 +193,7 @@ class IdentityAwareTestClient:
         """
         return self._make_authenticated_request("PUT", user, url, **kwargs)
 
-    def patch_as(self, user: User, url: str, **kwargs) -> Response:  # noqa: ANN003
+    def patch_as(self, user: UserMixin, url: str, **kwargs) -> Response:  # noqa: ANN003
         """
         Make authenticated PATCH request as specific user.
 
@@ -196,7 +208,7 @@ class IdentityAwareTestClient:
         """
         return self._make_authenticated_request("PATCH", user, url, **kwargs)
 
-    def delete_as(self, user: User, url: str, **kwargs) -> Response:  # noqa: ANN003
+    def delete_as(self, user: UserMixin, url: str, **kwargs) -> Response:  # noqa: ANN003
         """
         Make authenticated DELETE request as specific user.
 

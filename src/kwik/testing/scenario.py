@@ -27,22 +27,26 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from kwik.core.enum import Permissions
-from kwik.crud import Context, crud_permissions, crud_roles, crud_users
-from kwik.schemas import PermissionDefinition, RoleDefinition, UserRegistration
+from kwik.crud import Context, crud_permissions, crud_roles
+from kwik.kernel import get_kernel
+from kwik.schemas import PermissionDefinition, RoleDefinition
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
-    from kwik.models import Permission, Role, User
+    from kwik.models import Permission, Role
+    from kwik.models.user_mixin import UserMixin
 
 
 @dataclass
 class ScenarioResult:
     """Container for all entities created by a scenario build."""
 
-    users: dict[str, User] = field(default_factory=dict)
+    users: dict[str, UserMixin] = field(default_factory=dict)
     roles: dict[str, Role] = field(default_factory=dict)
     permissions: dict[str, Permission] = field(default_factory=dict)
+    passwords: dict[str, str] = field(default_factory=dict)
+    """Plaintext passwords keyed by user email, for IdentityAwareTestClient.register_passwords()."""
 
 
 @dataclass
@@ -56,6 +60,7 @@ class UserSpec:
     is_active: bool = True
     admin: bool = False
     roles: list[str] = field(default_factory=list)
+    extra_fields: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass
@@ -91,6 +96,7 @@ class Scenario:
         is_active: bool = True,
         admin: bool = False,
         roles: list[str] | None = None,
+        extra_fields: dict[str, object] | None = None,
     ) -> Scenario:
         """
         Add a user to the scenario.
@@ -103,6 +109,7 @@ class Scenario:
             is_active: Whether user is active (defaults to True)
             admin: Whether user should have admin privileges (defaults to False)
             roles: List of role names to assign to user
+            extra_fields: Additional registration-schema fields for custom user models.
 
         Returns:
             Self for method chaining
@@ -127,6 +134,7 @@ class Scenario:
                 is_active=is_active,
                 admin=admin,
                 roles=user_roles,
+                extra_fields=extra_fields or {},
             )
         )
 
@@ -202,7 +210,7 @@ class Scenario:
 
         return self
 
-    def build(self, *, session: Session, admin_user: User | None = None) -> ScenarioResult:  # noqa: C901, PLR0912
+    def build(self, *, session: Session, admin_user: UserMixin | None = None) -> ScenarioResult:  # noqa: C901, PLR0912
         """
         Build the scenario by creating all specified entities.
 
@@ -300,19 +308,22 @@ class Scenario:
                         context=admin_context,
                     )
 
-        # Create users using standard CRUD operations
+        # Create users using the kernel's registered registration schema
+        registration_schema = get_kernel().schemas.registration
         for user_spec in self._user_specs:
-            user = crud_users.create(
-                obj_in=UserRegistration(
+            user = get_kernel().crud_users.create(
+                obj_in=registration_schema(
                     name=user_spec.name,
                     surname=user_spec.surname,
                     email=user_spec.email,
                     password=user_spec.password,
                     is_active=user_spec.is_active,
+                    **user_spec.extra_fields,
                 ),
                 context=no_user_context,
             )
             result.users[user_spec.name] = user
+            result.passwords[user.email] = user_spec.password
 
             # Assign roles to user
             for role_name in user_spec.roles:

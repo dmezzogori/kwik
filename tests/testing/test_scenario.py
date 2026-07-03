@@ -283,7 +283,7 @@ class TestScenarioAutoCreationLogic:
         with (
             patch("kwik.testing.scenario.crud_roles") as mock_crud_roles,
             patch("kwik.testing.scenario.crud_permissions") as mock_crud_perms,
-            patch("kwik.testing.scenario.crud_users") as mock_crud_users,
+            patch("kwik.testing.scenario.get_kernel") as mock_get_kernel,
             patch("kwik.testing.scenario.Permissions") as mock_permissions_enum,
         ):
             # Setup mocks
@@ -297,7 +297,7 @@ class TestScenarioAutoCreationLogic:
 
             mock_user = Mock()
             mock_user.name = "adminuser"
-            mock_crud_users.create.return_value = mock_user
+            mock_get_kernel.return_value.crud_users.create.return_value = mock_user
 
             # Mock the Permissions enum
             mock_permissions_enum.__iter__.return_value = [Mock(value="test:permission")]
@@ -329,7 +329,7 @@ class TestScenarioAutoCreationLogic:
         with (
             patch("kwik.testing.scenario.crud_roles") as mock_crud_roles,
             patch("kwik.testing.scenario.crud_permissions"),
-            patch("kwik.testing.scenario.crud_users") as mock_crud_users,
+            patch("kwik.testing.scenario.get_kernel") as mock_get_kernel,
         ):
             # Setup mocks
             mock_admin_role = Mock()
@@ -338,7 +338,7 @@ class TestScenarioAutoCreationLogic:
 
             mock_user = Mock()
             mock_user.name = "adminuser"
-            mock_crud_users.create.return_value = mock_user
+            mock_get_kernel.return_value.crud_users.create.return_value = mock_user
 
             # Create scenario with explicit admin role AND admin user
             scenario = Scenario().with_role("admin", is_active=True).with_user(name="adminuser", admin=True)
@@ -362,12 +362,12 @@ class TestScenarioAutoCreationLogic:
         # Mock the necessary CRUD operations
         with (
             patch("kwik.testing.scenario.crud_roles") as mock_crud_roles,
-            patch("kwik.testing.scenario.crud_users") as mock_crud_users,
+            patch("kwik.testing.scenario.get_kernel") as mock_get_kernel,
         ):
             # Setup mocks
             mock_user = Mock()
             mock_user.name = "regularuser"
-            mock_crud_users.create.return_value = mock_user
+            mock_get_kernel.return_value.crud_users.create.return_value = mock_user
 
             # Create scenario with regular user (no admin users)
             scenario = Scenario().with_user(name="regularuser", admin=False)

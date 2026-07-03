@@ -30,11 +30,11 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from kwik.crud import UserCtx
-    from kwik.models import Permission, Role, User
+    from kwik.models import Permission, Role, UserMixin
 
 
 @pytest.fixture
-def user_factory(admin_context: UserCtx) -> Callable[..., User]:
+def user_factory(admin_context: UserCtx) -> Callable[..., UserMixin]:
     """
     Create a factory fixture for test users using the Scenario API.
 
@@ -60,8 +60,9 @@ def user_factory(admin_context: UserCtx) -> Callable[..., User]:
         is_active: bool = True,
         admin: bool = False,
         roles: list[str] | None = None,
-    ) -> User:
-        """Create a test user with the specified parameters."""
+        extra_fields: dict[str, object] | None = None,
+    ) -> UserMixin:
+        """Create a test user with the specified parameters, including custom-model extra_fields."""
         if email is None:
             email = f"{name.lower()}@test.com"
 
@@ -73,6 +74,7 @@ def user_factory(admin_context: UserCtx) -> Callable[..., User]:
             is_active=is_active,
             admin=admin,
             roles=roles or [],
+            extra_fields=extra_fields,
         )
 
         # For user creation, we need to handle admin users specially
