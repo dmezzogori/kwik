@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, get_args
+from typing import TYPE_CHECKING, ClassVar, TypeVar, get_args
 
 from pydantic import BaseModel
 from sqlalchemy import func, inspect, select
@@ -10,7 +10,7 @@ from sqlalchemy import func, inspect, select
 from kwik.exceptions import DuplicatedEntityError, EntityNotFoundError
 from kwik.models import Base
 
-from .context import Context, UserCtx
+from .context import Context
 
 if TYPE_CHECKING:
     from sqlalchemy import Select
@@ -36,6 +36,18 @@ def _sort_query[ModelType: Base](
     return stmt.order_by(*order_by)
 
 
+def _ctx_requires_user(ctx_type: object) -> bool:
+    """Return True when a Context type parameter guarantees a non-None user."""
+    resolved = getattr(ctx_type, "__value__", ctx_type)  # unwrap PEP 695 `type` aliases
+    args = get_args(resolved)
+    if not args:
+        return False
+    user_type = args[0]
+    if user_type is type(None):
+        return False
+    return type(None) not in get_args(user_type)
+
+
 class NoDatabaseConnectionError(Exception):
     """Raised when no database connection is available."""
 
@@ -47,24 +59,29 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
     # Optional allowlist of fields exposed for list filtering/sorting
     list_allowed_fields: ClassVar[set[str] | None] = None
 
-    def __init__(self) -> None:
+    def __init__(self, *, model: type[ModelType] | None = None) -> None:
         """
         CRUD object with default methods to Create, Read, Update, Delete (CRUD).
 
-        The model type is automatically extracted from the generic type parameters.
+        The model type is extracted from the generic type parameters, or passed
+        explicitly via ``model=`` (required when the subclass is itself generic
+        over the model, e.g. the kernel-owned users CRUD).
         """
-        # Extract model type from generic parameters
         bases = getattr(self, "__orig_bases__", None)
-        if bases is not None:
-            args = get_args(bases[0])
-            if args:
-                self.model = args[1]
-            else:
+        if model is not None:
+            self.model = model
+        else:
+            if bases is None or not get_args(bases[0]):
                 msg = "Model type must be specified via generic type parameters: AutoCRUD[Model, Create, Update]"
                 raise ValueError(msg)
-        else:
-            msg = "Model type must be specified via generic type parameters: AutoCRUD[Model, Create, Update]"
-            raise ValueError(msg)
+            candidate = get_args(bases[0])[1]
+            if isinstance(candidate, TypeVar):
+                msg = (
+                    "Model type is a type variable; pass the concrete model explicitly: "
+                    f"{type(self).__name__}(model=MyModel)"
+                )
+                raise TypeError(msg)
+            self.model = candidate
 
         # Check for audit trail fields using SQLAlchemy introspection
         model_columns = inspect(self.model).columns
@@ -78,16 +95,15 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
         else:
             self._list_allowed_fields = set(self.list_allowed_fields)
 
-        # Validate consistency: if model has audit fields, Context must be UserCtx
-        if (self.record_creator_user_id or self.record_modifier_user_id) and bases is not None:
-            # Extract Context type from generic parameters to validate it's UserCtx
-            ctx_type = get_args(bases[0])[0] if get_args(bases[0]) else None
-            if ctx_type is not UserCtx:
+        # Validate consistency: audit fields require a Context type with a non-optional user
+        if self.record_creator_user_id or self.record_modifier_user_id:
+            ctx_type = get_args(bases[0])[0] if bases is not None and get_args(bases[0]) else None
+            if ctx_type is None or not _ctx_requires_user(ctx_type):
+                ctx_name = getattr(ctx_type, "__name__", repr(ctx_type))
                 msg = (
                     f"Model {self.model.__name__} has audit trail fields (creator_user_id/last_modifier_user_id) "
-                    f"but Context parameter is {ctx_type.__name__ if ctx_type else 'unknown'}. "
-                    f"Use UserCtx as the first generic parameter: AutoCRUD[UserCtx, {self.model.__name__}, ...] "
-                    f"to ensure user information is available for audit trail functionality."
+                    f"but its Context parameter ({ctx_name}) allows a None user. "
+                    f"Use a Context with a non-optional user type (e.g. UserCtx) as the first generic parameter."
                 )
                 raise ValueError(msg)
 

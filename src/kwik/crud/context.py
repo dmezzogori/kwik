@@ -15,34 +15,28 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from kwik.models.user_mixin import UserMixin
+
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
-    from kwik.models import User
-
 
 @dataclass(slots=True, frozen=True)
-class Context[U: (None, User, User | None)]:
+class Context[U: UserMixin | None]:
     """
     A context object that holds database session and user information meant to be used at the CRUD layer level.
 
     This generic class provides a way to pass both database session and user
-    context through the application. The user type parameter allows for
-    different authentication states.
-
-    Parameters
-    ----------
-    U : type
-        The user type, constrained to None, User, or User | None to represent
-        different authentication states.
+    context through the application. The user type parameter is bounded by
+    ``UserMixin | None`` so consuming applications can parameterize it with
+    their own concrete user model (e.g. ``Context[AppUser]``).
 
     Attributes
     ----------
     session : Session
         The SQLAlchemy database session.
     user : U
-        The user object, which can be None, User, or User | None depending
-        on the authentication state.
+        The user object; ``None`` for unauthenticated contexts.
 
     """
 
@@ -50,6 +44,6 @@ class Context[U: (None, User, User | None)]:
     user: U
 
 
-type UserCtx = Context[User]
-type MaybeUserCtx = Context[User | None]
+type UserCtx = Context[UserMixin]
+type MaybeUserCtx = Context[UserMixin | None]
 type NoUserCtx = Context[None]

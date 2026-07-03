@@ -61,7 +61,7 @@ class TestAutoCRUDValidation:
         """Test that models with audit fields fail with NoUserCtx."""
         with pytest.raises(  # noqa: PT012
             ValueError,
-            match=r"Model ModelWithAuditFields has audit trail fields.*but Context parameter is NoUserCtx",
+            match=r"Model ModelWithAuditFields has audit trail fields.*non-optional user",
         ):
 
             class InvalidCRUD(AutoCRUD[NoUserCtx, ModelWithAuditFields, _CreateSchema, _UpdateSchema, int]):
@@ -103,7 +103,7 @@ class TestAutoCRUDValidation:
 
         with pytest.raises(  # noqa: PT012
             ValueError,
-            match=r"Model ModelWithOnlyCreator has audit trail fields.*but Context parameter is NoUserCtx",
+            match=r"Model ModelWithOnlyCreator has audit trail fields.*non-optional user",
         ):
 
             class InvalidCRUD(AutoCRUD[NoUserCtx, ModelWithOnlyCreator, _CreateSchema, _UpdateSchema, int]):
@@ -123,7 +123,7 @@ class TestAutoCRUDValidation:
 
         with pytest.raises(  # noqa: PT012
             ValueError,
-            match=r"Model ModelWithOnlyModifier has audit trail fields.*but Context parameter is NoUserCtx",
+            match=r"Model ModelWithOnlyModifier has audit trail fields.*non-optional user",
         ):
 
             class InvalidCRUD(AutoCRUD[NoUserCtx, ModelWithOnlyModifier, _CreateSchema, _UpdateSchema, int]):
