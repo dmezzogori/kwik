@@ -30,6 +30,7 @@ dev = [
     "pytest-asyncio>=0.23.0",
     "ruff>=0.12.1",
     "pytest-xdist>=3.8.0",
+    "pyright>=1.1.390",
 ]
 
 [build-system]
@@ -56,6 +57,10 @@ omit = [
 
 [tool.coverage.report]
 exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:"]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
@@ -106,6 +111,7 @@ unfixable = []
 [tool.ruff.lint.per-file-ignores]
 "tests/*.py" = ["S101", "S105", "S106", "S107", "SLF001", "N805"]
 "*/tests/*.py" = ["S101", "S105", "S106", "S107", "S311", "SLF001", "N805"]
+"tests_custom_user/*.py" = ["S101", "S105", "S106", "S107", "S311", "SLF001", "N805"]
 "src/kwik/core/settings.py" = ["N805", "FBT001"]
 "src/kwik/utils/files.py" = ["ASYNC240"]
 "tests/utils/test_files.py" = ["ASYNC240"]

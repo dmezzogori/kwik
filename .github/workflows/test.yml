@@ -44,7 +44,13 @@ jobs:
       
     - name: Run tests
       run: uv run pytest
-        
+
+    - name: Run custom-user model tests
+      run: uv run pytest tests_custom_user -p kwik.testing.fixtures -n 0
+
+    - name: Type-check kernel typing contract
+      run: uv run pyright tests_custom_user/test_typing_contract.py
+
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v7
       with:
