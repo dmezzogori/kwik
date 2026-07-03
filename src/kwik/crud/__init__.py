@@ -9,10 +9,11 @@ from .autocrud import AutoCRUD, NoDatabaseConnectionError
 from .context import Context, MaybeUserCtx, NoUserCtx, UserCtx
 from .permissions import crud_permissions
 from .roles import crud_roles
-from .users import crud_users
+from .users import CRUDUsers, crud_users
 
 __all__ = [
     "AutoCRUD",
+    "CRUDUsers",
     "Context",
     "MaybeUserCtx",
     "NoDatabaseConnectionError",
