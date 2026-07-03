@@ -88,7 +88,6 @@ class Kernel[UserT: UserMixin]:
     def get_current_user(...) -> UserT: ...
     def get_resolved_user(...) -> UserT: ...          # JWT-or-API-key path
     def get_user_context(...) -> Context[UserT]: ...
-    def get_maybe_user_context(...) -> Context[UserT | None]: ...
 
     # Router factories (see §7)
     def create_users_router(self) -> AuthenticatedRouter: ...
@@ -182,8 +181,8 @@ All current endpoint behavior (impersonation, password change/reset, admin reset
 - **`testing/scenario.py`** — `UserSpec` gains `extra_fields: dict[str, Any]`. `Scenario.build()` constructs the user payload by instantiating **the kernel's registered registration schema** with base + extra fields — validation for free, and the fields flow through `create()`'s `model_dump()` into custom columns. Relationship attributes are out of scope; apps seed those post-creation with their own fixtures.
 - **`testing/fixtures/factories.py`** — `user_factory` accepts and forwards `extra_fields`.
 - **`testing/client.py`** — `IdentityAwareTestClient` drops the hard-coded password-by-email table in favor of resolving passwords from the scenario/factory results (which know the passwords they used), with the current defaults kept as fallback.
-- **Testing the mechanism itself** — one kernel per process is a hard constraint, so kwik's suite gains a second pytest session: `tests/custom_user/` with its own conftest that constructs `Kernel(user_model=CustomTestUser, schemas=...)` (one extra column, e.g. `nickname`) before fixtures run. CI runs it as a separate `pytest tests/custom_user` invocation. Everything under `tests/` proper runs against `DefaultUser`. `_reset_for_testing()` is used only by registry unit tests that never map a model.
-- **Typing contract** — kwik has no type checker today (ruff only), so the first-class-typing guarantee gets its own enforcement: `tests/custom_user/test_typing_contract.py` uses `typing.assert_type` to pin `kernel.get_current_user` → `CustomTestUser`, `kernel.crud_users.get(...)` → `CustomTestUser`, `kernel.get_user_context` → `Context[CustomTestUser]`, and CI runs pyright scoped to that file. This is deliberately narrow — a full-repo type-check rollout is out of scope.
+- **Testing the mechanism itself** — one kernel per process is a hard constraint, so kwik's suite gains a second pytest session: `tests_custom_user/` (repo root, outside `testpaths` — the main suite must never collect it) with its own conftest that constructs `Kernel(user_model=CustomTestUser, schemas=...)` (one extra column, e.g. `nickname`) before fixtures run. CI runs it as a separate `pytest tests_custom_user` invocation. Everything under `tests/` proper runs against `DefaultUser`. `_reset_for_testing()` is used only by registry unit tests that never map a model.
+- **Typing contract** — kwik has no type checker today (ruff only), so the first-class-typing guarantee gets its own enforcement: `tests_custom_user/test_typing_contract.py` uses `typing.assert_type` to pin `kernel.get_current_user` → `CustomTestUser`, `kernel.crud_users.get(...)` → `CustomTestUser`, `kernel.get_user_context` → `Context[CustomTestUser]`, and CI runs pyright scoped to that file. This is deliberately narrow — a full-repo type-check rollout is out of scope.
 
 ### 10. Error handling
 
@@ -227,8 +226,8 @@ All at kernel construction, all `RuntimeError`/`TypeError` with actionable messa
 | `api/endpoints/users.py`, `login.py`, `roles.py` | Converted to kernel-bound factories (no `from __future__ import annotations`) |
 | `api/endpoints/__init__.py`, `api/api.py` | Factory exports; singleton `api_router` deleted |
 | `testing/scenario.py`, `testing/fixtures/*`, `testing/client.py` | §9 changes |
-| `tests/custom_user/` | NEW — custom-model test session + typing contract (`assert_type`) |
-| `.github/workflows/test.yml` | Second pytest invocation (`tests/custom_user`) + scoped pyright step |
+| `tests_custom_user/` | NEW — custom-model test session + typing contract (`assert_type`) |
+| `.github/workflows/test.yml` | Second pytest invocation (`tests_custom_user`) + scoped pyright step |
 | `docs/handbook/` | Quickstart rewrite, extensibility page, migration guide |
 | `pyproject.toml`, `CHANGELOG.md` | 2.0.0 |
 
@@ -237,14 +236,14 @@ All at kernel construction, all `RuntimeError`/`TypeError` with actionable messa
 ## Acceptance Criteria
 
 - A consuming app can declare `class AppUser(Base, UserMixin)` with additional columns and relationships, register it via `Kernel(user_model=AppUser, schemas=...)`, and get a **single `users` table** — no auxiliary table, no proxying.
-- `kernel.get_current_user` / `kernel.get_user_context` / `kernel.crud_users` are statically typed against the app's class; the documented one-line `Annotated` aliases give autocompleting, type-checked custom fields in endpoints — enforced by `assert_type` contract tests in `tests/custom_user/` under a pyright CI step scoped to that file.
+- `kernel.get_current_user` / `kernel.get_user_context` / `kernel.crud_users` are statically typed against the app's class; the documented one-line `Annotated` aliases give autocompleting, type-checked custom fields in endpoints — enforced by `assert_type` contract tests in `tests_custom_user/` under a pyright CI step scoped to that file.
 - kwik's auth (JWT + API key + impersonation + password reset), CRUD, and users/login/roles routers work transparently with the custom model; registered schemas bind to both request bodies and response models.
 - Zero-config apps work unchanged in behavior: default kernel materializes `DefaultUser` lazily; stock schemas serve the built-in routers.
 - Built-in routers are individually opt-out-able via `create_api_router(...)` flags.
 - `kwik.seeding.create_first_superuser` works for both default and custom models (idempotent; `extra_fields` for custom non-null columns) and is what `admin_user` fixture uses.
 - Scenario/factories support `extra_fields`, validated through the registered registration schema.
 - Kernel misconfiguration (double kernel, wrong tablename, missing columns, bad schemas) fails at construction with actionable errors.
-- Full kwik test suite passes for `DefaultUser`; the `tests/custom_user/` session passes for a custom model; lint and format clean.
+- Full kwik test suite passes for `DefaultUser`; the `tests_custom_user/` session passes for a custom model; lint and format clean.
 - Migration guide published in the handbook.
 
 ## Out of Scope

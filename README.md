@@ -102,9 +102,9 @@ docker compose up
   - `skip` and `limit` for pagination (stable default ordering by primary key when no sort is provided)
   - `sorting` as comma-separated fields with optional direction, e.g. `?sorting=name:asc,id:desc`
   - `filter_key` and `value` for simple equality filters, e.g. `?filter_key=is_active&value=true`
-- Example endpoint:
+- Example endpoint (`kernel` is your app's registered `kwik.Kernel`; use `get_kernel().crud_users` for the default user model):
   - `def list_users(q: ListQuery, context: UserContext) -> Paginated[UserProfile]:
-        total, data = crud_users.get_multi(context=context, **q)
+        total, data = kernel.crud_users.get_multi(context=context, **q)
         return {"total": total, "data": data}`
 - Invalid filter/sort fields return HTTP 400 with a clear message.
 

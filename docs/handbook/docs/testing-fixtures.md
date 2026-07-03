@@ -98,7 +98,7 @@ Factory fixtures offer concise helpers built on top of the `Scenario` fluent API
 
 ### user_factory (function)
 
-Creates a `User` with configurable attributes. Arguments:
+Creates a user (an instance of the active user model, typed `UserMixin`) with configurable attributes. Arguments:
 
 - `name: str = "testuser"`
 - `surname: str = "testsurname"`
@@ -107,6 +107,7 @@ Creates a `User` with configurable attributes. Arguments:
 - `is_active: bool = True`
 - `admin: bool = False`
 - `roles: list[str] | None = None`
+- `extra_fields: dict[str, object] | None = None` (additional registration-schema fields for custom user models)
 
 Behavior:
 
@@ -195,17 +196,22 @@ def engine(settings) -> Engine:  # type: ignore[override]
 
 ```python
 import pytest
-from kwik.crud import Context, crud_users
-from kwik.schemas import UserRegistration
 from kwik.testing.fixtures.core_fixtures import admin_user as base_admin_user
 
 @pytest.fixture(scope="session", autouse=True)
 def admin_user(engine, settings, base_admin_user):  # type: ignore[override]
     # Use the base admin_user fixture and add extra users/data
     _ = base_admin_user
-    # create additional seed data here if needed
+    # create additional seed data here if needed (e.g. via get_kernel().crud_users)
     return _
 ```
+
+The `crud_users` singleton was removed in Kwik 2.0. When you need direct user
+CRUD in a fixture, resolve it from the active kernel via
+`from kwik.kernel import get_kernel` and `get_kernel().crud_users`. For a custom
+user model, register the kernel in your `conftest.py` before fixtures run and pass
+`extra_fields` through `Scenario`/`user_factory` — see the
+[User model](user-model.md) guide.
 
 ## Concurrency and performance
 

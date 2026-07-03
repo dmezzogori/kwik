@@ -87,7 +87,7 @@ def test_role_and_user(user_factory, role_factory):
     assert user.email.endswith("@test.com")
 ```
 
-- `user_factory(...)` returns a `User`
+- `user_factory(...)` returns the active user model instance (typed `UserMixin`)
 - `role_factory(...)` returns a `Role`
 - `permission_factory(name=...)` returns a `Permission`
 
@@ -110,6 +110,15 @@ def test_protected_endpoint(app, admin_user):
 ```
 
 Available methods mirror HTTP verbs: `get_as`, `post_as`, `put_as`, `patch_as`, `delete_as`. For public endpoints, use the wrapped client’s regular methods (e.g., `client.get("/public")`).
+
+For users created with non-default passwords (e.g. via `Scenario`), register the
+passwords the build used so the client can authenticate them:
+
+```python
+scenario = Scenario().with_user(name="john", password="s3cret").build(session=session, admin_user=admin_user)
+client.register_passwords(scenario.passwords)  # email -> plaintext, from ScenarioResult.passwords
+res = client.get_as(scenario.users["john"], "/api/v1/users/me")
+```
 
 ## Tips and best practices
 

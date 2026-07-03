@@ -29,6 +29,7 @@ nav:
   - Introduction:
     - Endpoints: writing-endpoints.md
     - AutoCRUD: autocrud.md
+    - User model: user-model.md
   - Testing:
       - Overview: testing.md
       - Fixtures: testing-fixtures.md

@@ -339,12 +339,23 @@ What you’d have around it:
 
 ## Wire It Into the API {#wiring}
 
-After defining your router (e.g., `projects_router`), include it in the main API router in `src/kwik/api/api.py`:
+After defining your router (e.g., `projects_router`), assemble Kwik's built-in API
+router from the kernel, add your router to it, and build the `Kwik` app. For an app
+that keeps Kwik's default user model, resolve the default kernel with `get_kernel()`;
+if you register a custom user model, call `create_api_router()` on your own kernel
+instead (see the [User model](user-model.md) guide).
 
 ```python
-from .endpoints import projects_router
+from kwik import Kwik
+from kwik.kernel import get_kernel
+from kwik.settings import BaseKwikSettings
 
+from myapp.projects import projects_router
+
+api_router = get_kernel().create_api_router()  # login/users/roles/permissions
 api_router.include_router(projects_router)
+
+app = Kwik(settings=BaseKwikSettings(), api_router=api_router)
 ```
 
 That’s it — you now have a fully authenticated, permission‑aware, typed endpoint that plays nicely with Kwik’s patterns.

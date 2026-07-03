@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-07-03
+
+Kwik 2.0 makes the user identity **extensible**. Applications compose their own
+user model from a mixin, register it once through a typed `Kernel`, and Kwik wires
+its authentication, CRUD, routers, and testing utilities to that class — a single
+`users` table, no side tables or proxying, with the user statically typed as the
+app's concrete model. This is a breaking release; see the
+[User model guide](https://davide.mezzogori.com/kwik/user-model/) for the full
+migration walkthrough.
+
+### Added
+
+- **`kwik.Kernel` and `kwik.UserSchemas`** — the typed registration point for the application's user model and schemas. `Kernel[UserT: UserMixin]` validates the model and schemas, claims the process-wide slot, and exposes typed dependency callables (`get_current_user`, `get_resolved_user`, `get_user_context`) plus a typed `crud_users: CRUDUsers[UserT]`. `get_kernel()` (in `kwik.kernel`) returns the active kernel, materializing a `DefaultUser` kernel lazily for zero-config apps.
+- **`kwik.UserMixin`** (`kwik.models.UserMixin`) — a pure auth mixin contributing the auth-essential columns (`id`, `name`, `surname`, `email`, `hashed_password`, `is_active`) and the `roles`/`permissions` relationships. Compose a custom user model as `class AppUser(Base, UserMixin)` with `__tablename__ = "users"`.
+- **`DefaultUser`** — the built-in user model, imported lazily only when no custom kernel is registered, so zero-config applications keep working unchanged.
+- **Kernel-bound router factories** — `create_login_router()`, `create_users_router()`, `create_roles_router()`, and `create_api_router(*, login=True, users=True, roles=True, permissions=True)`, each built from the kernel's model and schemas, with per-router opt-out flags.
+- **`kwik.seeding.create_first_superuser(*, session, settings, **extra_fields)`** — an idempotent first-superuser battery (admin role, all permissions, superuser, role assignment) shared by production apps and Kwik's own `admin_user` fixture; `extra_fields` supports custom models with non-null columns.
+- **Custom-model testing support** — `Scenario` and `user_factory` accept `extra_fields`, validated through the registered registration schema; `ScenarioResult.passwords` exposes the plaintext passwords a build used, and `IdentityAwareTestClient.register_passwords(...)` consumes them to authenticate scenario users.
+- **`AutoCRUD(model=...)`** — subclasses may pass the model explicitly (required when the subclass is itself generic over the model, e.g. the kernel-owned users CRUD); otherwise the model is inferred from the generic parameters as before.
+- **Custom-user test session and typing contract** — a separate `tests_custom_user/` pytest session exercises the mechanism against a custom model, and `tests_custom_user/test_typing_contract.py` pins the typing guarantee with `typing.assert_type` under a scoped pyright CI step.
+
+### Changed
+
+- **`Context` is now bounded** — its type parameter changed from a fixed constraint to `Context[U: UserMixin | None]`, making `Context[AppUser]` legal. The `UserCtx` / `MaybeUserCtx` / `NoUserCtx` aliases re-point onto `UserMixin`.
+- **`current_user` / `resolved_user` are typed against `UserMixin`** — the module-level dependencies resolve the active kernel at request time; the kernel's `get_current_user` / `get_resolved_user` are typed `-> UserT` for app-side aliases.
+- **AutoCRUD audit-column validation relaxed** — the check now accepts any Context whose user type argument is non-optional (instead of requiring the exact `UserCtx`), so app-defined `Context[AppUser]` CRUD classes pass while nullable-user contexts still fail loudly.
+
+### Removed
+
+All removals below are **breaking changes** requiring code updates. See the migration guide.
+
+- **`kwik.api_router` singleton and `kwik.api.api`** — assemble routers via `kernel.create_api_router(...)` instead (each built-in router is individually opt-out-able).
+- **Module-level `users_router` / `login_router` / `roles_router`** — replaced by the kernel's router factories.
+- **`kwik.crud.crud_users` singleton** — use `kernel.crud_users` (or `get_kernel().crud_users` for the default model), typed `CRUDUsers[UserT]`.
+- **`kwik.models.User` export and the concrete `User` model** — compose your own `AppUser(Base, UserMixin)`; there is no top-level `User` name.
+- **Audit `UserMixin` renamed to `UserTrackingMixin`** — the audit-trail mixin (`creator_user_id`, `last_modifier_user_id`) is now `kwik.models.UserTrackingMixin` (no deprecation alias); `UserMixin` now names the new auth mixin. `RecordInfoMixin` composition is unchanged.
+
+### Migration
+
+- Full migration walkthrough — including the single-Alembic-migration recipe for collapsing a 1.x two-table user pattern — is published in the handbook: **[Extending the User model](https://davide.mezzogori.com/kwik/user-model/)**.
+
 ## [1.10.0] - 2026-06-25
 
 ### Changed

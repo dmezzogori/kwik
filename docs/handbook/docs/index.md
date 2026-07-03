@@ -34,7 +34,8 @@ from decimal import Decimal
 from pydantic import BaseModel
 from sqlalchemy.orm import Mapped, mapped_column
 
-from kwik import Kwik, api_router
+from kwik import Kwik
+from kwik.kernel import get_kernel
 from kwik.models import Base, RecordInfoMixin
 from kwik.crud import AutoCRUD
 from kwik.crud.context import UserCtx
@@ -75,7 +76,8 @@ class CustomerUpdate(AtLeastOneFieldMixin):
 class CustomerCRUD(AutoCRUD[UserCtx, Customer, CustomerCreate, CustomerUpdate, int]):
     pass
 
-crud_customers = CustomerCRUD(Customer)
+# AutoCRUD subclasses take no constructor args — the model is read from the generic parameters.
+crud_customers = CustomerCRUD()
 
 # 4. Create the API endpoints
 # AuthenticatedRouter ensures all endpoints require JWT authentication
@@ -129,7 +131,9 @@ def delete_customer(customer_id: int, context: UserContext):
     return {"message": "Customer deleted successfully"}
 
 # 5. Register the router with your Kwik app
-# Include your router into the main API router, then build the Kwik app
+# Build the built-in API router from the kernel, add your router, then build the Kwik app.
+# This app keeps Kwik's default user model; to extend it, see the "User model" guide.
+api_router = get_kernel().create_api_router()  # login/users/roles/permissions
 api_router.include_router(customers_router)
 app = Kwik(settings=BaseKwikSettings(), api_router=api_router)
 ```
@@ -211,6 +215,8 @@ Kwik stands on the shoulders of giants:
 * **[Testcontainers](https://testcontainers-python.readthedocs.io/)**: Real database testing
 
 ## Next Steps
+
+**✅ User model**: Extend the user identity with your own columns via the typed `Kernel` — see the [User model](user-model.md) guide.
 
 **✅ Testing**: Real database testing with business scenarios
 
