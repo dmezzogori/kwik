@@ -28,6 +28,10 @@ migration walkthrough.
 - **`AutoCRUD(model=...)`** — subclasses may pass the model explicitly (required when the subclass is itself generic over the model, e.g. the kernel-owned users CRUD); otherwise the model is inferred from the generic parameters as before.
 - **Custom-user test session and typing contract** — a separate `tests_custom_user/` pytest session exercises the mechanism against a custom model, and `tests_custom_user/test_typing_contract.py` pins the typing guarantee with `typing.assert_type` under a scoped pyright CI step.
 
+### Security
+
+- **First-superuser seeding has insecure defaults** — `FIRST_SUPERUSER` / `FIRST_SUPERUSER_PASSWORD` default to `admin@example.com` / `admin`, and `create_first_superuser` grants the seeded user **every** permission. Production deployments **must** set `KWIK_FIRST_SUPERUSER` / `KWIK_FIRST_SUPERUSER_PASSWORD` before first startup. See the [User model guide](https://davide.mezzogori.com/kwik/user-model/#seeding-the-first-superuser).
+
 ### Changed
 
 - **`Context` is now bounded** — its type parameter changed from a fixed constraint to `Context[U: UserMixin | None]`, making `Context[AppUser]` legal. The `UserCtx` / `MaybeUserCtx` / `NoUserCtx` aliases re-point onto `UserMixin`.

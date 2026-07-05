@@ -77,7 +77,8 @@ class UserSchemas:
 
 class Kernel[UserT: UserMixin]:
     def __init__(self, *, user_model: type[UserT], schemas: UserSchemas | None = None) -> None:
-        # 1. validate (see §10), 2. claim the process-wide slot, 3. build crud_users, 4. resolve schemas
+        # 1. validate model + resolved schemas (see §10), 2. build crud_users,
+        # 3. claim the process-wide slot LAST — so a failure above never poisons the slot
         ...
 
     user_model: type[UserT]
@@ -115,7 +116,7 @@ UserContext = Annotated[Context[TebanUser], Depends(kernel.get_user_context)]
 
 **Typing subtlety (accepted):** an `Annotated` alias must name the concrete class to be statically valid, so aliases live in the app, not derived from the kernel by magic. The kernel's guarantee is that its dependency callables are *typed* against `UserT` (so the one-line aliases have real type-checker backing) and that `kernel.crud_users.get(...)` returns a typed `UserT`.
 
-**Zero-config apps:** never touch the kernel. On first internal resolution, kwik materializes a default kernel wired to `DefaultUser` and stock schemas. kwik exports ready-made module-level aliases (`current_user`, `resolved_user`, `UserContext`, `MaybeUserContext`, `NoUserContext`) typed against `UserMixin`; their underlying dependency functions call `get_kernel()` at request time, so nothing is mapped eagerly at import.
+**Zero-config apps:** never touch the kernel. On first internal resolution, kwik materializes a default kernel wired to `DefaultUser` and stock schemas. kwik exports ready-made module-level aliases (`current_user`, `resolved_user`, `UserContext`, `NoUserContext`) typed against `UserMixin`; their underlying dependency functions call `get_kernel()` at request time, so nothing is mapped eagerly at import.
 
 ### 3. Internal registry (`kwik/kernel.py`, private)
 

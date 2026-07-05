@@ -33,19 +33,20 @@ def create_first_superuser(*, session: Session, settings: BaseKwikSettings, **ex
     kernel = get_kernel()
     no_user_context = Context(session=session, user=None)
 
-    existing = kernel.crud_users.get_by_email(email=settings.FIRST_SUPERUSER, context=no_user_context)
-    if existing is not None:
-        return existing
-
-    registration = kernel.schemas.registration(
-        name="admin",
-        surname="admin",
-        email=settings.FIRST_SUPERUSER,
-        password=settings.FIRST_SUPERUSER_PASSWORD,
-        is_active=True,
-        **extra_fields,
-    )
-    superuser = kernel.crud_users.create(obj_in=registration, context=no_user_context)
+    # Only user creation is conditional; the role/permission battery below re-runs
+    # unconditionally so a re-run converges (e.g. a new Permissions member or a dropped
+    # assignment is restored) rather than short-circuiting on the existing superuser.
+    superuser = kernel.crud_users.get_by_email(email=settings.FIRST_SUPERUSER, context=no_user_context)
+    if superuser is None:
+        registration = kernel.schemas.registration(
+            name="admin",
+            surname="admin",
+            email=settings.FIRST_SUPERUSER,
+            password=settings.FIRST_SUPERUSER_PASSWORD,
+            is_active=True,
+            **extra_fields,
+        )
+        superuser = kernel.crud_users.create(obj_in=registration, context=no_user_context)
 
     admin_context = Context(session=session, user=superuser)
     admin_role = crud_roles.create_if_not_exist(

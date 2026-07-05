@@ -6,7 +6,7 @@
 
 > **⚠️ Pre-Release Software Warning**
 > 
-> Kwik v1.0 has been released and is ready for production use. The internal APIs, data structures, and framework interfaces are now stable. While not guaranteed, we strive to maintain backward compatibility following semantic versioning principles.
+> Kwik 2.0 has been released — a breaking release that makes the user identity extensible via a typed `Kernel` (see the [User model guide](https://davide.mezzogori.com/kwik/user-model/)). The internal APIs, data structures, and framework interfaces are stable within a major line. While not guaranteed, we strive to maintain backward compatibility following semantic versioning principles.
  
 ---
 

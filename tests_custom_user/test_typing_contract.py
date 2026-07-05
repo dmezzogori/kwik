@@ -12,13 +12,13 @@ from typing import TYPE_CHECKING, assert_type
 
 from kwik.crud.context import Context
 from kwik.crud.users import CRUDUsers
+from kwik.kernel import Kernel
 from kwik.models import UserMixin
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
     from kwik.crud.context import MaybeUserCtx
-    from kwik.kernel import Kernel
 
 
 class ContractUser(UserMixin):
@@ -42,7 +42,14 @@ def _probe_context_typing(kernel: Kernel[ContractUser], db_session: Session, som
     assert_type(ctx.user, ContractUser)
 
 
+def _probe_constructor_inference() -> None:
+    # Never executed: ContractUser is not a Base subclass, so constructing a real Kernel would
+    # fail at runtime. pyright only needs to see that the constructor infers Kernel[ContractUser].
+    assert_type(Kernel(user_model=ContractUser), Kernel[ContractUser])
+
+
 def test_contract_module_imports() -> None:
     """The probes above are static-only; this keeps pytest collection meaningful."""
     assert callable(_probe_kernel_typing)
     assert callable(_probe_context_typing)
+    assert callable(_probe_constructor_inference)

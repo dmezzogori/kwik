@@ -21,6 +21,10 @@ if TYPE_CHECKING:
     from kwik.schemas import UserPasswordChange
 
 
+# Deliberate bound tension: UserT is bound by UserMixin here, while AutoCRUD's ModelType is
+# bound by Base. The two bounds are intentionally not reconciled repo-wide — pyright runs only
+# against tests_custom_user/test_typing_contract.py, and every concrete user model is
+# Base + UserMixin at runtime (the kernel validates this), so the mismatch never surfaces.
 class CRUDUsers[UserT: UserMixin](AutoCRUD[MaybeUserCtx, UserT, BaseModel, BaseModel, int]):
     """
     CRUD operations for user models with authentication and authorization support.

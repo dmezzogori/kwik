@@ -24,6 +24,27 @@ class _PlainProfile(BaseModel):
     id: int
 
 
+class _NoPasswordRegistration(BaseModel):
+    """Registration schema missing the required password field — must be rejected."""
+
+    name: str
+    surname: str
+    email: str
+    is_active: bool = True
+
+
+class _HashedPasswordRegistration(UserRegistration):
+    """Registration schema exposing the kwik-managed hashed_password field — must be rejected."""
+
+    hashed_password: str = ""
+
+
+class _IdRegistration(UserRegistration):
+    """Registration schema exposing the kwik-managed id field — must be rejected."""
+
+    id: int = 0
+
+
 @pytest.fixture
 def clean_slot(monkeypatch: pytest.MonkeyPatch) -> None:
     """Detach the process-wide kernel slot for the duration of one test."""
@@ -68,6 +89,24 @@ class TestKernelValidation:
         with pytest.raises(TypeError, match="from_attributes"):
             Kernel(user_model=DefaultUser, schemas=bundle)
 
+    def test_rejects_registration_without_password(self) -> None:
+        """A registration schema that does not declare a password field is rejected."""
+        bundle = UserSchemas(profile=UserProfile, registration=_NoPasswordRegistration, update=UserProfileUpdate)
+        with pytest.raises(TypeError, match="password"):
+            Kernel(user_model=DefaultUser, schemas=bundle)
+
+    def test_rejects_registration_exposing_hashed_password(self) -> None:
+        """A registration schema that exposes hashed_password is rejected."""
+        bundle = UserSchemas(profile=UserProfile, registration=_HashedPasswordRegistration, update=UserProfileUpdate)
+        with pytest.raises(TypeError, match="hashed_password"):
+            Kernel(user_model=DefaultUser, schemas=bundle)
+
+    def test_rejects_registration_exposing_id(self) -> None:
+        """A registration schema that exposes the id field is rejected."""
+        bundle = UserSchemas(profile=UserProfile, registration=_IdRegistration, update=UserProfileUpdate)
+        with pytest.raises(TypeError, match="'id'"):
+            Kernel(user_model=DefaultUser, schemas=bundle)
+
 
 class TestKernelSlot:
     """The kernel claims the process-wide slot and resolves via get_kernel()."""
@@ -102,3 +141,31 @@ class TestKernelSlot:
         kernel = get_kernel()
         assert kernel.user_model is DefaultUser
         assert kwik.kernel._active_kernel is kernel
+
+    def test_slot_survives_late_init_failure(
+        self,
+        clean_slot: None,  # noqa: ARG002
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A failure after validation (CRUDUsers construction) must not poison the slot."""
+        real_crud_users = kwik.kernel.CRUDUsers
+
+        def _raiser(**_kwargs: object) -> object:
+            """Stand-in for CRUDUsers that fails during construction."""
+            error_message = "late init boom"
+            raise ValueError(error_message)
+
+        monkeypatch.setattr(kwik.kernel, "CRUDUsers", _raiser)
+        with pytest.raises(ValueError, match="late init boom"):
+            Kernel(user_model=DefaultUser)
+        assert kwik.kernel._active_kernel is None
+
+        monkeypatch.setattr(kwik.kernel, "CRUDUsers", real_crud_users)
+        kernel = Kernel(user_model=DefaultUser)
+        assert kwik.kernel._active_kernel is kernel
+
+    def test_materialize_returns_active_kernel_on_lost_claim_race(self, clean_slot: None) -> None:  # noqa: ARG002
+        """When the slot is claimed mid-construction, the materializer returns the active kernel."""
+        winner = Kernel(user_model=DefaultUser)
+        recovered = kwik.kernel._materialize_default_kernel()
+        assert recovered is winner

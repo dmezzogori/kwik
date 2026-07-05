@@ -159,14 +159,18 @@ class AppUserUpdate(UserProfileUpdate):   # update payload
     external: bool | None = None
 ```
 
-The contract Kwik validates at `Kernel` construction:
+The contract Kwik validates at `Kernel` construction — enforced on the schemas you pass
+**and** on the stock defaults when you pass none:
 
 - **`profile`** must enable `model_config["from_attributes"]` so it can serialize
   ORM instances. `UserProfile` inherits this from `ORMMixin`, so subclassing it is
   enough.
-- **`registration`** must carry the base registration fields (`name`, `surname`,
-  `email`, `is_active`) **plus a `password` field**. `UserRegistration` already
-  declares all of them; add your custom columns as fields.
+- **`registration`** must declare a **`password`** field and must **not** expose
+  `hashed_password` or `id` — both are managed by Kwik (`create()` hashes `password`
+  into `hashed_password`, and the database assigns `id`). `UserRegistration` already
+  satisfies this; add your custom columns as extra fields. You will also want the base
+  identity fields (`name`, `surname`, `email`, `is_active`) so users can actually be
+  created — `UserRegistration` provides them.
 - **`update`** carries the updatable fields, all optional.
 
 Custom registration fields flow straight into your custom columns: `create()`
@@ -182,8 +186,18 @@ what a model with no extra fields wants.
 `kwik.seeding.create_first_superuser` idempotently creates the admin role, every
 `Permissions` enum value, the superuser from `settings.FIRST_SUPERUSER` /
 `FIRST_SUPERUSER_PASSWORD`, and the role assignment — all through the kernel's
-CRUD, so it works transparently with your model. Call it from the `Kwik(seed_db=...)`
-hook:
+CRUD, so it works transparently with your model. It also **converges on re-run**: the
+role/permission battery runs unconditionally each call, so a newly added `Permissions`
+member (or a manually removed assignment) is restored the next time it runs, while an
+existing superuser is never recreated. Call it from the `Kwik(seed_db=...)` hook:
+
+!!! warning "The superuser battery has insecure defaults and grants every permission"
+    `settings.FIRST_SUPERUSER` / `FIRST_SUPERUSER_PASSWORD` default to
+    `admin@example.com` / `admin`, and the battery grants the seeded user the admin role
+    with **every** permission in the `Permissions` enum. **Production deployments MUST**
+    override these via the `KWIK_FIRST_SUPERUSER` / `KWIK_FIRST_SUPERUSER_PASSWORD`
+    environment variables (or your settings source) before first startup — otherwise your
+    app ships with a fully privileged, publicly known admin account.
 
 ```python
 from kwik.seeding import create_first_superuser
@@ -245,6 +259,29 @@ so your registered model is the one mapped and created. The `admin_user` fixture
 is built on `create_first_superuser`, so fixtures and production share one code
 path.
 
+!!! note "Override the built-in user fixtures if your registration schema has required custom fields"
+    Kwik's session-scoped autouse `admin_user` and `regular_user` fixtures build users
+    with **base fields only** (`name`, `surname`, `email`, `password`, `is_active`). If
+    your registration schema declares a custom field that is **required** (no default),
+    those fixtures fail validation. Override them in your `conftest.py` to supply the extra
+    fields — the override is a one-liner over the same battery:
+
+    ```python
+    import pytest
+    from kwik.database import create_session, session_scope
+    from kwik.seeding import create_first_superuser
+    from kwik.settings import BaseKwikSettings
+
+
+    @pytest.fixture(scope="session", autouse=True)
+    def admin_user(settings: BaseKwikSettings, engine):
+        _session = create_session(engine=engine)
+        with session_scope(session=_session, commit=True) as scoped:
+            user = create_first_superuser(session=scoped, settings=settings, company="ACME")
+            scoped.refresh(user)
+            return user
+    ```
+
 `Scenario` and `user_factory` accept `extra_fields`, validated through your
 registered registration schema and persisted into your custom columns. Passwords
 chosen during a build are returned on `ScenarioResult.passwords`; hand them to
@@ -267,6 +304,21 @@ def test_custom_field_roundtrip(session, admin_user, identity_aware_client):
     assert response.status_code == 200
     assert response.json()["company"] == "ACME"
 ```
+
+!!! note "Scenario and factory users are typed `UserMixin`, not your concrete model"
+    `ScenarioResult.users` and `user_factory(...)` are typed as `UserMixin` (the framework
+    cannot know your concrete class), so `scenario.users["acme"].company` does not
+    type-check even though the attribute exists at runtime. When a test needs your custom
+    fields under a type checker, re-fetch through the typed CRUD — `kernel.crud_users.get(...)`
+    returns your model — or `cast(AppUser, ...)` the value:
+
+    ```python
+    from typing import cast
+    from app.models import AppUser
+
+    acme = cast(AppUser, scenario.users["acme"])
+    assert acme.company == "ACME"  # now type-checks
+    ```
 
 If you want the type-checker to enforce the typing guarantee, add a small
 `assert_type` contract module (as Kwik's own `tests_custom_user/test_typing_contract.py`

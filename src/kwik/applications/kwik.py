@@ -43,8 +43,8 @@ def _make_lifespan(
     ----------
     settings : BaseKwikSettings
         Application settings containing database configuration and environment details.
-    seed_db : Callable[[Session], None]
-        Function to seed the database.
+    seed_db : Callable[[Session, BaseKwikSettings], None] | None
+        Optional database-seeding hook, invoked at startup with the session and settings.
 
     Returns
     -------

@@ -10,6 +10,7 @@ This module must not use ``from __future__ import annotations``: FastAPI-facing
 signatures added here must evaluate eagerly.
 """
 
+import sys
 from dataclasses import dataclass
 from typing import Annotated, Final, cast
 
@@ -60,6 +61,7 @@ def _validate_user_model(user_model: type) -> None:
 
 
 def _validate_schemas(schemas: UserSchemas) -> None:
+    """Enforce the schema contract on the resolved bundle; runs BEFORE the slot is claimed."""
     for field_name in ("profile", "registration", "update"):
         schema = getattr(schemas, field_name)
         if not (isinstance(schema, type) and issubclass(schema, BaseModel)):
@@ -67,6 +69,14 @@ def _validate_schemas(schemas: UserSchemas) -> None:
             raise TypeError(msg)
     if not schemas.profile.model_config.get("from_attributes", False):
         msg = "UserSchemas.profile must enable model_config['from_attributes'] to serialize ORM objects"
+        raise TypeError(msg)
+    registration_fields = set(schemas.registration.model_fields)
+    if "password" not in registration_fields:
+        msg = "registration schema must declare a 'password' field"
+        raise TypeError(msg)
+    forbidden = {"hashed_password", "id"} & registration_fields
+    if forbidden:
+        msg = "registration schema must not expose 'hashed_password'/'id' — these are managed by kwik"
         raise TypeError(msg)
 
 
@@ -78,18 +88,20 @@ class Kernel[UserT: UserMixin]:
     crud_users: CRUDUsers[UserT]
 
     def __init__(self, *, user_model: type[UserT], schemas: UserSchemas | None = None) -> None:
-        """Validate the model and schemas, then claim the process-wide kernel slot."""
+        """Validate the model and schemas, build crud_users, then claim the process-wide slot last."""
         _validate_user_model(user_model)
-        if schemas is not None:
-            _validate_schemas(schemas)
-        _claim_slot(self)
-        self.user_model = user_model
-        self.schemas = (
+        resolved_schemas = (
             schemas
             if schemas is not None
             else UserSchemas(profile=UserProfile, registration=UserRegistration, update=UserProfileUpdate)
         )
+        _validate_schemas(resolved_schemas)
+        self.user_model = user_model
+        self.schemas = resolved_schemas
         self.crud_users = CRUDUsers(model=user_model)
+        # Claim the slot LAST: if validation or CRUDUsers construction raises above, the
+        # process-wide slot stays free instead of being poisoned by a half-built kernel.
+        _claim_slot(self)
 
     def get_current_user(self, user: Annotated[UserMixin, Depends(_get_current_user)]) -> UserT:
         """FastAPI dependency: the JWT-authenticated user, typed as the registered model."""
@@ -165,13 +177,39 @@ def _claim_slot(kernel: Kernel[UserMixin]) -> None:
 def get_kernel() -> Kernel[UserMixin]:
     """Return the active kernel, materializing the DefaultUser kernel when none was registered."""
     kernel = _active_kernel
-    if kernel is None:
-        # Lazy import: DefaultUser is mapped only when actually needed, so a custom
-        # user model never collides with it in Base.metadata.
-        from kwik.models.default_user import DefaultUser  # noqa: PLC0415
+    if kernel is not None:
+        return kernel
+    return _materialize_default_kernel()
 
-        kernel = Kernel(user_model=DefaultUser)
-    return kernel
+
+def _materialize_default_kernel() -> Kernel[UserMixin]:
+    """
+    Build the zero-config DefaultUser kernel, guarding two edge cases.
+
+    Forgotten kernel: if a custom user model already mapped the ``users`` table but no
+    Kernel was constructed, importing DefaultUser would collide on that table — raise an
+    actionable error instead of a cryptic SQLAlchemy one. Benign race: if another thread
+    claimed the slot while we were constructing, return the kernel it registered.
+    """
+    if "users" in Base.metadata.tables and "kwik.models.default_user" not in sys.modules:
+        msg = (
+            "a custom user model is mapped but no Kernel was constructed — build "
+            "Kernel(user_model=...) before importing kwik routers or running the app"
+        )
+        raise RuntimeError(msg)
+
+    # Lazy import: DefaultUser is mapped only when actually needed, so a custom
+    # user model never collides with it in Base.metadata.
+    from kwik.models.default_user import DefaultUser  # noqa: PLC0415
+
+    try:
+        return Kernel(user_model=DefaultUser)
+    except RuntimeError:
+        # Another thread won the slot between our guard check and _claim_slot; reuse its kernel.
+        recovered = _active_kernel
+        if recovered is not None:
+            return recovered
+        raise
 
 
 def _reset_for_testing() -> None:
