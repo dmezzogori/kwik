@@ -28,6 +28,7 @@ class User(Base):
         primaryjoin="User.id==UserRole.user_id",
         secondaryjoin="UserRole.role_id==Role.id",
         viewonly=True,
+        lazy="selectin",
     )
 
     @hybrid_property
@@ -60,6 +61,7 @@ class Role(Base, RecordInfoMixin):
         "Permission",
         secondary="roles_permissions",
         viewonly=True,
+        lazy="selectin",
     )
 
 
@@ -74,8 +76,11 @@ class UserRole(Base, RecordInfoMixin):
 
 
 # Deferred column_property: must be defined after UserRole to avoid forward reference.
+# ``deferred=True`` keeps the correlated count subquery out of every Role load;
+# role reads that serialize ``user_count`` undefer it explicitly (see crud_roles).
 Role.user_count = column_property(
-    select(func.count(UserRole.id)).where(UserRole.role_id == Role.id).correlate_except(UserRole).scalar_subquery()
+    select(func.count(UserRole.id)).where(UserRole.role_id == Role.id).correlate_except(UserRole).scalar_subquery(),
+    deferred=True,
 )
 
 

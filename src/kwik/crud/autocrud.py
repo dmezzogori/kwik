@@ -14,6 +14,7 @@ from .context import Context, UserCtx
 
 if TYPE_CHECKING:
     from sqlalchemy import Select
+    from sqlalchemy.sql.base import ExecutableOption
 
     from kwik.dependencies.sorting_query import ParsedSortingQuery
 
@@ -46,6 +47,9 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
     model: type[ModelType]
     # Optional allowlist of fields exposed for list filtering/sorting
     list_allowed_fields: ClassVar[set[str] | None] = None
+    # Loader options applied to the read paths (get/get_if_exist/get_multi),
+    # e.g. undeferring column properties the read schema serializes.
+    select_options: ClassVar[tuple[ExecutableOption, ...]] = ()
 
     def __init__(self) -> None:
         """
@@ -93,7 +97,7 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
 
     def get(self, *, entity_id: PkType, context: Ctx) -> ModelType | None:
         """Get single record by primary key entity ID."""
-        return context.session.get(self.model, entity_id)
+        return context.session.get(self.model, entity_id, options=self.select_options or None)
 
     def get_multi(
         self,
@@ -107,6 +111,8 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
         """Get multiple records with pagination, filtering, and sorting."""
         # Build base select statement
         stmt = select(self.model)
+        if self.select_options:
+            stmt = stmt.options(*self.select_options)
 
         # Apply filters if provided
         if filters:
