@@ -27,12 +27,14 @@ from __future__ import annotations
 
 from .client import IdentityAwareTestClient
 from .fixtures import permission_factory, role_factory, user_factory
+from .query_counting import assert_max_queries
 from .scenario import Scenario, ScenarioResult
 
 __all__ = [
     "IdentityAwareTestClient",
     "Scenario",
     "ScenarioResult",
+    "assert_max_queries",
     "permission_factory",
     "role_factory",
     "user_factory",
