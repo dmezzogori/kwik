@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-07-27
+
+### Changed
+
+- **`User.roles` and `Role.permissions` are now `lazy="selectin"`** — loading any set of users (or roles) batch-loads the related roles (permissions) in one additional query per result set instead of one query per row. This eliminates the recurring N+1 class on user-listing read paths in downstream apps with no consumer code changes.
+- **`crud_users.has_permissions` runs a single aggregate query** over `users_roles`/`roles_permissions` instead of traversing lazy ORM collections, so permission checks cost one round-trip regardless of relationship loading state. Detached users fall back to their already-loaded collections. Signature unchanged.
+- **`Role.user_count` is now a deferred column property** — casual `Role` loads (including the roles reached through `User.roles`) no longer pay the correlated `count(users_roles.id)` subquery. The roles CRUD read paths (`get`/`get_if_exist`/`get_multi`) undefer it explicitly, so `RoleProfile.user_count` serialization stays query-free.
+
+### Fixed
+
+- **Viewonly RBAC collections no longer go stale within a session** — every `crud_roles` association mutation (`assign_user`, `remove_user`, `assign_permission`, `remove_permission`, `remove_all_users`, `remove_all_permissions`) now expires the affected viewonly collections (`user.roles`, `role.users`, `role.permissions`, `Role.user_count`). Eager-loaded collections read after a mutation reload fresh data instead of serving the pre-mutation snapshot.
+
+### Added
+
+- **`AutoCRUD.select_options`** — class-level loader options applied on the read paths (`get`/`get_if_exist`/`get_multi`), e.g. for undeferring column properties the read schema serializes.
+- **`kwik.testing.assert_max_queries(session, n)`** — context manager that captures every SQL statement executed in the block and fails with the statement list when the count exceeds the limit; yields the captured statements. One-line N+1 regression tests for kwik apps.
+
 ## [1.10.0] - 2026-06-25
 
 ### Changed
