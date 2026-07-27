@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
-from sqlalchemy import select
+from sqlalchemy import distinct, func, select
+from sqlalchemy.orm import object_session
 
 from kwik.exceptions import AuthenticationFailedError, InactiveUserError, UserNotFoundError
-from kwik.models import Permission, Role, User
+from kwik.models import Permission, Role, RolePermission, User, UserRole
 from kwik.schemas import UserPasswordChange, UserProfileUpdate, UserRegistration
 from kwik.security import get_password_hash, verify_password
 
@@ -133,9 +134,33 @@ class _CRUDUsers(AutoCRUD[MaybeUserCtx, User, UserRegistration, UserProfileUpdat
         return user
 
     def has_permissions(self, *, user: User, permissions: Sequence[str]) -> bool:
-        """Check if the user has all the permissions provided."""
-        user_permission_names = {permission.name for permission in user.permissions}
-        return all(permission in user_permission_names for permission in permissions)
+        """
+        Check if the user has all the permissions provided.
+
+        Runs a single aggregate query over the users_roles/roles_permissions
+        association tables, so the check costs one round-trip regardless of the
+        loading state of the user's relationship collections. Falls back to
+        traversing the (already loaded) ``user.permissions`` collection when the
+        user is detached from any session.
+        """
+        if not permissions:
+            return True
+
+        session = object_session(user)
+        if session is None:
+            user_permission_names = {permission.name for permission in user.permissions}
+            return all(permission in user_permission_names for permission in permissions)
+
+        required = set(permissions)
+        stmt = (
+            select(func.count(distinct(Permission.name)))
+            .select_from(Permission)
+            .join(RolePermission, RolePermission.permission_id == Permission.id)
+            .join(UserRole, UserRole.role_id == RolePermission.role_id)
+            .where(UserRole.user_id == user.id, Permission.name.in_(required))
+        )
+        matched = session.execute(stmt).scalar_one()
+        return matched == len(required)
 
     def has_roles(self, *, user: User, roles: Sequence[str]) -> bool:
         """Check if the user has all the roles provided."""

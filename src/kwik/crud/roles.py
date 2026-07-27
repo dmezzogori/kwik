@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from sqlalchemy import or_, select
+from sqlalchemy.orm import undefer
 
 from kwik.models import Permission, Role, RolePermission, User, UserRole
 from kwik.schemas import RoleDefinition, RoleUpdate
@@ -12,12 +13,41 @@ from kwik.schemas import RoleDefinition, RoleUpdate
 from .autocrud import AutoCRUD
 from .context import UserCtx
 
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
+    from sqlalchemy.sql.base import ExecutableOption
+
+    from kwik.models.base import Base
+
 
 class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
     """CRUD operations for roles with user and permission management."""
 
     # Expose only safe/public fields for list filtering/sorting
     list_allowed_fields: ClassVar[set[str]] = {"id", "name", "is_active"}
+
+    # Role reads serialize ``RoleProfile.user_count``; the column property is
+    # deferred at the model level, so undefer it on the CRUD read paths.
+    select_options: ClassVar[tuple[ExecutableOption, ...]] = (undefer(Role.user_count),)
+
+    @staticmethod
+    def _expire_loaded(*, session: Session, instance: Base, attributes: list[str]) -> None:
+        """
+        Expire attributes on an instance so stale viewonly caches reload on next access.
+
+        The roles/users/permissions relationships are ``viewonly``: mutating the
+        association rows directly does not update collections already loaded in the
+        session. Expiring them after each association mutation keeps eager-loaded
+        collections trustworthy within the same unit of work.
+
+        Args:
+            session: The active session.
+            instance: The ORM instance whose attributes should be expired.
+            attributes: Names of the attributes to expire.
+
+        """
+        if instance in session:
+            session.expire(instance, attributes)
 
     def get_by_name(self, *, name: str, context: UserCtx) -> Role | None:
         """Get role by name."""
@@ -52,9 +82,14 @@ class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
         """Remove all user associated with the role."""
         # Remove all user-role associations for this role
         user_role_associations = context.session.query(UserRole).filter(UserRole.role_id == role.id).all()
+        removed_user_ids = {user_role_db.user_id for user_role_db in user_role_associations}
         for user_role_db in user_role_associations:
             context.session.delete(user_role_db)
         context.session.flush()
+        self._expire_loaded(session=context.session, instance=role, attributes=["users", "user_count"])
+        for obj in list(context.session.identity_map.values()):
+            if isinstance(obj, User) and obj.id in removed_user_ids:
+                self._expire_loaded(session=context.session, instance=obj, attributes=["roles"])
         return role
 
     def assign_permission(self, *, role: Role, permission: Permission, context: UserCtx) -> Role:
@@ -78,6 +113,8 @@ class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
             )
             context.session.add(role_permission)
             context.session.flush()
+            self._expire_loaded(session=context.session, instance=role, attributes=["permissions"])
+            self._expire_loaded(session=context.session, instance=permission, attributes=["roles"])
 
         return role
 
@@ -96,6 +133,8 @@ class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
         if association is not None:
             context.session.delete(association)
             context.session.flush()
+            self._expire_loaded(session=context.session, instance=role, attributes=["permissions"])
+            self._expire_loaded(session=context.session, instance=permission, attributes=["roles"])
 
         return role
 
@@ -120,6 +159,8 @@ class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
             )
             context.session.add(user_role)
             context.session.flush()
+            self._expire_loaded(session=context.session, instance=user, attributes=["roles"])
+            self._expire_loaded(session=context.session, instance=role, attributes=["users", "user_count"])
 
         return role
 
@@ -138,6 +179,8 @@ class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
         if association is not None:
             context.session.delete(association)
             context.session.flush()
+            self._expire_loaded(session=context.session, instance=user, attributes=["roles"])
+            self._expire_loaded(session=context.session, instance=role, attributes=["users", "user_count"])
 
         return role
 
@@ -145,9 +188,14 @@ class CRUDRole(AutoCRUD[UserCtx, Role, RoleDefinition, RoleUpdate, int]):
         """Remove all permission associations from a role."""
         # Remove all role-permission associations for this role
         permission_associations = context.session.query(RolePermission).filter(RolePermission.role_id == role.id).all()
+        removed_permission_ids = {role_permission.permission_id for role_permission in permission_associations}
         for role_permission in permission_associations:
             context.session.delete(role_permission)
         context.session.flush()
+        self._expire_loaded(session=context.session, instance=role, attributes=["permissions"])
+        for obj in list(context.session.identity_map.values()):
+            if isinstance(obj, Permission) and obj.id in removed_permission_ids:
+                self._expire_loaded(session=context.session, instance=obj, attributes=["roles"])
         return role
 
 
