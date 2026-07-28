@@ -14,6 +14,7 @@ from .role import RoleDefinition, RolePermissionAssignment, RoleProfile, RoleUpd
 from .token import Token, TokenPayload
 from .user import (
     AdminPasswordReset,
+    NewPassword,
     UserPasswordChange,
     UserProfile,
     UserProfileUpdate,
@@ -22,6 +23,7 @@ from .user import (
 
 __all__ = [
     "AdminPasswordReset",
+    "NewPassword",
     "ORMMixin",
     "Paginated",
     "PermissionDefinition",

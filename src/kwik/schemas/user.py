@@ -30,10 +30,18 @@ def _within_bcrypt_limit(value: str) -> str:
     return value
 
 
-# Applied to passwords being *set*. Passwords being *verified* stay unconstrained:
-# an account created under bcrypt <5.0.0 may hold a longer secret, and rejecting it
-# at validation time would turn a failed login into a confusing 422.
-_NewPassword = Annotated[str, AfterValidator(_within_bcrypt_limit)]
+NewPassword = Annotated[str, AfterValidator(_within_bcrypt_limit)]
+"""A password being *set*, constrained to what bcrypt will actually hash.
+
+Public so downstream schemas that collect a password and forward it to kwik can
+apply the same bound at *their* request boundary. Without it the constraint fires
+only when kwik builds its own schema deeper in the call stack, where a Pydantic
+``ValidationError`` surfaces as a 500 rather than a 422.
+
+Passwords being *verified* stay unconstrained: an account created under
+bcrypt <5.0.0 may hold a longer secret, and rejecting it at validation time would
+turn a failed login into a confusing 422.
+"""
 
 
 class UserRegistration(BaseModel):
@@ -42,7 +50,7 @@ class UserRegistration(BaseModel):
     name: _UserName
     surname: _UserSurname
     email: EmailStr
-    password: _NewPassword
+    password: NewPassword
     is_active: bool = True
 
 
@@ -59,13 +67,13 @@ class UserPasswordChange(BaseModel):
     """Schema for user password change requests."""
 
     old_password: str
-    new_password: _NewPassword
+    new_password: NewPassword
 
 
 class AdminPasswordReset(BaseModel):
     """Schema for admin-initiated password reset (no old password required)."""
 
-    new_password: _NewPassword
+    new_password: NewPassword
 
 
 class UserProfile(ORMMixin):
