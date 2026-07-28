@@ -2,7 +2,7 @@
 
 from typing import ClassVar
 
-from uvicorn.workers import UvicornWorker
+from uvicorn_worker import UvicornWorker
 
 
 class KwikUvicornWorker(UvicornWorker):

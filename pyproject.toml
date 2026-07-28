@@ -1,6 +1,6 @@
 [project]
 name = "kwik"
-version = "1.11.0"
+version = "1.12.0"
 description = "Fast, batteries-included, business-oriented, opinionated REST APIs framework"
 readme = "README.md"
 authors = [
@@ -8,12 +8,15 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "aiofiles==24.1.0",
-    "bcrypt==4.0.1",
-    "fastapi[standard]==0.138.0",
-    "gunicorn==23.0.0",
-    "httptools==0.6.4",
-    "psycopg2-binary==2.9.10",
+    # Compatible ranges, not exact pins: consumers must be able to absorb a
+    # security patch to any of these without waiting on a kwik release.
+    # kwik's own uv.lock still pins exact versions for reproducible CI.
+    "aiofiles>=25.1.0,<26",
+    "bcrypt>=5.0.0,<6",
+    "fastapi[standard]>=0.140.7,<0.141",
+    "gunicorn>=26.0.0,<27",
+    "httptools>=0.8.0,<0.9",
+    "psycopg2-binary>=2.9.12,<2.10",
     "pydantic[email]>=2.0.0,<3.0.0",
     "pyjwt>=2.10.0",
     "sqlalchemy>=2.0.0,<3.0.0",
@@ -21,6 +24,8 @@ dependencies = [
     "loguru>=0.7.3",
     "testcontainers>=4.0.0",
     "pytest>=8.0.0",
+    # Replaces uvicorn.workers, deprecated since uvicorn 0.30 and slated for removal.
+    "uvicorn-worker>=0.4.0",
 ]
 
 [dependency-groups]

@@ -9,10 +9,14 @@ from typing import TYPE_CHECKING
 
 import jwt
 import pytest
+from fastapi import status
+from pydantic import ValidationError
 
+from kwik.core import BCRYPT_MAX_PASSWORD_BYTES
 from kwik.crud import crud_users
 from kwik.exceptions.base import TokenValidationError
-from kwik.schemas import UserRegistration
+from kwik.exceptions.users import PasswordTooLongError
+from kwik.schemas import UserPasswordChange, UserRegistration
 from kwik.security import (
     ALGORITHM,
     create_token,
@@ -213,3 +217,82 @@ def test_verify_password_empty_hash() -> None:
     empty_hash = ""
 
     assert verify_password(plain_password, empty_hash) is False
+
+
+def test_get_password_hash_accepts_exactly_the_bcrypt_limit() -> None:
+    """A password of exactly BCRYPT_MAX_PASSWORD_BYTES bytes must still hash."""
+    password = "a" * BCRYPT_MAX_PASSWORD_BYTES
+
+    assert verify_password(password, get_password_hash(password)) is True
+
+
+def test_get_password_hash_rejects_over_long_password() -> None:
+    """Bcrypt >=5.0.0 rejects >72 bytes; kwik surfaces that as a typed 422 error."""
+    password = "a" * (BCRYPT_MAX_PASSWORD_BYTES + 1)
+
+    with pytest.raises(PasswordTooLongError) as exc_info:
+        get_password_hash(password)
+
+    assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert str(BCRYPT_MAX_PASSWORD_BYTES) in exc_info.value.detail
+
+
+def test_get_password_hash_counts_bytes_not_characters() -> None:
+    """A 72-character multi-byte password exceeds 72 bytes and must be rejected."""
+    # Each "e" with a combining acute is 2 bytes in UTF-8, so 72 chars == 144 bytes.
+    password = "é" * BCRYPT_MAX_PASSWORD_BYTES
+
+    assert len(password) == BCRYPT_MAX_PASSWORD_BYTES
+    assert len(password.encode("utf-8")) > BCRYPT_MAX_PASSWORD_BYTES
+
+    with pytest.raises(PasswordTooLongError):
+        get_password_hash(password)
+
+
+def test_verify_password_rejects_over_long_password_without_raising() -> None:
+    """
+    An over-long password fails verification rather than propagating ValueError.
+
+    Accounts created under bcrypt <5.0.0 could hold a silently-truncated secret;
+    verification must degrade to a failed login, not a 500.
+    """
+    hashed_password = get_password_hash("a" * BCRYPT_MAX_PASSWORD_BYTES)
+    over_long = "a" * (BCRYPT_MAX_PASSWORD_BYTES + 1)
+
+    assert verify_password(over_long, hashed_password) is False
+
+
+@pytest.mark.parametrize(
+    "password",
+    [
+        "a" * (BCRYPT_MAX_PASSWORD_BYTES + 1),
+        "é" * BCRYPT_MAX_PASSWORD_BYTES,
+    ],
+    ids=["over-long-ascii", "over-long-utf8"],
+)
+def test_user_registration_schema_rejects_over_long_password(password: str) -> None:
+    """The schema rejects over-long passwords so the API answers 422, not 500."""
+    with pytest.raises(ValidationError):
+        UserRegistration(
+            name="Test",
+            surname="User",
+            email="over.long@example.com",
+            password=password,
+        )
+
+
+def test_password_change_schema_leaves_old_password_unconstrained() -> None:
+    """
+    Only the password being *set* is capped; the one being verified is not.
+
+    A legacy account may hold a secret longer than bcrypt's limit, and rejecting it
+    at validation time would turn a failed login into a confusing 422.
+    """
+    over_long = "a" * (BCRYPT_MAX_PASSWORD_BYTES + 1)
+
+    schema = UserPasswordChange(old_password=over_long, new_password="fits-fine-123")
+
+    assert schema.old_password == over_long
+
+    with pytest.raises(ValidationError):
+        UserPasswordChange(old_password=over_long, new_password=over_long)

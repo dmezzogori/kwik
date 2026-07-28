@@ -11,7 +11,9 @@ import jwt
 from pydantic import ValidationError
 
 from kwik import schemas
+from kwik.core import BCRYPT_MAX_PASSWORD_BYTES
 from kwik.exceptions.base import TokenValidationError
+from kwik.exceptions.users import PasswordTooLongError
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -53,7 +55,13 @@ def decode_token(*, token: str, settings: BaseKwikSettings) -> schemas.TokenPayl
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify plain password against bcrypt hashed password."""
+    """
+    Verify plain password against bcrypt hashed password.
+
+    Returns ``False`` rather than raising for malformed hashes and for passwords
+    longer than :data:`~kwik.core.BCRYPT_MAX_PASSWORD_BYTES`, which bcrypt >=5.0.0
+    rejects outright.
+    """
     try:
         return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
     except (ValueError, TypeError):
@@ -62,8 +70,22 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def get_password_hash(password: str) -> str:
-    """Generate bcrypt hash for password using direct bcrypt implementation."""
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    """
+    Generate bcrypt hash for password using direct bcrypt implementation.
+
+    The request schemas reject over-long passwords before they reach this point;
+    the check is repeated here so callers that bypass schema validation get a
+    typed error instead of the bare ``ValueError`` bcrypt >=5.0.0 raises.
+
+    Raises:
+        PasswordTooLongError: If the UTF-8 encoding of ``password`` exceeds
+            :data:`~kwik.core.BCRYPT_MAX_PASSWORD_BYTES`.
+
+    """
+    encoded = password.encode("utf-8")
+    if len(encoded) > BCRYPT_MAX_PASSWORD_BYTES:
+        raise PasswordTooLongError(len(encoded))
+    return bcrypt.hashpw(encoded, bcrypt.gensalt()).decode("utf-8")
 
 
 def generate_password_reset_token(*, email: str, settings: BaseKwikSettings, password_hash: str) -> str:
