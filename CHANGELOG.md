@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-07-28
+
+### Changed
+
+- **BREAKING: passwords longer than 72 UTF-8 bytes are now rejected instead of silently truncated.** `bcrypt` 5.0.0 raises `ValueError` past that bound rather than discarding the excess, as every earlier version did. Passwords being *set* are validated at the schema boundary (`UserRegistration.password`, `UserPasswordChange.new_password`, `AdminPasswordReset.new_password`) and re-checked in `get_password_hash`. **Existing hashes are unaffected** — the `$2b$` format and cost 12 default are unchanged, so no migration or forced password reset is required. Any account whose plaintext secret exceeded 72 bytes was already being verified against a truncated value and will now fail to log in; such accounts need a password reset.
+- **`old_password` is deliberately left unconstrained.** An account created under bcrypt <5.0.0 may hold a longer secret; rejecting it at validation time would turn a failed login into a confusing 422.
+- **BREAKING: six dependencies moved from exact pins to compatible ranges** — `aiofiles`, `bcrypt`, `fastapi[standard]`, `gunicorn`, `httptools`, `psycopg2-binary`. Exact pins meant a consumer could not absorb a security patch to any of them without waiting on a kwik release. kwik's own `uv.lock` still pins exact versions for reproducible CI.
+- **Migrated off `uvicorn.workers`**, deprecated since uvicorn 0.30 and slated for removal, to the standalone `uvicorn-worker` package. `KwikUvicornWorker` behaves identically; only the import changed.
+
+### Added
+
+- **`kwik.core.BCRYPT_MAX_PASSWORD_BYTES`** — the 72-byte bound, shared by the schemas and the hashing code. It lives in `core` because `kwik.security` imports `kwik.schemas`, so the constant cannot sit in either without a cycle.
+- **`kwik.schemas.NewPassword`** — the annotated password type, exported so downstream schemas that collect a password and forward it to kwik can apply the same bound at *their* request boundary. Without it the constraint fires only when kwik builds its own schema deeper in the call stack, where a Pydantic `ValidationError` surfaces as a 500 rather than a 422.
+- **`kwik.exceptions.users.PasswordTooLongError`** — a 422 `KwikError` raised by `get_password_hash`, so callers bypassing schema validation get a typed error instead of a bare `ValueError`.
+
+### Security
+
+- **bcrypt 4.0.1 → >=5.0.0** — clears the pin 1.10.0 recorded as "remains pinned (not flagged)". `passlib` is absent from kwik, so the well-known `bcrypt.__about__` incompatibility never applied here.
+- **psycopg2-binary 2.9.10 → >=2.9.12** — binary wheels move off end-of-life OpenSSL 1.1.1w to 3.5.6, and libpq 16.0 → 17.9.
+- **httptools 0.6.4 → >=0.8.0** — fixes `parse_url` truncating URLs past 64KB (`uint16_t` offset wrap), which reaches `scope["path"]`. kwik forces the httptools parser, so this is on the request path.
+- **fastapi 0.138.0 → >=0.140.7** and **gunicorn 23.0.0 → >=26.0.0** — no advisories outstanding at the previous pins; both carry upstream hardening. gunicorn 26 removes the eventlet worker (unused here) and adds a control socket.
+
 ## [1.11.0] - 2026-07-27
 
 ### Changed
