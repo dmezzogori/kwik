@@ -121,7 +121,7 @@ def handler(settings: Settings) -> None:  # access env‑driven config safely
 
 ### Session
 
-Provides a per‑request SQLAlchemy session with automatic commit/close (`src/kwik/dependencies/session.py`). Prefer using `UserContext`/`NoUserContext` instead of `Session` directly in handlers.
+Provides a per‑request SQLAlchemy session with automatic commit/close (`src/kwik/dependencies/session.py`). The commit happens after the endpoint returns and before the response is sent, so a client that acts on the response at once reads the committed write; if the endpoint raises, nothing is committed. Writes made later, while a streaming body is generated or in a background task, are committed when the session closes. Prefer using `UserContext`/`NoUserContext` instead of `Session` directly in handlers.
 
 ### Context (UserContext / NoUserContext)
 
@@ -348,3 +348,37 @@ api_router.include_router(projects_router)
 ```
 
 That’s it — you now have a fully authenticated, permission‑aware, typed endpoint that plays nicely with Kwik’s patterns.
+
+## Overriding built-in routes {#overriding-built-in-routes}
+
+Kwik ships routes for login, users, roles and permissions. An application that needs
+different rules for one of them, for example a guard on `PUT /users/{user_id}/reset-password`,
+re-declares the route on its own router and builds kwik's routes without it:
+
+```python
+from fastapi import APIRouter
+from kwik.api import build_api_router
+
+from myapp.api.user_overrides import user_overrides_router
+
+api_router = APIRouter()
+api_router.include_router(user_overrides_router)  # declares PUT /users/{user_id}/reset-password
+api_router.include_router(
+    build_api_router(
+        exclude={
+            ("PUT", "/users/{user_id}/reset-password"),  # overridden above
+            ("DELETE", "/roles/{role_id}/users"),  # withdrawn, no replacement
+        },
+    ),
+)
+```
+
+Each pair is a method and the route's full path. Excluding is what makes an override
+complete. Registering your route first is enough for dispatch, but kwik's handler would
+still be in the application, and OpenAPI would document it instead of yours. A route can
+also be withdrawn by excluding it without declaring a replacement.
+
+`build_api_router` raises `ValueError` when a pair matches no route, so a kwik upgrade
+that renames or moves a route fails at import time instead of silently bringing back the
+unguarded original. It also raises when a pair would drop a route that serves other
+methods too.
