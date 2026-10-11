@@ -11,7 +11,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-from kwik.database import create_engine, create_session_factory, session_scope
+from kwik.database import create_engine, create_session_factory, session_scope, warn_if_pool_exceeds_connections
 from kwik.dependencies.session import _commit_session
 from kwik.exceptions import KwikError, kwik_exception_handler, value_error_handler
 from kwik.logging import logger
@@ -57,6 +57,7 @@ def _make_lifespan(
     @asynccontextmanager
     async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         _engine = create_engine(settings=settings)
+        warn_if_pool_exceeds_connections(settings)
         _session_local = create_session_factory(engine=_engine)
 
         if seed_db is not None:

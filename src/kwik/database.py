@@ -7,6 +7,7 @@ with optimized connection pool settings for the Kwik application.
 Functions:
     create_engine: Creates a SQLAlchemy engine with connection pooling and validation.
     create_session_factory: Creates a SQLAlchemy session factory for database sessions.
+    warn_if_pool_exceeds_connections: Warns when the worker pools can exceed the connection limit.
 """
 
 from __future__ import annotations
@@ -16,6 +17,8 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.orm import Session, sessionmaker
+
+from kwik.logging import logger
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -33,23 +36,50 @@ def create_engine(settings: BaseKwikSettings) -> Engine:
     ----------
     settings : BaseKwikSettings
         Application settings containing database configuration including
-        the SQLALCHEMY_DATABASE_URI.
+        the SQLALCHEMY_DATABASE_URI and the pool settings
+        (POSTGRES_POOL_SIZE, POSTGRES_MAX_OVERFLOW, POSTGRES_POOL_TIMEOUT).
 
     Returns
     -------
     Engine
         Configured SQLAlchemy engine with connection pooling, pre-ping
-        validation, and automatic connection recycling.
+        validation, and automatic connection recycling. A checkout that finds
+        the pool exhausted fails after POSTGRES_POOL_TIMEOUT seconds.
 
     """
     return _create_engine(
         settings.SQLALCHEMY_DATABASE_URI,
-        # Connection pool settings
-        pool_size=10,  # Core connections (adjust based on expected load)
-        max_overflow=20,  # Additional connections during peak usage
+        # Connection pool settings (per worker process)
+        pool_size=settings.POSTGRES_POOL_SIZE,
+        max_overflow=settings.POSTGRES_MAX_OVERFLOW,
+        pool_timeout=settings.POSTGRES_POOL_TIMEOUT,
         pool_pre_ping=True,  # Validates connections before use
         pool_recycle=3600,  # Recycle connections every hour (PostgreSQL default timeout is often 8 hours)
     )
+
+
+def warn_if_pool_exceeds_connections(settings: BaseKwikSettings) -> bool:
+    """
+    Log a warning when the worker pools together can exceed the database's connection limit.
+
+    Each worker process has its own pool of ``POSTGRES_POOL_SIZE + POSTGRES_MAX_OVERFLOW``
+    connections, so ``BACKEND_WORKERS`` pools can open that many times as many.
+
+    Returns
+    -------
+    bool
+        True when it warned.
+
+    """
+    per_worker = settings.POSTGRES_POOL_SIZE + settings.POSTGRES_MAX_OVERFLOW
+    total = settings.BACKEND_WORKERS * per_worker
+    if total <= settings.POSTGRES_MAX_CONNECTIONS:
+        return False
+    logger.warning(
+        f"{settings.BACKEND_WORKERS} workers x {per_worker} pooled connections = {total} "
+        f"exceeds POSTGRES_MAX_CONNECTIONS={settings.POSTGRES_MAX_CONNECTIONS}",
+    )
+    return True
 
 
 def create_session_factory(engine: Engine) -> sessionmaker:
@@ -109,4 +139,10 @@ def session_scope(*, session: Session, commit: bool = False) -> Generator[Sessio
         session.close()
 
 
-__all__ = ["create_engine", "create_session", "create_session_factory", "session_scope"]
+__all__ = [
+    "create_engine",
+    "create_session",
+    "create_session_factory",
+    "session_scope",
+    "warn_if_pool_exceeds_connections",
+]

@@ -9,7 +9,15 @@ from __future__ import annotations
 import secrets
 from typing import Any, Literal
 
-from pydantic import AnyHttpUrl, EmailStr, PositiveInt, field_validator, model_validator
+from pydantic import (
+    AnyHttpUrl,
+    EmailStr,
+    NonNegativeInt,
+    PositiveFloat,
+    PositiveInt,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from kwik.logging import LOG_LEVELS  # noqa: TC001
@@ -51,6 +59,10 @@ class BaseKwikSettings(BaseSettings):
     POSTGRES_DB: str = "db"
     POSTGRES_PORT: str = "5432"
     POSTGRES_MAX_CONNECTIONS: int = 100
+    # Connection pool, per worker process: see the handbook's "Database connection pool".
+    POSTGRES_POOL_SIZE: PositiveInt = 10  # connections kept open
+    POSTGRES_MAX_OVERFLOW: NonNegativeInt = 20  # extra connections opened under load
+    POSTGRES_POOL_TIMEOUT: PositiveFloat = 10.0  # seconds a checkout waits before failing
     SQLALCHEMY_DATABASE_URI: str = ""
 
     # Project settings
