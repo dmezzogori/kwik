@@ -6,12 +6,13 @@ from contextlib import asynccontextmanager
 from pprint import pformat
 from typing import TYPE_CHECKING
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from kwik.database import create_engine, create_session_factory, session_scope
+from kwik.dependencies.session import _commit_session
 from kwik.exceptions import KwikError, kwik_exception_handler, value_error_handler
 from kwik.logging import logger
 
@@ -88,6 +89,8 @@ class Kwik:
 
     It instantiates the FastAPI application and adds some middlewares.
     It automatically registers all the endpoints from the api_router.
+    Every route commits its database session after the endpoint returns and
+    before the response is sent, so clients never read ahead of a write.
     """
 
     def __init__(
@@ -129,6 +132,8 @@ class Kwik:
             debug=self.settings.DEBUG,
             redirect_slashes=False,
             lifespan=_make_lifespan(self.settings, self._seed_db),
+            # Commit every route's session before its response is sent (teban #823).
+            dependencies=[Depends(_commit_session, scope="function")],
         )
 
         app.add_middleware(ProxyHeadersMiddleware)
