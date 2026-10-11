@@ -9,7 +9,7 @@ from __future__ import annotations
 import secrets
 from typing import Any, Literal
 
-from pydantic import AnyHttpUrl, EmailStr, field_validator, model_validator
+from pydantic import AnyHttpUrl, EmailStr, PositiveInt, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from kwik.logging import LOG_LEVELS  # noqa: TC001
@@ -37,6 +37,9 @@ class BaseKwikSettings(BaseSettings):
 
     # Server settings
     BACKEND_WORKERS: int = 1
+    # Seconds gunicorn waits for a worker to stop before killing it; uvicorn's own
+    # graceful shutdown is derived from it (KwikUvicornWorker).
+    BACKEND_GRACEFUL_TIMEOUT: PositiveInt = 30
     HOTRELOAD: bool = False
     DEBUG: bool = False
     LOG_LEVEL: LOG_LEVELS = "INFO"

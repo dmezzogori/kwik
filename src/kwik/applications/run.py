@@ -127,6 +127,10 @@ def run(kwik_app: str | Kwik) -> None:
             # Custom worker class with optimized Uvicorn configuration
             # (includes httptools, websockets, and proxy_headers automatically)
             "worker_class": "kwik.applications.uvicorn.KwikUvicornWorker",
+            # Seconds a worker gets to stop before it is killed; KwikUvicornWorker ends
+            # uvicorn's graceful shutdown a margin earlier so open streams are cancelled
+            # and their cleanup runs.
+            "graceful_timeout": settings.BACKEND_GRACEFUL_TIMEOUT,
         }
 
         # Initialize and run Gunicorn application with custom configuration
