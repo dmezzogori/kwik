@@ -33,10 +33,16 @@ class User(Base):
 
     @hybrid_property
     def permissions(self) -> list[Permission]:
-        """Get all permissions for this user through their roles."""
+        """
+        Get all permissions for this user through their *active* roles.
+
+        A deactivated role is held by no one, so it grants nothing. ``roles`` itself
+        stays the raw assignment list, inactive roles included.
+        """
         permissions = []
         for role in self.roles:
-            permissions.extend(role.permissions)
+            if role.is_active:
+                permissions.extend(role.permissions)
         return permissions
 
 

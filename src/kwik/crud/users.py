@@ -135,13 +135,14 @@ class _CRUDUsers(AutoCRUD[MaybeUserCtx, User, UserRegistration, UserProfileUpdat
 
     def has_permissions(self, *, user: User, permissions: Sequence[str]) -> bool:
         """
-        Check if the user has all the permissions provided.
+        Check if the user has all the permissions provided, through active roles.
 
+        A deactivated role is held by no one, so its permissions do not count.
         Runs a single aggregate query over the users_roles/roles_permissions
         association tables, so the check costs one round-trip regardless of the
         loading state of the user's relationship collections. Falls back to
-        traversing the (already loaded) ``user.permissions`` collection when the
-        user is detached from any session.
+        traversing the (already loaded) ``user.permissions`` collection, which
+        also counts active roles only, when the user is detached from any session.
         """
         if not permissions:
             return True
@@ -157,23 +158,29 @@ class _CRUDUsers(AutoCRUD[MaybeUserCtx, User, UserRegistration, UserProfileUpdat
             .select_from(Permission)
             .join(RolePermission, RolePermission.permission_id == Permission.id)
             .join(UserRole, UserRole.role_id == RolePermission.role_id)
-            .where(UserRole.user_id == user.id, Permission.name.in_(required))
+            .join(Role, Role.id == UserRole.role_id)
+            .where(UserRole.user_id == user.id, Role.is_active.is_(True), Permission.name.in_(required))
         )
         matched = session.execute(stmt).scalar_one()
         return matched == len(required)
 
     def has_roles(self, *, user: User, roles: Sequence[str]) -> bool:
-        """Check if the user has all the roles provided."""
-        user_role_names = {role.name for role in user.roles}
+        """Check if the user holds all the roles provided; inactive roles are held by no one."""
+        user_role_names = {role.name for role in self.get_roles(user=user)}
         return all(role in user_role_names for role in roles)
 
     def get_permissions(self, *, user: User) -> list[Permission]:
-        """Get all permissions given to the user."""
+        """Get all permissions given to the user through active roles."""
         return user.permissions
 
     def get_roles(self, *, user: User) -> list[Role]:
-        """Get all roles associated to the user."""
-        return user.roles
+        """
+        Get the roles the user holds: the active roles assigned to them.
+
+        A deactivated role is held by no one. ``user.roles`` stays the raw
+        assignment list, for screens that manage assignments.
+        """
+        return [role for role in user.roles if role.is_active]
 
 
 crud_users = _CRUDUsers()
