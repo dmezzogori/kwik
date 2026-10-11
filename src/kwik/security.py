@@ -12,6 +12,9 @@ from pydantic import ValidationError
 
 from kwik import schemas
 from kwik.core import BCRYPT_MAX_PASSWORD_BYTES
+
+# Re-exported: applications configure and read the password policy through kwik.security.
+from kwik.core.password_policy import configure_password_policy, password_min_length  # noqa: F401
 from kwik.exceptions.base import TokenValidationError
 from kwik.exceptions.users import PasswordTooLongError
 

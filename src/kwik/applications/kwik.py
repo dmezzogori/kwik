@@ -11,6 +11,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
+from kwik.core.password_policy import configure_password_policy
 from kwik.database import create_engine, create_session_factory, session_scope, warn_if_pool_exceeds_connections
 from kwik.dependencies.session import _commit_session
 from kwik.exceptions import KwikError, kwik_exception_handler, value_error_handler
@@ -104,6 +105,7 @@ class Kwik:
         """Initialize Kwik application with API router."""
         self.settings = settings
         self._seed_db = seed_db
+        configure_password_policy(min_length=settings.PASSWORD_MIN_LENGTH)
         self._app = self._init_fastapi_app(api_router=api_router)
 
         logger.info(

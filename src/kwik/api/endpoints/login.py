@@ -11,7 +11,7 @@ from kwik.core.enum import Permissions
 from kwik.crud import crud_users
 from kwik.dependencies import NoUserContext, Settings, UserContext, current_token, current_user, has_permission
 from kwik.exceptions.base import TokenValidationError
-from kwik.schemas import Token, UserProfile
+from kwik.schemas import NewPassword, Token, UserProfile
 from kwik.security import create_token, verify_password_reset_token
 
 if TYPE_CHECKING:
@@ -79,7 +79,7 @@ def stop_impersonating(token: current_token, settings: Settings) -> Token:
 @login_router.post("/reset-password")
 def reset_password(
     token: Annotated[str, Body()],
-    password: Annotated[str, Body()],
+    password: Annotated[NewPassword, Body()],
     settings: Settings,
     context: NoUserContext,
 ) -> dict:

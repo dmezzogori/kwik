@@ -317,7 +317,7 @@ class TestUserCRUD:
             name="New",
             surname="User",
             email="new@example.com",
-            password="password123",
+            password="password1234",
         )
 
         # Create user with filters that won't match existing users
@@ -340,7 +340,7 @@ class TestUserCRUD:
             name="Duplicate",
             surname="User",
             email="different@example.com",  # Different email in data
-            password="password123",
+            password="password1234",
         )
         filters = {"email": "existing@example.com"}  # But filter matches existing
 

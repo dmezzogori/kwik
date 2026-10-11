@@ -111,14 +111,18 @@ def admin_user(settings: BaseKwikSettings, engine: Engine) -> User:
             scoped_session.refresh(existing_user)
             return existing_user
 
-        # Create admin user (email/password from settings)
+        # Create admin user (email/password from settings). The password comes from
+        # configuration, so it bypasses the minimum-length policy, as any seed should.
         admin_user = crud_users.create(
-            obj_in=UserRegistration(
-                name="admin",
-                surname="admin",
-                email=settings.FIRST_SUPERUSER,
-                password=settings.FIRST_SUPERUSER_PASSWORD,
-                is_active=True,
+            obj_in=UserRegistration.model_validate(
+                {
+                    "name": "admin",
+                    "surname": "admin",
+                    "email": settings.FIRST_SUPERUSER,
+                    "password": settings.FIRST_SUPERUSER_PASSWORD,
+                    "is_active": True,
+                },
+                context={"password_policy": False},
             ),
             context=no_user_context,
         )

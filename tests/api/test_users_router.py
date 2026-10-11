@@ -123,7 +123,7 @@ class TestUsersRouter:
             "name": "testuser",
             "surname": "testsurname",
             "email": "duplicate@example.com",
-            "password": "password123",
+            "password": "password1234",
             "is_active": True,
         }
 
@@ -141,7 +141,7 @@ class TestUsersRouter:
             "name": "testuser",
             "surname": "testsurname",
             "email": "invalid-email-format",
-            "password": "password123",
+            "password": "password1234",
             "is_active": True,
         }
         response = identity_aware_client.post_as(admin_user, "/api/v1/users/", json=user_data)
@@ -166,7 +166,7 @@ class TestUsersRouter:
             "name": "testuser",
             "surname": "testsurname",
             "email": "test@example.com",
-            "password": "password123",
+            "password": "password1234",
             "is_active": True,
         }
         response = identity_aware_client.post_as(regular_user, "/api/v1/users/", json=user_data)
@@ -178,7 +178,7 @@ class TestUsersRouter:
             "name": "testuser",
             "surname": "testsurname",
             "email": "test@example.com",
-            "password": "password123",
+            "password": "password1234",
             "is_active": True,
         }
         response = client.post("/api/v1/users/", json=user_data)

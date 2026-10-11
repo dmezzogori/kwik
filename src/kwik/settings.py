@@ -12,6 +12,7 @@ from typing import Any, Literal
 from pydantic import (
     AnyHttpUrl,
     EmailStr,
+    Field,
     NonNegativeInt,
     PositiveFloat,
     PositiveInt,
@@ -20,6 +21,7 @@ from pydantic import (
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from kwik.core import BCRYPT_MAX_PASSWORD_BYTES, DEFAULT_PASSWORD_MIN_LENGTH
 from kwik.logging import LOG_LEVELS  # noqa: TC001
 
 
@@ -74,6 +76,9 @@ class BaseKwikSettings(BaseSettings):
     # User settings
     FIRST_SUPERUSER: EmailStr = "admin@example.com"
     FIRST_SUPERUSER_PASSWORD: str = "admin"  # noqa: S105
+    # Minimum characters of a new password (create, change, reset). Seeds created from
+    # configuration, like the first superuser, bypass it; see kwik.schemas.NewPassword.
+    PASSWORD_MIN_LENGTH: int = Field(default=DEFAULT_PASSWORD_MIN_LENGTH, ge=1, le=BCRYPT_MAX_PASSWORD_BYTES)
 
     @field_validator("BACKEND_WORKERS", mode="before")
     @classmethod

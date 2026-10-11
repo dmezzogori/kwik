@@ -16,3 +16,5 @@ This constant lives in ``core`` so both the hashing boundary (``kwik.security``)
 and the request schemas (``kwik.schemas.user``) can enforce the same limit
 without an import cycle -- ``kwik.security`` imports ``kwik.schemas``.
 """
+
+from .password_policy import DEFAULT_PASSWORD_MIN_LENGTH as DEFAULT_PASSWORD_MIN_LENGTH  # noqa: E402
