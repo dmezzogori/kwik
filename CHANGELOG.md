@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-10-11
+
+### Changed
+
+- **BREAKING: new passwords must have at least 12 characters.** `NewPassword` now enforces `PASSWORD_MIN_LENGTH` (default 12, configurable between 1 and 72) on top of bcrypt's 72-byte bound, so `UserRegistration.password`, `UserPasswordChange.new_password`, `AdminPasswordReset.new_password` and every application schema reusing `NewPassword` refuse shorter passwords with a 422. The rule is length only, with no composition rules, following NIST SP 800-63B. `POST /login/reset-password` now validates its `password` as `NewPassword` (it was a bare `str`). **Existing accounts are unaffected**: verifying a password (login, `old_password`) stays unconstrained. Seeds and scripts that create accounts from configuration, such as the first superuser, validate with `context={"password_policy": False}` to skip the minimum; kwik's `admin_user` fixture does, so the development default `FIRST_SUPERUSER_PASSWORD="admin"` keeps working (teban #302).
+- **BREAKING: an inactive role is held by no one.** `crud_users.has_permissions` (and so every `has_permission` gate), `has_roles`, `get_roles`, `get_permissions` and `User.permissions` count active roles only, and `GET /users/me/roles` and `GET /users/me/permissions` follow. Deactivating a role is a quick way to take it, and its permissions, from every user who holds it. `User.roles` and the role-management reads (`Role.users`, `GET /roles/{id}/users`) still list assignments, active or not. The permission check's aggregate query joins `roles`; it is still one round-trip (teban #908).
+- **BREAKING: a starved connection-pool checkout fails after 10 s instead of 30 s.** See `POSTGRES_POOL_TIMEOUT` below (teban #777).
+- **A failed commit is now a 5xx.** The commit used to run after the response had been sent, so its failure reached the client as a success; it now runs before the response goes out.
+
+### Added
+
+- **`kwik.api.build_api_router(exclude=...)`** — kwik's built-in routes as one router, minus the `(METHOD, path)` pairs an application overrides or withdraws. An override registered first wins dispatch, but without the exclusion the application keeps a second handler, and OpenAPI documents kwik's handler instead of the override. It raises `ValueError` when a pair matches no route, or matches only some of a route's methods, so a kwik upgrade that moves a route fails at import rather than silently bringing the unguarded route back. `kwik.api.api_router` is now `build_api_router()`, with the same routes in the same order. The handbook documents the override pattern (teban #378, #302).
+- **`PASSWORD_MIN_LENGTH`** setting, **`kwik.security.configure_password_policy`** / **`password_min_length`**, and **`kwik.core.DEFAULT_PASSWORD_MIN_LENGTH`** — the password policy above. `Kwik` configures it from settings at construction; processes that never build a `Kwik` app keep the default.
+- **`POSTGRES_POOL_SIZE`** (10), **`POSTGRES_MAX_OVERFLOW`** (20) and **`POSTGRES_POOL_TIMEOUT`** (10.0 s) settings, previously hardcoded in `create_engine` (the timeout was SQLAlchemy's 30 s). A request finding the pool exhausted used to hold its thread for 30 s and then fail anyway, usually after the proxy had given up. **`kwik.database.warn_if_pool_exceeds_connections`** runs at startup and logs a warning when `BACKEND_WORKERS × (POSTGRES_POOL_SIZE + POSTGRES_MAX_OVERFLOW)` exceeds `POSTGRES_MAX_CONNECTIONS`, since each worker has its own pool. The handbook's new Database page gives the reasoning and the sizing rule (teban #777).
+- **`BACKEND_GRACEFUL_TIMEOUT`** setting (30 s), passed to gunicorn as `graceful_timeout`, and **`kwik.applications.uvicorn.GRACEFUL_SHUTDOWN_MARGIN`** (5 s).
+
+### Fixed
+
+- **Writes are committed before the response is sent.** With FastAPI 0.140, the commit in the session dependency's `yield` teardown ran after the response had been sent, so a client acting on the response at once (a sign-in followed by `GET /me`, a create followed by a navigation) could read the database before the write was committed. `Kwik` now installs `_commit_session` app-wide with `scope="function"`: it shares the request's session and commits after the endpoint returns and the response is serialized, before the status line goes out. If the endpoint raises, nothing is committed. The request-scoped session still owns the lifecycle: it rolls back on error, commits writes made later (streaming bodies, background tasks) and closes after the response. Every route is covered, with no change to endpoint code (teban #823).
+- **Open streams are cancelled before gunicorn kills the worker on restart.** gunicorn's `graceful_timeout` was left at its default and uvicorn's `timeout_graceful_shutdown` was unset, so uvicorn waited on open streaming responses until gunicorn SIGKILLed the worker, and the streams' cleanup (for example a lease release in a `finally`) never ran. `KwikUvicornWorker` now sets `timeout_graceful_shutdown` to gunicorn's `graceful_timeout` minus `GRACEFUL_SHUTDOWN_MARGIN`, never below 1 s, so open streams are cancelled and clean up in time (teban #757).
+
+### Testing
+
+- The API test client joins an outer transaction in `create_savepoint` mode, so the per-request commits release a SAVEPOINT and each test's writes are still rolled back. Applications whose test session overrides `_get_session` with a plain session must do the same, or their tests start committing for real.
+
 ## [1.12.0] - 2026-07-28
 
 ### Changed
