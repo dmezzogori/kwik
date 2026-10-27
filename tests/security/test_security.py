@@ -19,6 +19,7 @@ from kwik.exceptions.users import PasswordTooLongError
 from kwik.schemas import UserPasswordChange, UserRegistration
 from kwik.security import (
     ALGORITHM,
+    create_refresh_token,
     create_token,
     decode_token,
     generate_password_reset_token,
@@ -26,14 +27,21 @@ from kwik.security import (
     verify_password,
     verify_password_reset_token,
 )
+from kwik.settings import BaseKwikSettings
 
 if TYPE_CHECKING:
     from kwik.crud import NoUserCtx
     from kwik.models import User
-    from kwik.settings import BaseKwikSettings
 
 EMAIL = "test@example.com"
 PASSWORD_HASH = get_password_hash("initial-password-123")
+USER_ID = 123
+SESSION_ID = "sess-1"
+TOKEN_ID = "jti-1"
+EXPIRES_AT = datetime(2099, 1, 1, tzinfo=UTC)  # far future: PyJWT's wall-clock exp check never interferes
+SECONDS_PER_MINUTE = 60
+THIRTY_DAYS_IN_MINUTES = 43_200
+GRACE_SECONDS = 30
 
 
 def test_generate_password_reset_token(settings: BaseKwikSettings) -> None:
@@ -176,6 +184,87 @@ def test_decode_token_invalid_payload(settings: BaseKwikSettings) -> None:
 
     with pytest.raises(TokenValidationError):
         decode_token(token=invalid_token, settings=settings)
+
+
+def test_create_token_without_session_has_no_session_claims(settings: BaseKwikSettings) -> None:
+    """A token minted without a session carries the 1.13 claim set and no refresh data."""
+    token = create_token(user_id=USER_ID, settings=settings)
+    claims = jwt.decode(token.access_token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+    assert "sid" not in claims
+    assert "typ" not in claims
+    assert token.refresh_token is None
+    assert token.expires_in is None
+
+
+def test_create_token_with_session_carries_sid_and_type(settings: BaseKwikSettings) -> None:
+    """A token minted for a session carries sid and typ and reports its lifetime in seconds."""
+    token = create_token(user_id=USER_ID, session_id=SESSION_ID, settings=settings)
+    payload = decode_token(token=token.access_token, settings=settings)
+    assert payload.sid == SESSION_ID
+    assert payload.typ == "access"
+    assert token.expires_in == settings.ACCESS_TOKEN_EXPIRE_MINUTES * SECONDS_PER_MINUTE
+
+
+def test_refresh_token_roundtrip(settings: BaseKwikSettings) -> None:
+    """A refresh token decodes, as a refresh token, to the claims it was created with."""
+    expires_at = datetime.now(UTC) + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
+    raw = create_refresh_token(
+        user_id=USER_ID,
+        session_id=SESSION_ID,
+        token_id=TOKEN_ID,
+        expires_at=expires_at,
+        settings=settings,
+    )
+    payload = decode_token(token=raw, settings=settings, token_type="refresh")
+    assert (payload.sub, payload.sid, payload.jti, payload.typ) == (USER_ID, SESSION_ID, TOKEN_ID, "refresh")
+
+
+def test_refresh_token_encoding_is_deterministic(settings: BaseKwikSettings) -> None:
+    """Encoding the same arguments twice yields the same string."""
+
+    def encode() -> str:
+        return create_refresh_token(
+            user_id=USER_ID,
+            session_id=SESSION_ID,
+            token_id=TOKEN_ID,
+            expires_at=EXPIRES_AT,
+            settings=settings,
+        )
+
+    assert encode() == encode()
+
+
+def test_decode_token_rejects_other_type(settings: BaseKwikSettings) -> None:
+    """An access token is not accepted as a refresh token, nor the reverse."""
+    access = create_token(user_id=USER_ID, session_id=SESSION_ID, settings=settings).access_token
+    refresh = create_refresh_token(
+        user_id=USER_ID,
+        session_id=SESSION_ID,
+        token_id=TOKEN_ID,
+        expires_at=EXPIRES_AT,
+        settings=settings,
+    )
+    with pytest.raises(TokenValidationError):
+        decode_token(token=access, settings=settings, token_type="refresh")
+    with pytest.raises(TokenValidationError):
+        decode_token(token=refresh, settings=settings)
+
+
+def test_decode_token_accepts_1_13_payload(settings: BaseKwikSettings) -> None:
+    """A token minted by kwik 1.13 (no typ, no sid) still validates as an access token."""
+    legacy = jwt.encode(
+        {"exp": EXPIRES_AT, "sub": str(USER_ID), "kwik_impersonate": ""},
+        settings.SECRET_KEY,
+        algorithm=ALGORITHM,
+    )
+    payload = decode_token(token=legacy, settings=settings)
+    assert (payload.sid, payload.typ, payload.jti) == (None, "access", None)
+
+
+def test_settings_refresh_defaults() -> None:
+    """The refresh lifetime defaults to 30 days and the reuse grace to 30 seconds."""
+    assert BaseKwikSettings().REFRESH_TOKEN_EXPIRE_MINUTES == THIRTY_DAYS_IN_MINUTES
+    assert BaseKwikSettings().REFRESH_REUSE_GRACE_SECONDS == GRACE_SECONDS
 
 
 def test_verify_password_matching() -> None:

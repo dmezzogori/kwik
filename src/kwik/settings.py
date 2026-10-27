@@ -45,6 +45,9 @@ class BaseKwikSettings(BaseSettings):
     # Security settings
     SECRET_KEY: str = secrets.token_urlsafe(32)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10_080  # 7 days
+    REFRESH_TOKEN_EXPIRE_MINUTES: PositiveInt = 43_200  # 30 days
+    # Seconds during which a just-rotated refresh token is still accepted (lost-response retries).
+    REFRESH_REUSE_GRACE_SECONDS: NonNegativeInt = 30
     BACKEND_CORS_ORIGINS: list[AnyHttpUrl] = []
 
     # Server settings

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Literal
 
 import bcrypt
 import jwt
@@ -26,35 +26,84 @@ if TYPE_CHECKING:
     from kwik.settings import BaseKwikSettings
 
 ALGORITHM: Final[str] = "HS256"
+SECONDS_PER_MINUTE: Final[int] = 60
 
 
 def create_token(
     *,
     user_id: int,
     impersonator_user_id: int | None = None,
+    session_id: str | None = None,
     settings: BaseKwikSettings,
 ) -> schemas.Token:
-    """Create OAuth2 bearer token response for user authentication."""
-    access_token = jwt.encode(
+    """
+    Create OAuth2 bearer token response for user authentication.
+
+    Without ``session_id`` the claim set is the one kwik 1.13 issued. With it the token also
+    carries ``sid`` and ``typ`` and the response reports ``expires_in`` in seconds.
+    """
+    claims: dict[str, object] = {
+        "exp": datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+        "sub": str(user_id),
+        "kwik_impersonate": "" if impersonator_user_id is None else str(impersonator_user_id),
+    }
+    expires_in: int | None = None
+    if session_id is not None:
+        claims["sid"] = session_id
+        claims["typ"] = "access"
+        expires_in = settings.ACCESS_TOKEN_EXPIRE_MINUTES * SECONDS_PER_MINUTE
+
+    access_token = jwt.encode(claims, settings.SECRET_KEY, algorithm=ALGORITHM)
+
+    return schemas.Token(access_token=access_token, token_type="bearer", expires_in=expires_in)  # noqa: S106
+
+
+def create_refresh_token(
+    *,
+    user_id: int,
+    session_id: str,
+    token_id: str,
+    expires_at: datetime,
+    settings: BaseKwikSettings,
+) -> str:
+    """
+    Encode a refresh token for one generation of a session.
+
+    The token has no ``iat`` (PyJWT rejects an ``iat`` in the future, which breaks callers
+    driving an injected clock) and ``jti`` identifies the generation, so encoding the same
+    arguments twice yields the same string.
+    """
+    return jwt.encode(
         {
-            "exp": datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+            "typ": "refresh",
             "sub": str(user_id),
-            "kwik_impersonate": "" if impersonator_user_id is None else str(impersonator_user_id),
+            "sid": session_id,
+            "jti": token_id,
+            "exp": expires_at,
         },
         settings.SECRET_KEY,
         algorithm=ALGORITHM,
     )
 
-    return schemas.Token(access_token=access_token, token_type="bearer")  # noqa: S106
 
-
-def decode_token(*, token: str, settings: BaseKwikSettings) -> schemas.TokenPayload:
-    """Decode and validate JWT token, returning payload data."""
+def decode_token(
+    *,
+    token: str,
+    settings: BaseKwikSettings,
+    token_type: Literal["access", "refresh"] = "access",  # noqa: S107
+) -> schemas.TokenPayload:
+    """Decode and validate a JWT, returning its payload; the token must be of ``token_type``."""
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
-        return schemas.TokenPayload(**payload)
+        claims = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+        if claims.get("typ") == "refresh":
+            # Refresh tokens carry no impersonation claim; the payload schema requires one.
+            claims.setdefault("kwik_impersonate", "")
+        payload = schemas.TokenPayload(**claims)
     except (jwt.PyJWTError, ValidationError):
         raise TokenValidationError from None
+    if payload.typ != token_type:
+        raise TokenValidationError
+    return payload
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
