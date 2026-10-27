@@ -8,16 +8,17 @@ from fastapi import HTTPException, status
 class KwikError(Exception):
     """Base class for all Kwik exceptions."""
 
-    def __init__(self, status_code: int, detail: str) -> None:
-        """Initialize Kwik exception with status code and detail message."""
+    def __init__(self, status_code: int, detail: str, headers: dict[str, str] | None = None) -> None:
+        """Initialize Kwik exception with status code, detail message and optional response headers."""
         self.status_code = status_code
         self.detail = detail
+        self.headers = headers
         super().__init__()
 
     @property
     def http_exc(self) -> HTTPException:
         """Convert Kwik exception to FastAPI HTTPException."""
-        return HTTPException(status_code=self.status_code, detail=self.detail)
+        return HTTPException(status_code=self.status_code, detail=self.detail, headers=self.headers)
 
 
 class DuplicatedEntityError(KwikError):

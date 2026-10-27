@@ -17,6 +17,7 @@ async def kwik_exception_handler(request: Request, exc: KwikError) -> JSONRespon
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail},
+        headers=exc.headers,
     )
 
 
