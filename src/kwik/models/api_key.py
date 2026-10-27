@@ -52,9 +52,9 @@ class ApiKey(Base):
     prefix: Mapped[str] = mapped_column(String(8), nullable=False, default="tbk_")
     key_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
     key_suffix: Mapped[str] = mapped_column(String(4), nullable=False)
-    expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    last_used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
 
     user: Mapped[User] = relationship("User", lazy="joined")

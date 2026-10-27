@@ -7,7 +7,7 @@
 import hashlib
 import secrets
 from collections.abc import Generator
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi import FastAPI, status
@@ -24,6 +24,8 @@ from kwik.models.user import Permission, Role, RolePermission, User, UserRole
 from kwik.routers import ApiKeyRouter
 from kwik.security import get_password_hash
 from kwik.settings import BaseKwikSettings
+
+ONE_SECOND = timedelta(seconds=1)
 
 
 def _make_key() -> tuple[str, str]:
@@ -175,7 +177,7 @@ class TestVerifyApiKeyRejection:
             user,
             plaintext,
             key_hash,
-            expires_at=datetime.now() - timedelta(days=1),  # noqa: DTZ005
+            expires_at=datetime.now(UTC) - timedelta(days=1),
         )
 
         response = client.get("/test/protected", headers={"X-API-Key": plaintext})
@@ -192,7 +194,7 @@ class TestVerifyApiKeyRejection:
             user,
             plaintext,
             key_hash,
-            revoked_at=datetime.now(),  # noqa: DTZ005
+            revoked_at=datetime.now(UTC),
         )
 
         response = client.get("/test/protected", headers={"X-API-Key": plaintext})
@@ -209,6 +211,52 @@ class TestVerifyApiKeyRejection:
         response = client.get("/test/protected", headers={"X-API-Key": plaintext})
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+class TestApiKeyTimezones:
+    """API-key timestamps are stored and compared as timezone-aware UTC."""
+
+    def test_aware_expiry_one_second_past_is_refused(self, app_and_client: tuple) -> None:
+        """An aware expiry one second in the past is refused as expired."""
+        _, client, session = app_and_client
+        user = _create_user(session)
+        plaintext, key_hash = _make_key()
+        _create_api_key(session, user, plaintext, key_hash, expires_at=datetime.now(UTC) - ONE_SECOND)
+
+        response = client.get("/test/protected", headers={"X-API-Key": plaintext})
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.json()["detail"] == "API key has expired"
+
+    def test_aware_expiry_one_second_ahead_is_accepted(self, app_and_client: tuple) -> None:
+        """An aware expiry in the near future is still valid."""
+        _, client, session = app_and_client
+        user = _create_user(session)
+        plaintext, key_hash = _make_key()
+        _create_api_key(session, user, plaintext, key_hash, expires_at=datetime.now(UTC) + timedelta(minutes=1))
+
+        response = client.get("/test/protected", headers={"X-API-Key": plaintext})
+
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_last_used_at_is_aware_utc(self, app_and_client: tuple) -> None:
+        """After a call, last_used_at carries the UTC tzinfo."""
+        _, client, session = app_and_client
+        user = _create_user(session)
+        plaintext, key_hash = _make_key()
+        api_key = _create_api_key(session, user, plaintext, key_hash)
+
+        client.get("/test/protected", headers={"X-API-Key": plaintext})
+
+        session.refresh(api_key)
+        assert api_key.last_used_at is not None
+        assert api_key.last_used_at.utcoffset() == timedelta(0)
+
+    def test_columns_are_timezone_aware(self) -> None:
+        """The three timestamp columns are timestamptz."""
+        columns = ApiKey.__table__.c
+        for name in ("expires_at", "revoked_at", "last_used_at"):
+            assert columns[name].type.timezone is True
 
 
 class TestHasPermissionWithApiKey:

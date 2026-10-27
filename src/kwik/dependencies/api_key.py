@@ -16,7 +16,7 @@ user without triggering the JWT dependency chain.
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, Request, status
@@ -84,7 +84,7 @@ def _verify_api_key(
             detail="API key has been revoked",
         )
 
-    now = datetime.now()  # noqa: DTZ005
+    now = datetime.now(UTC)
     if api_key.expires_at is not None and api_key.expires_at <= now:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
