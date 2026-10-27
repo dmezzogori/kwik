@@ -14,9 +14,9 @@ def has_permission(*permissions: str) -> Depends:
     """
     Endpoint dependency to check if the current user has the required permissions.
 
-    Works transparently on both ``AuthenticatedRouter`` (JWT) and
+    Works transparently on both ``AuthenticatedRouter`` (bearer token) and
     ``ApiKeyRouter`` (API key) endpoints. Uses ``resolved_user`` which
-    checks ``request.state.api_key_user`` first, then falls back to JWT.
+    checks ``request.state.api_key_user`` first, then falls back to the bearer token.
 
     Raises:
         AccessDeniedError: if the user does not have the required permissions.

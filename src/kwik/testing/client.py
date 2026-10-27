@@ -9,17 +9,17 @@ Example usage:
     from fastapi.testclient import TestClient
 
     # Wrap your FastAPI TestClient
-    test_client = TestClient(app)
-    client = IdentityAwareTestClient(test_client)
+    with TestClient(app) as http:
+        client = IdentityAwareTestClient(http, settings)
 
-    # Make authenticated request as specific user
-    response = client.get_as(user, "/protected-endpoint")
+        # Make authenticated request as specific user
+        response = client.get_as(user, "/protected-endpoint")
 
-    # Switch context and make another request
-    response = client.get_as(admin_user, "/admin-endpoint")
+        # Switch context and make another request
+        response = client.get_as(admin_user, "/admin-endpoint")
 
-    # Make unauthenticated request
-    response = client.get("/public-endpoint")
+        # Make unauthenticated request
+        response = client.get("/public-endpoint")
 """
 
 from __future__ import annotations

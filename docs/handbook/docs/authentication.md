@@ -22,7 +22,7 @@ A request without a valid token gets `401` with a `WWW-Authenticate` header:
 | No `Authorization: Bearer` header | `Bearer` |
 | Invalid, expired or revoked token, or a token of the wrong type | `Bearer error="invalid_token"` |
 
-Inactive accounts are refused on the bearer path, with or without a store. Under impersonation the check applies to the acting account, so the impersonator must be active. Password login refuses an inactive account with the same answer as a wrong password.
+Inactive accounts are refused with or without a store, on routes that resolve the user (`current_user`, `has_permission`) and in `authenticate_from_token`. A route that reads only `current_token` does not load the account, so revoking a deactivated user's sessions (with a store) closes that gap. Under impersonation the check applies to the acting account, so the impersonator must be active. Password login refuses an inactive account with the same answer as a wrong password.
 
 ## Without a store (default) {#without-a-store}
 
@@ -150,7 +150,9 @@ It returns the new record (the clamped one: kwik mints the refresh token's expir
 The hard cap on a session (for example 90 days from `created_at`, however often it refreshes) is the store's policy, not kwik's. Enforce it in `rotate`: clamp the new `expires_at`, as the `LEAST(...)` above does, because every rotation overwrites `expires_at`. Changing it through `update` would not last. Use `update` only to revoke. Deactivating a user should also revoke their sessions: kwik refuses inactive accounts on the bearer path, but it does not revoke anything for you.
 
 !!! warning "Revocation must be durable"
-    When `refresh_session` detects reuse, or finds a child session whose parent is dead, it calls `store.revoke(...)` and then raises `SessionRevokedError`, a subclass of `InvalidBearerTokenError` with the same 401 and challenge. A request that raises normally rolls back kwik's request database session, which would discard a revocation the store wrote through it. Since 1.14.0 kwik makes an exception for `SessionRevokedError`: it commits the request session, then lets the error answer the 401. A store bound to the request session therefore keeps its revocation, on kwik's `POST /login/refresh` and on any application route that calls `refresh_session` under a `Kwik` app.
+    When `refresh_session` detects reuse, or finds a child session whose parent is dead, it calls `store.revoke(...)` and then raises `SessionRevokedError`, a subclass of `InvalidBearerTokenError` with the same 401 and challenge. A request that raises normally rolls back kwik's request database session, which would discard a revocation the store wrote through it. Since 1.14.0 kwik makes an exception for `SessionRevokedError`: it commits the request session, then lets the error answer the 401. A store bound to the request session therefore keeps its revocation, on kwik's `POST /login/refresh` and on any application route that calls `refresh_session` under a `Kwik` app, provided `SessionRevokedError` itself propagates out of the endpoint or the endpoint returns normally.
+
+    Do not catch `SessionRevokedError` and raise a different exception, for example an `HTTPException` that carries a `Set-Cookie` header to clear the refresh cookie: the request session is then rolled back and the revocation is lost. To add headers, copy them onto the caught instance and re-raise it with a bare `raise` (`exc.headers = {**(exc.headers or {}), "Set-Cookie": ...}`), or register an exception handler for `SessionRevokedError` (handlers run after the commit), or make `revoke` commit in its own transaction, as the sketch below does.
 
     The commit covers everything pending in the request session. On `POST /login/refresh` the store's own writes are the only ones, but an application route that writes other data and then calls `refresh_session` has those writes committed too when the session is revoked.
 

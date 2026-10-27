@@ -62,7 +62,8 @@ def refresh(body: RefreshRequest, settings: Settings, store: AuthSessions) -> To
 
     Raises:
         AuthSessionsNotConfiguredError: If the application configured no auth session store.
-        InvalidBearerTokenError: If the refresh token is invalid, expired or reused.
+        InvalidBearerTokenError: If the refresh token is invalid or expired.
+        SessionRevokedError: If the token was reused, or its impersonation parent is dead; the session is revoked.
 
     """
     if store is None:

@@ -95,7 +95,7 @@ These use `admin_context` automatically for operations that require elevated pri
 
 ## IdentityAwareTestClient: authenticated requests
 
-Wrap FastAPI’s `TestClient` to make requests “as a user” without manually handling tokens. The client mints a bearer token for the user from the application settings, opens an auth session when the application has an auth session store, and caches the token per user. It does not post the login form.
+Wrap FastAPI’s `TestClient` to make requests “as a user” without manually handling tokens. The client mints a bearer token for the user from the application settings, opens an auth session when the application has an auth session store, and caches the token per user. It posts the login form only in the deprecated fallback described below. When the app's store is wired through the `_get_auth_session_store` override rather than `Kwik(auth_session_store=...)`, pass `auth_session_store=` to `IdentityAwareTestClient`; otherwise it mints tokens without a session and every request is 401.
 
 ```python
 from fastapi.testclient import TestClient

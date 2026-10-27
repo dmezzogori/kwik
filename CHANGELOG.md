@@ -11,13 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **BREAKING: an invalid, expired or revoked bearer token is a 401** with `WWW-Authenticate: Bearer error="invalid_token"`. It was a 400 `Invalid token`, raised from `TokenValidationError`. A missing or non-Bearer `Authorization` header is also a 401, with `WWW-Authenticate: Bearer`, and a `has_permission` route called with no credentials now sends that header too (its status was already 401). `decode_token` itself still raises `TokenValidationError`, so library callers are unchanged. Frontends that keyed on the old 400 to detect an expired token must handle 401.
+- **BREAKING: an invalid, expired or revoked bearer token is a 401** with `WWW-Authenticate: Bearer error="invalid_token"`. It was a 400 `Invalid token`, raised from `TokenValidationError`. A missing or non-Bearer `Authorization` header is also a 401, with `WWW-Authenticate: Bearer`, and a `has_permission` route called with no credentials now sends that header too (its status was already 401). `decode_token` itself still raises `TokenValidationError`, so callers of `decode_token` are unchanged. Frontends that keyed on the old 400 to detect an expired token must handle 401.
 - **BREAKING: `_resolve_current_user` takes a new required `store` keyword.** Applications that call it directly from an override pass `store=`; `None` keeps the 1.13 behaviour.
-- **BREAKING: `kwik.dependencies.token.oauth2_scheme` is gone.** The bearer dependencies read the header through `HTTPBearer` instead of the OAuth2 password form, so OpenAPI declares one `bearer` http scheme and no settings are read at import time. **Swagger UI's Authorize dialog now takes a pasted token**, not a username and password, because the password-flow scheme no longer exists.
+- **BREAKING: `kwik.dependencies.token.oauth2_scheme` and the private `_oauth2_optional` are gone.** The bearer dependencies read the header through `HTTPBearer` instead of the OAuth2 password form, so OpenAPI declares one `bearer` http scheme and no settings are read at import time. **Swagger UI's Authorize dialog now takes a pasted token**, not a username and password, because the password-flow scheme no longer exists.
 - **`Token` has two new nullable fields**, `refresh_token` and `expires_in`. Both are `None` for a token minted without a session, so the 1.13 response is unchanged apart from the two null fields.
-- **BREAKING: an inactive account is refused** (kwik #43 item 2). `current_user`, `has_permission` and `authenticate_from_token` answer 401 `Inactive user` when the acting account is inactive, or when the impersonator behind an impersonation token is inactive or missing; impersonating an inactive account still works. `POST /login/access-token` refuses an inactive account with the same answer as a wrong password, so sign-in does not reveal the account state. This holds with or without an auth session store, so the "nothing changes without a store" rule does not cover it. An application that overrode the two dependencies to add this check (Teban's `active_user.py`) can drop the override.
+- **BREAKING: an inactive account is refused** (kwik #43 item 2). `current_user`, `has_permission` and `authenticate_from_token` answer 401 `Inactive user` when the acting account is inactive, or when the impersonator behind an impersonation token is inactive or missing; impersonating an inactive account still works. `POST /login/access-token` refuses an inactive account with the same answer as a wrong password, so sign-in does not reveal the account state. This holds with or without an auth session store, so the "nothing changes without a store" rule does not cover it. `authenticate_from_token` raises `InvalidBearerTokenError` (401), not `TokenValidationError` or `AccessDeniedError`, for a dead session or an inactive or missing acting account, so callers that catch the old exceptions must also catch it. An application that overrode the two dependencies to add this check (Teban's `active_user.py`) can drop the override.
 - **BREAKING: `api_keys.expires_at`, `revoked_at` and `last_used_at` are `timestamptz`** (kwik #43 item 3). `verify_api_key` compares and writes with `datetime.now(UTC)`; 1.13 wrote `last_used_at` with the process-local `datetime.now()`. An application that owns the table in its Alembic history migrates it (see Migration).
-- **`IdentityAwareTestClient` no longer calls `POST /login/access-token`** when settings are given or `app.state.settings` is available: it mints the token itself. Application tests that relied on it to exercise login (rate limits, a deactivated account refused at sign-in, a wrong-password `RuntimeError`) must post the form themselves. A token is now minted for any user object with an `id`, so a request made as an inactive user gets 401 from the bearer check instead of the sign-in refusing it. **The client's `settings` argument changes meaning**: in 1.13 it only served to detect the admin email for the form login; in 1.14 it is the signing configuration, so a caller that passes a settings object whose `SECRET_KEY` or `ALGORITHM` differ from the app's now gets 401s. Pass the same settings the app is built from, or omit it and let the client read `app.state.settings` after the lifespan starts.
+- **`IdentityAwareTestClient` no longer calls `POST /login/access-token`** when settings are given or `app.state.settings` is available: it mints the token itself. Application tests that relied on it to exercise login (rate limits, a deactivated account refused at sign-in, a wrong-password `RuntimeError`) must post the form themselves. A token is now minted for any user object with an `id`, so a request made as an inactive user gets 401 from the bearer check instead of the sign-in refusing it. **The client's `settings` argument changes meaning**: in 1.13 it only served to detect the admin email for the form login; in 1.14 it is the signing configuration, so a caller that passes a settings object whose `SECRET_KEY` differs from the app's now gets 401s. Pass the same settings the app is built from, or omit it and let the client read `app.state.settings` after the lifespan starts.
 
 ### Added
 
@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`REFRESH_TOKEN_EXPIRE_MINUTES`** (43 200, 30 days) and **`REFRESH_REUSE_GRACE_SECONDS`** (30) settings. `ACCESS_TOKEN_EXPIRE_MINUTES` keeps its 10 080 default (7 days); an application that adopts sessions sets it to minutes.
 - `InvalidBearerTokenError` and `MissingBearerTokenError` (401, with a `WWW-Authenticate` challenge) and `AuthSessionsNotConfiguredError` (501). `KwikError` gains optional `headers`, passed through `http_exc` and the exception handler.
 - **`SessionRevokedError`**, a subclass of `InvalidBearerTokenError` with the same 401 and `WWW-Authenticate: Bearer error="invalid_token"` header. `refresh_session` raises it after revoking a session (refresh-token reuse, or an impersonation session whose parent is missing or inactive); every other refusal stays `InvalidBearerTokenError`. Code that catches `InvalidBearerTokenError` still catches it.
+- `RefreshRequest` in `kwik.schemas`, the body of `POST /login/refresh`.
 - A handbook "Authentication" page documents bearer authentication, sessions, refresh, impersonation and the store protocol.
 
 ### Deprecated
@@ -49,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Testing
 
 - `IdentityAwareTestClient.token_for(user)` signs an access token from the settings (the argument, else `app.state.settings`) and opens an auth session when a store is given or set on `app.state`. `_get_auth_token` delegates to it, so existing call sites keep working.
+- `IdentityAwareTestClient(auth_session_store=...)` names the store explicitly. Pass it when the app's store is wired through the `_get_auth_session_store` override rather than `Kwik(auth_session_store=...)`; otherwise the client mints tokens without a session and every request is 401.
 - `InMemoryAuthSessionStore` is available to application tests; kwik's own API fixtures now run with a store.
 
 ### Migration
@@ -60,10 +62,35 @@ Coming from 1.13:
 - **The API-key columns change type.** An application that owns the `api_keys` table adds this step to its own Alembic history, for `expires_at`, `revoked_at` and `last_used_at`:
 
   ```python
-  op.alter_column("api_keys", col, type_=sa.DateTime(timezone=True), existing_type=sa.DateTime(), postgresql_using=f"{col} AT TIME ZONE 'UTC'")
+  import sqlalchemy as sa
+  from alembic import op
+
+  API_KEY_TIMESTAMPS = ("expires_at", "revoked_at", "last_used_at")
+
+
+  def upgrade() -> None:
+      for col in API_KEY_TIMESTAMPS:
+          op.alter_column(
+              "api_keys",
+              col,
+              type_=sa.DateTime(timezone=True),
+              existing_type=sa.DateTime(),
+              postgresql_using=f"{col} AT TIME ZONE 'UTC'",
+          )
+
+
+  def downgrade() -> None:
+      for col in API_KEY_TIMESTAMPS:
+          op.alter_column(
+              "api_keys",
+              col,
+              type_=sa.DateTime(),
+              existing_type=sa.DateTime(timezone=True),
+              postgresql_using=f"{col} AT TIME ZONE 'UTC'",
+          )
   ```
 
-  Existing values are read as UTC. Check that the application's processes ran in UTC: kwik 1.13 wrote `last_used_at` with the local `datetime.now()`. Naive values an application writes (for example `expires_at`) are interpreted in the PostgreSQL session time zone, so write aware UTC datetimes instead.
+  If you skip the migration, every API key with an expiry answers 500, because the stored naive value cannot be compared with an aware `datetime.now(UTC)`; keys without an expiry keep working. Existing values are read as UTC. Check that the application's processes ran in UTC: kwik 1.13 wrote `last_used_at` with the local `datetime.now()`. Naive values an application writes (for example `expires_at`) are interpreted in the PostgreSQL session time zone, so write aware UTC datetimes instead.
 
 ## [1.13.0] - 2026-10-11
 

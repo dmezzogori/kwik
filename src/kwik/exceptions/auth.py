@@ -31,7 +31,12 @@ class SessionRevokedError(InvalidBearerTokenError):
     impersonation session whose parent session is missing or inactive. The response is the same
     401 with the same challenge as :class:`InvalidBearerTokenError`. Under a ``Kwik`` app, kwik
     commits the request's database session before this error propagates (and only for this
-    error), so a revocation a store wrote through that session is durable.
+    error), so a revocation a store wrote through that session is durable. This holds only if
+    this error itself propagates out of the endpoint (or the endpoint returns normally). Do not catch it and
+    raise a different exception, such as an ``HTTPException`` carrying ``Set-Cookie``: the request session is
+    then rolled back and the revocation is lost. To add headers, set
+    ``exc.headers = {**(exc.headers or {}), ...}`` on the caught instance and re-raise it with a bare
+    ``raise``, or register an exception handler, or make the store's ``revoke`` commit on its own.
     """
 
 

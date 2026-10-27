@@ -78,7 +78,7 @@ class CustomerCRUD(AutoCRUD[UserCtx, Customer, CustomerCreate, CustomerUpdate, i
 crud_customers = CustomerCRUD(Customer)
 
 # 4. Create the API endpoints
-# AuthenticatedRouter ensures all endpoints require JWT authentication
+# AuthenticatedRouter ensures all endpoints require bearer authentication
 customers_router = AuthenticatedRouter(prefix="/customers")
 
 # Add route-level permission dependencies as needed
@@ -140,7 +140,7 @@ That's it! You now have a complete REST API with:
 
  - **AutoCRUD**: The `AutoCRUD` class automatically provides all the standard CRUD operations (`create()`, `get_multi()`, `get_if_exist()`, `update()`, `delete()`) with built-in audit trails, validation, and business rule enforcement. You can override any method to add custom business logic while keeping the automatic features.
 
- - **AuthenticatedRouter**: Using `AuthenticatedRouter` instead of FastAPI's standard router automatically ensures all endpoints require JWT authentication. Users must provide a valid JWT token to access any endpoint on this router.
+ - **AuthenticatedRouter**: Using `AuthenticatedRouter` instead of FastAPI's standard router automatically ensures all endpoints require bearer authentication. Users must provide a valid bearer token to access any endpoint on this router.
 
  - **Permission Dependencies**: The `has_permission()` dependency allows you to specify which permissions a user needs to access each endpoint. As shown in the example, you can require different permissions for different operations (`customers_read`, `customers_create`, `customers_update`, `customers_delete`). Define these names in `src/kwik/core/enum.py` under the `Permissions` enum so they can be granted to roles. You can also combine multiple permissions by passing them as separate arguments to `has_permission()`.
 
@@ -188,7 +188,7 @@ Kwik gives you all of this **out of the box**, with patterns that scale from sta
 
 Kwik is opinionated because **you shouldn't have to make the same architectural decisions over and over again**.
 
-**Security**: JWT authentication, RBAC permissions, audit trails, rate limiting, security headers - all configured and working.
+**Security**: bearer-token authentication, RBAC permissions, audit trails, rate limiting, security headers - all configured and working.
 
 **Database**: PostgreSQL with synchronous SQLAlchemy 2.x (async support planned), connection pooling, migrations, model mixins - all integrated.
 
