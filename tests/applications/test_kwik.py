@@ -230,13 +230,16 @@ class TestStartupLogRedaction:
 
     def test_startup_log_never_contains_secrets(self, settings: BaseKwikSettings) -> None:
         """No secret appears in the debug log, and the redaction marker does."""
-        secret_settings = settings.model_copy(
-            update={
+        secret_settings = BaseKwikSettings.model_validate(
+            {
+                **settings.model_dump(),
+                "SQLALCHEMY_DATABASE_URI": "",
                 "SECRET_KEY": KNOWN_SECRET_KEY,
                 "POSTGRES_PASSWORD": KNOWN_DB_PASSWORD,
                 "FIRST_SUPERUSER_PASSWORD": KNOWN_SUPERUSER_PASSWORD,
             },
         )
+        assert f":{KNOWN_DB_PASSWORD}@" in secret_settings.SQLALCHEMY_DATABASE_URI
         records: list[str] = []
         sink_id = logger.add(records.append, level="DEBUG", format="{message}")
         try:
@@ -249,6 +252,7 @@ class TestStartupLogRedaction:
         assert REDACTED in log
         for secret in (KNOWN_SECRET_KEY, KNOWN_DB_PASSWORD, KNOWN_SUPERUSER_PASSWORD):
             assert secret not in log
+        assert f":{KNOWN_DB_PASSWORD}@" not in log
 
     def test_database_uri_password_is_redacted(self) -> None:
         """A password embedded in a URL is replaced, the rest of the URL stays."""
