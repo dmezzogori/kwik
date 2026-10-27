@@ -13,7 +13,7 @@ import secrets
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Final
 
-from kwik.exceptions.auth import InvalidBearerTokenError
+from kwik.exceptions.auth import InvalidBearerTokenError, SessionRevokedError
 from kwik.exceptions.base import TokenValidationError
 from kwik.security import create_refresh_token, create_token, decode_token
 
@@ -122,10 +122,12 @@ def refresh_session(
     token for the session is reuse and revokes the session and its impersonation children.
 
     Raises:
-        InvalidBearerTokenError: If the token is invalid, expired or not a refresh token, if
-            the session is unknown, revoked or expired, if it is an impersonation session whose
-            parent session is unknown, revoked or expired (which also revokes it), or if the
-            token was reused.
+        SessionRevokedError: After revoking the session, if the token was reused, or if it is an
+            impersonation session whose parent session is unknown, revoked or expired. Under a
+            ``Kwik`` app the request's database session is committed before it propagates, so a
+            revocation the store wrote through that session is kept.
+        InvalidBearerTokenError: If the token is invalid, expired or not a refresh token, or if
+            the session is unknown, revoked or expired; nothing is revoked.
 
     """
     now = now or datetime.now(UTC)
@@ -142,7 +144,7 @@ def refresh_session(
         parent = store.get(record.parent_session_id)
         if parent is None or not parent.is_active(now=now):
             store.revoke(record.id, at=now)
-            raise InvalidBearerTokenError
+            raise SessionRevokedError
     if payload.jti == record.refresh_token_id:
         # Current generation: rotate through the store's compare-and-set.
         rotated = store.rotate(
@@ -167,7 +169,7 @@ def refresh_session(
         # Same successor: the claims are re-minted from the record, so the string is identical.
         return _pair(record, settings)
     store.revoke(record.id, at=now)
-    raise InvalidBearerTokenError(detail="Refresh token reused; session revoked")
+    raise SessionRevokedError(detail="Refresh token reused; session revoked")
 
 
 def revoke_session(*, session_id: str, store: AuthSessionStore, now: datetime | None = None) -> None:

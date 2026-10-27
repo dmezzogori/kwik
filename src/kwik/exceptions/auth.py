@@ -23,6 +23,18 @@ class InvalidBearerTokenError(KwikError):
         )
 
 
+class SessionRevokedError(InvalidBearerTokenError):
+    """
+    Exception raised when a refresh revoked the session it was refused for.
+
+    ``refresh_session`` raises it after ``store.revoke(...)``, on refresh-token reuse and for an
+    impersonation session whose parent session is missing or inactive. The response is the same
+    401 with the same challenge as :class:`InvalidBearerTokenError`. Under a ``Kwik`` app, kwik
+    commits the request's database session before this error propagates (and only for this
+    error), so a revocation a store wrote through that session is durable.
+    """
+
+
 class MissingBearerTokenError(KwikError):
     """Exception raised when a request that needs a bearer token carries none."""
 

@@ -14,6 +14,7 @@ from fastapi import Depends, Request
 from sqlalchemy.orm import Session as _Session
 
 from kwik.database import session_scope
+from kwik.exceptions.auth import SessionRevokedError
 
 
 def _get_session(request: Request) -> Generator[_Session, None, None]:
@@ -43,8 +44,22 @@ def _commit_session(session: Annotated[_Session, Depends(_get_session)]) -> Gene
     If the endpoint raised, the exception passes through this generator before
     the commit line and nothing is committed. If the commit fails, the client
     gets a server error instead of a success sent before the failure.
+
+    The one exception is ``SessionRevokedError``: ``refresh_session`` raises it
+    right after ``store.revoke(...)``, and a store bound to the request's session
+    wrote the revocation into it. That error commits the session and is then
+    re-raised unchanged, so the client still gets the 401 and the revocation is
+    kept. Everything pending in the session is committed with it: on kwik's
+    ``POST /login/refresh`` the store's own writes are the only ones, but an
+    application route that writes other data and then calls ``refresh_session``
+    has those writes committed too. If that commit fails, its error propagates
+    and the client gets a server error.
     """
-    yield
+    try:
+        yield
+    except SessionRevokedError:
+        session.commit()
+        raise
     session.commit()
 
 

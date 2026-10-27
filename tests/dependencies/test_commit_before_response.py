@@ -6,6 +6,7 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
+import pytest
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.testclient import TestClient
@@ -16,6 +17,7 @@ from kwik.applications import Kwik
 from kwik.database import create_session
 from kwik.dependencies import Session  # noqa: TC001 - FastAPI resolves endpoint annotations at runtime
 from kwik.dependencies.session import _commit_session, _get_session
+from kwik.exceptions import InvalidBearerTokenError, SessionRevokedError
 from kwik.models import Role
 
 if TYPE_CHECKING:
@@ -175,3 +177,56 @@ def test_dependency_installed_app_wide(settings: BaseKwikSettings) -> None:
         dependency.dependency is _commit_session and dependency.scope == "function"
         for dependency in kwik.app.router.dependencies
     )
+
+
+def _throw_into_commit(session: MagicMock, error: Exception) -> None:
+    """Drive ``_commit_session`` by hand as FastAPI does when the endpoint raised ``error``."""
+    teardown = _commit_session(session)
+    next(teardown)
+    teardown.throw(error)
+
+
+def test_normal_return_commits_once() -> None:
+    """An endpoint that returns gets exactly one commit."""
+    session = MagicMock(spec=OrmSession)
+    teardown = _commit_session(session)
+    next(teardown)
+    with pytest.raises(StopIteration):
+        next(teardown)
+    session.commit.assert_called_once_with()
+
+
+def test_session_revoked_error_commits_and_reraises_unchanged() -> None:
+    """A SessionRevokedError commits the session once and then propagates as the same object."""
+    session = MagicMock(spec=OrmSession)
+    error = SessionRevokedError(detail="Refresh token reused; session revoked")
+    with pytest.raises(SessionRevokedError) as raised:
+        _throw_into_commit(session, error)
+    assert raised.value is error
+    session.commit.assert_called_once_with()
+
+
+@pytest.mark.parametrize(
+    "error",
+    [InvalidBearerTokenError(), HTTPException(status_code=HTTPStatus.CONFLICT), RuntimeError("boom")],
+    ids=["invalid-bearer-token", "http-exception", "runtime-error"],
+)
+def test_other_errors_pass_through_without_commit(error: Exception) -> None:
+    """Every exception other than SessionRevokedError, its base class included, commits nothing."""
+    session = MagicMock(spec=OrmSession)
+    with pytest.raises(type(error)) as raised:
+        _throw_into_commit(session, error)
+    assert raised.value is error
+    session.commit.assert_not_called()
+
+
+def test_failed_commit_after_session_revoked_error_propagates() -> None:
+    """If committing the revocation fails, the commit error propagates instead of being swallowed."""
+    session = MagicMock(spec=OrmSession)
+    commit_error = RuntimeError("commit failed")
+    session.commit.side_effect = commit_error
+    revoked = SessionRevokedError()
+    with pytest.raises(RuntimeError) as raised:
+        _throw_into_commit(session, revoked)
+    assert raised.value is commit_error
+    assert raised.value.__context__ is revoked

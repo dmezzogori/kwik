@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
@@ -21,13 +22,14 @@ from kwik.exceptions import (
     AuthSessionsNotConfiguredError,
     InvalidBearerTokenError,
     MissingBearerTokenError,
+    SessionRevokedError,
     kwik_exception_handler,
 )
 from kwik.schemas import TokenPayload
 from kwik.security import SECONDS_PER_MINUTE, decode_token
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
 
     from kwik.schemas import Token
     from kwik.settings import BaseKwikSettings
@@ -42,6 +44,14 @@ ROTATIONS = 3
 def _grace(settings: BaseKwikSettings) -> timedelta:
     """Return the refresh reuse grace window configured in ``settings``."""
     return timedelta(seconds=settings.REFRESH_REUSE_GRACE_SECONDS)
+
+
+@contextmanager
+def _plain_refusal() -> Iterator[None]:
+    """Expect an InvalidBearerTokenError that is not a SessionRevokedError: a refusal that revoked nothing."""
+    with pytest.raises(InvalidBearerTokenError) as refused:
+        yield
+    assert not isinstance(refused.value, SessionRevokedError)
 
 
 def _sid(token: Token, settings: BaseKwikSettings) -> str:
@@ -232,11 +242,11 @@ def test_refresh_previous_after_grace_revokes_session(
     second = refresh_session(refresh_token=first.refresh_token, settings=settings, store=store, now=now + ONE_SECOND)
     sid = _sid(second, settings)
     late = now + ONE_SECOND + _grace(settings) + ONE_SECOND
-    with pytest.raises(InvalidBearerTokenError) as reused:
+    with pytest.raises(SessionRevokedError) as reused:
         refresh_session(refresh_token=first.refresh_token, settings=settings, store=store, now=late)
     assert reused.value.detail == "Refresh token reused; session revoked"
     assert _record(store, sid).revoked_at == late
-    with pytest.raises(InvalidBearerTokenError):  # the successor is dead too
+    with _plain_refusal():  # the successor is dead too
         refresh_session(refresh_token=second.refresh_token, settings=settings, store=store, now=late + ONE_SECOND)
 
 
@@ -248,10 +258,11 @@ def test_refresh_unknown_generation_revokes_session(
     current = first
     for _ in range(ROTATIONS):
         current = refresh_session(refresh_token=current.refresh_token, settings=settings, store=store, now=now)
-    with pytest.raises(InvalidBearerTokenError):
+    with pytest.raises(SessionRevokedError) as reused:
         refresh_session(refresh_token=first.refresh_token, settings=settings, store=store, now=now)
+    assert reused.value.detail == "Refresh token reused; session revoked"
     assert _record(store, _sid(first, settings)).revoked_at == now
-    with pytest.raises(InvalidBearerTokenError):
+    with _plain_refusal():
         refresh_session(refresh_token=current.refresh_token, settings=settings, store=store, now=now)
 
 
@@ -264,7 +275,7 @@ def test_refresh_revoked_session_refused(
     revoke_session(session_id=sid, store=store, now=now)
     before = _record(store, sid)
     assert before.revoked_at == now
-    with pytest.raises(InvalidBearerTokenError):
+    with _plain_refusal():
         refresh_session(refresh_token=first.refresh_token, settings=settings, store=store, now=now + ONE_SECOND)
     assert _record(store, sid) == before
 
@@ -293,8 +304,9 @@ def test_refresh_child_refused_when_parent_revoked_without_cascade(
     parent_sid, child = _impersonation(settings, store, now)
     store.update(replace(_record(store, parent_sid), revoked_at=now))
     later = now + ONE_SECOND
-    with pytest.raises(InvalidBearerTokenError):
+    with pytest.raises(SessionRevokedError) as revoked:
         refresh_session(refresh_token=child.refresh_token, settings=settings, store=store, now=later)
+    assert revoked.value.detail == "Invalid or expired token"
     assert _record(store, _sid(child, settings)).revoked_at == later
 
 
@@ -304,7 +316,7 @@ def test_refresh_child_refused_when_parent_expired(
     """A child cannot outlive an expired parent by refreshing itself."""
     parent_sid, child = _impersonation(settings, store, now)
     store.update(replace(_record(store, parent_sid), expires_at=now + ONE_HOUR))
-    with pytest.raises(InvalidBearerTokenError):
+    with pytest.raises(SessionRevokedError):
         refresh_session(refresh_token=child.refresh_token, settings=settings, store=store, now=now + 2 * ONE_HOUR)
     assert _record(store, _sid(child, settings)).revoked_at is not None
 
@@ -314,7 +326,7 @@ def test_refresh_child_refused_when_parent_missing(
 ) -> None:
     """A child whose parent session is unknown to the store cannot be refreshed."""
     _, child = _impersonation(settings, store, now, parent_sid="unknown-session")
-    with pytest.raises(InvalidBearerTokenError):
+    with pytest.raises(SessionRevokedError):
         refresh_session(refresh_token=child.refresh_token, settings=settings, store=store, now=now + ONE_SECOND)
     assert _record(store, _sid(child, settings)).revoked_at is not None
 
@@ -336,14 +348,14 @@ def test_refresh_refused_when_store_expired_session(
     first = open_session(user_id=USER_ID, settings=settings, store=store, now=now)
     sid = _sid(first, settings)
     store.update(replace(_record(store, sid), expires_at=now - ONE_SECOND))
-    with pytest.raises(InvalidBearerTokenError):
+    with _plain_refusal():
         refresh_session(refresh_token=first.refresh_token, settings=settings, store=store, now=now)
 
 
 def test_refresh_unknown_session_refused(settings: BaseKwikSettings, store: InMemoryAuthSessionStore) -> None:
     """A valid refresh token whose session the store does not know is refused."""
     token = open_session(user_id=USER_ID, settings=settings, store=InMemoryAuthSessionStore())
-    with pytest.raises(InvalidBearerTokenError):
+    with _plain_refusal():
         refresh_session(refresh_token=token.refresh_token, settings=settings, store=store)
 
 
@@ -375,7 +387,7 @@ def test_lost_rotation_race_on_revoked_session_refused(
     first = open_session(user_id=USER_ID, settings=settings, store=store, now=now)
     sid = _sid(first, settings)
     racing_store = RacingStore(store, lambda: revoke_session(session_id=sid, store=store, now=now))
-    with pytest.raises(InvalidBearerTokenError):
+    with _plain_refusal():
         refresh_session(refresh_token=first.refresh_token, settings=settings, store=racing_store, now=now)
     assert racing_store.lost_once
 
@@ -383,13 +395,13 @@ def test_lost_rotation_race_on_revoked_session_refused(
 def test_refresh_rejects_access_token(settings: BaseKwikSettings, store: InMemoryAuthSessionStore) -> None:
     """An access token is not a refresh token."""
     token = open_session(user_id=USER_ID, settings=settings, store=store)
-    with pytest.raises(InvalidBearerTokenError):
+    with _plain_refusal():
         refresh_session(refresh_token=token.access_token, settings=settings, store=store)
 
 
 def test_refresh_rejects_garbage(settings: BaseKwikSettings, store: InMemoryAuthSessionStore) -> None:
     """A string that is not a JWT is refused with the 401 error, not the decoder's 400."""
-    with pytest.raises(InvalidBearerTokenError):
+    with _plain_refusal():
         refresh_session(refresh_token="not-a-token", settings=settings, store=store)
 
 
@@ -466,6 +478,14 @@ def test_exceptions_carry_www_authenticate() -> None:
         "Auth sessions are not configured",
     )
     assert not_configured.headers is None
+
+
+def test_session_revoked_error_is_an_invalid_bearer_token_error() -> None:
+    """SessionRevokedError answers exactly as InvalidBearerTokenError: 401 with the invalid_token challenge."""
+    revoked = SessionRevokedError()
+    assert isinstance(revoked, InvalidBearerTokenError)
+    assert (revoked.status_code, revoked.detail) == (HTTPStatus.UNAUTHORIZED, "Invalid or expired token")
+    assert revoked.headers == {"WWW-Authenticate": 'Bearer error="invalid_token"'}
 
 
 async def test_http_exc_and_handler_pass_headers() -> None:

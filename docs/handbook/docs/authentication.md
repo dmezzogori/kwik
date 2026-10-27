@@ -150,7 +150,11 @@ It returns the new record (the clamped one: kwik mints the refresh token's expir
 The hard cap on a session (for example 90 days from `created_at`, however often it refreshes) is the store's policy, not kwik's. Enforce it in `rotate`: clamp the new `expires_at`, as the `LEAST(...)` above does, because every rotation overwrites `expires_at`. Changing it through `update` would not last. Use `update` only to revoke. Deactivating a user should also revoke their sessions: kwik refuses inactive accounts on the bearer path, but it does not revoke anything for you.
 
 !!! warning "Revocation must be durable"
-    When `refresh_session` detects reuse, or finds a child session whose parent is dead, it calls `store.revoke(...)` and then raises `InvalidBearerTokenError`. The request ends in a 401, and kwik's request database session rolls back when the endpoint raises, which would discard the revocation. `revoke` must therefore commit on its own: use a separate connection or session and commit immediately. Keep `rotate` and `get` on the request session.
+    When `refresh_session` detects reuse, or finds a child session whose parent is dead, it calls `store.revoke(...)` and then raises `SessionRevokedError`, a subclass of `InvalidBearerTokenError` with the same 401 and challenge. A request that raises normally rolls back kwik's request database session, which would discard a revocation the store wrote through it. Since 1.14.0 kwik makes an exception for `SessionRevokedError`: it commits the request session, then lets the error answer the 401. A store bound to the request session therefore keeps its revocation, on kwik's `POST /login/refresh` and on any application route that calls `refresh_session` under a `Kwik` app.
+
+    The commit covers everything pending in the request session. On `POST /login/refresh` the store's own writes are the only ones, but an application route that writes other data and then calls `refresh_session` has those writes committed too when the session is revoked.
+
+    Outside a `Kwik` app (a worker, a script, a FastAPI app without kwik's commit dependency) nothing commits for you, and `revoke` must commit on its own: use a separate connection or session and commit immediately, as the sketch below does. The sketch also works under a `Kwik` app. Keep `rotate` and `get` on the request session.
 
 A sketch with SQLAlchemy, with columns you may add beyond the record (kind, client, user agent, IP, last used):
 
@@ -216,7 +220,8 @@ class SqlStore:
         return None if row is None else AuthSession(**{f: getattr(row, f) for f in AUTH_SESSION_FIELDS})
 
     def revoke(self, session_id: str, *, at: datetime) -> None:
-        # Own transaction: kwik raises 401 right after this call and the request session rolls back.
+        # Own transaction, so the revocation lasts even where nothing commits the request session
+        # (outside a Kwik app). Under a Kwik app, self.db would also do: kwik commits it on SessionRevokedError.
         with Session(self.db.get_bind()) as own, own.begin():
             own.execute(
                 update(AuthSessionRow)
@@ -251,7 +256,7 @@ from kwik.security import authenticate_from_token
 user = authenticate_from_token(token=raw_token, settings=settings, session=session, store=store)
 ```
 
-To check a decoded payload yourself, import `require_active_session` from `kwik.auth` and call `require_active_session(payload=payload, store=store)`. It returns the `AuthSession`, or `None` when `store` is `None`. With a store it raises `InvalidBearerTokenError` when the token has no session id or is not an access token, or when the session is missing, revoked or expired. `open_session`, `refresh_session` and `revoke_session` are the same functions the login routes call.
+To check a decoded payload yourself, import `require_active_session` from `kwik.auth` and call `require_active_session(payload=payload, store=store)`. It returns the `AuthSession`, or `None` when `store` is `None`. With a store it raises `InvalidBearerTokenError` when the token has no session id or is not an access token, or when the session is missing, revoked or expired. `open_session`, `refresh_session` and `revoke_session` are the same functions the login routes call. Outside a `Kwik` app, commit after a `SessionRevokedError` yourself if your store revokes through a session you control (see [Revocation must be durable](#store)).
 
 ## Testing {#testing}
 
