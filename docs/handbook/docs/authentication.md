@@ -41,12 +41,18 @@ app = Kwik(settings=settings, api_router=api_router, auth_session_store=MyStore(
 If the store needs the request's database session, override the dependency instead:
 
 ```python
+from kwik.dependencies import Session as DbSession
 from kwik.dependencies.token import _get_auth_session_store
 
-app.dependency_overrides[_get_auth_session_store] = lambda session: SqlStore(session)
+
+def _sql_store(session: DbSession) -> SqlStore:
+    return SqlStore(session)
+
+
+app.dependency_overrides[_get_auth_session_store] = _sql_store
 ```
 
-(Declare `session` with the `Session` dependency from `kwik.dependencies`, so FastAPI resolves it per request.)
+The override must be a function whose parameter is annotated with the `Session` dependency; an un-annotated parameter (a lambda) is read by FastAPI as a query parameter and every route answers 422.
 
 Then set the lifetimes. With sessions, the access token should be short; the refresh token carries the long lifetime:
 
@@ -67,7 +73,7 @@ With a store, login and refresh return the `Token` body with two extra fields:
 }
 ```
 
-`expires_in` is the access token lifetime in seconds. Exchange the refresh token for a new pair:
+`expires_in` is the access token lifetime in seconds. Without a store, both fields are serialised as `null`. Exchange the refresh token for a new pair:
 
 ```http
 POST /login/refresh
@@ -113,13 +119,13 @@ class AuthSession:
     revoked_at: datetime | None = None
 ```
 
-Every datetime is timezone-aware UTC, on the way in and on the way out. The store has five methods:
+Every datetime is timezone-aware UTC, on the way in and on the way out; normalise with `.astimezone(UTC)` if the database session time zone is not UTC. The store has five methods:
 
 | Method | Contract |
 |--------|----------|
 | `create(session)` | Persist a new record. |
 | `get(session_id)` | Return the record or `None`. |
-| `update(session)` | Replace the record. For your own use (hard caps, deactivation); kwik's refresh never calls it. It is not a revocation. |
+| `update(session)` | Replace the record. For your own use; kwik's refresh never calls it. Setting `revoked_at` through `update` does not cascade to child sessions, so revoke with `revoke`. |
 | `rotate(session_id, *, expected_token_id, new_token_id, expires_at, rotated_at)` | Compare-and-set, see below. |
 | `revoke(session_id, *, at)` | Set `revoked_at` on the session and on every session whose `parent_session_id` is it. |
 
@@ -129,7 +135,7 @@ Every datetime is timezone-aware UTC, on the way in and on the way out. The stor
 UPDATE auth_sessions
 SET previous_refresh_token_id = refresh_token_id,
     refresh_token_id = :new,
-    expires_at = :expires_at,
+    expires_at = LEAST(:expires_at, created_at + interval '90 days'),
     rotated_at = :rotated_at
 WHERE id = :id
   AND refresh_token_id = :expected
@@ -137,19 +143,29 @@ WHERE id = :id
 RETURNING *
 ```
 
-It returns the new record, or `None` when another rotation won or the session does not exist. kwik then re-reads the session and applies the grace check. The `revoked_at IS NULL` condition is not required by the protocol, but it keeps a revoked session from rotating in a race with `revoke`.
+It returns the new record (the clamped one: kwik mints the refresh token's expiry from the returned `expires_at`), or `None` when another rotation won or the session does not exist. kwik then re-reads the session and applies the grace check. The `revoked_at IS NULL` condition is not required by the protocol, but it keeps a revoked session from rotating in a race with `revoke`.
 
 `get` runs on every authenticated request, and twice on a route that combines an `AuthenticatedRouter` with a permission gate. Keep it one indexed read. If you cache it, the cache TTL is your revocation bound.
 
-The hard cap on a session (for example 90 days from `created_at`, however often it refreshes) is the store's policy, not kwik's. Enforce it by lowering `expires_at` through `update`, or by revoking. Deactivating a user should also revoke their sessions: kwik refuses inactive accounts on the bearer path, but it does not revoke anything for you.
+The hard cap on a session (for example 90 days from `created_at`, however often it refreshes) is the store's policy, not kwik's. Enforce it in `rotate`: clamp the new `expires_at`, as the `LEAST(...)` above does, because every rotation overwrites `expires_at`. Changing it through `update` would not last. Use `update` only to revoke. Deactivating a user should also revoke their sessions: kwik refuses inactive accounts on the bearer path, but it does not revoke anything for you.
+
+!!! warning "Revocation must be durable"
+    When `refresh_session` detects reuse, or finds a child session whose parent is dead, it calls `store.revoke(...)` and then raises `InvalidBearerTokenError`. The request ends in a 401, and kwik's request database session rolls back when the endpoint raises, which would discard the revocation. `revoke` must therefore commit on its own: use a separate connection or session and commit immediately. Keep `rotate` and `get` on the request session.
 
 A sketch with SQLAlchemy, with columns you may add beyond the record (kind, client, user agent, IP, last used):
 
 ```python
-from sqlalchemy import DateTime, ForeignKey, String, update
+from dataclasses import fields
+from datetime import datetime, timedelta
+
+from sqlalchemy import DateTime, ForeignKey, String, func, update
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from kwik.auth import AuthSession
+from kwik.models import Base  # or your own declarative base
+
+HARD_CAP = timedelta(days=90)
+AUTH_SESSION_FIELDS = [f.name for f in fields(AuthSession)]
 
 
 class AuthSessionRow(Base):
@@ -170,7 +186,7 @@ class AuthSessionRow(Base):
 
 class SqlStore:
     def __init__(self, db: Session) -> None:
-        self.db = db
+        self.db = db  # the request's session; commit and rollback are kwik's
 
     def create(self, session: AuthSession) -> None:
         self.db.add(AuthSessionRow(**vars(session)))
@@ -191,7 +207,8 @@ class SqlStore:
             .values(
                 previous_refresh_token_id=expected_token_id,
                 refresh_token_id=new_token_id,
-                expires_at=expires_at,
+                # the hard cap lives here: every rotation overwrites expires_at
+                expires_at=func.least(expires_at, AuthSessionRow.created_at + HARD_CAP),
                 rotated_at=rotated_at,
             )
             .returning(AuthSessionRow)
@@ -199,23 +216,21 @@ class SqlStore:
         return None if row is None else AuthSession(**{f: getattr(row, f) for f in AUTH_SESSION_FIELDS})
 
     def revoke(self, session_id: str, *, at: datetime) -> None:
-        self.db.execute(
-            update(AuthSessionRow)
-            .where(
-                (AuthSessionRow.id == session_id) | (AuthSessionRow.parent_session_id == session_id),
-                AuthSessionRow.revoked_at.is_(None),
+        # Own transaction: kwik raises 401 right after this call and the request session rolls back.
+        with Session(self.db.get_bind()) as own, own.begin():
+            own.execute(
+                update(AuthSessionRow)
+                .where(
+                    (AuthSessionRow.id == session_id) | (AuthSessionRow.parent_session_id == session_id),
+                    AuthSessionRow.revoked_at.is_(None),
+                )
+                .values(revoked_at=at)
             )
-            .values(revoked_at=at)
-        )
 
     # update(): same shape, copy the record's fields onto the row.
 ```
 
-`AUTH_SESSION_FIELDS` stands for the field names of `AuthSession` (`[f.name for f in dataclasses.fields(AuthSession)]`). Wire the store in with the dependency override shown above:
-
-```python
-app.dependency_overrides[_get_auth_session_store] = lambda session: SqlStore(session)
-```
+Wire the store in with the `_sql_store` override shown above.
 
 ## Impersonation {#impersonation}
 
@@ -236,7 +251,7 @@ from kwik.security import authenticate_from_token
 user = authenticate_from_token(token=raw_token, settings=settings, session=session, store=store)
 ```
 
-To check a decoded payload yourself, call `require_active_session(payload=payload, store=store)`. It returns the `AuthSession`, or `None` when `store` is `None`, and raises `InvalidBearerTokenError` otherwise when the session is missing, revoked or expired. `open_session`, `refresh_session` and `revoke_session` are the same functions the login routes call.
+To check a decoded payload yourself, import `require_active_session` from `kwik.auth` and call `require_active_session(payload=payload, store=store)`. It returns the `AuthSession`, or `None` when `store` is `None`. With a store it raises `InvalidBearerTokenError` when the token has no session id or is not an access token, or when the session is missing, revoked or expired. `open_session`, `refresh_session` and `revoke_session` are the same functions the login routes call.
 
 ## Testing {#testing}
 
