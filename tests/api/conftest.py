@@ -11,6 +11,7 @@ from sqlalchemy.orm.session import Session
 
 from kwik.api.api import api_router
 from kwik.applications import Kwik
+from kwik.auth import InMemoryAuthSessionStore
 from kwik.dependencies.session import _get_session
 from kwik.testing import IdentityAwareTestClient
 
@@ -23,15 +24,26 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(scope="session")
-def kwik_app(settings: BaseKwikSettings) -> Kwik:
-    """Create and return a Kwik application instance for testing."""
+def auth_store() -> InMemoryAuthSessionStore:
+    """Return the in-memory auth session store the ``kwik_app`` fixture is configured with."""
+    return InMemoryAuthSessionStore()
+
+
+@pytest.fixture(scope="session")
+def kwik_app(settings: BaseKwikSettings, auth_store: InMemoryAuthSessionStore) -> Kwik:
+    """Create a Kwik application instance with auth sessions enabled."""
+    return Kwik(settings=settings, api_router=api_router, auth_session_store=auth_store)
+
+
+@pytest.fixture(scope="session")
+def legacy_kwik_app(settings: BaseKwikSettings) -> Kwik:
+    """Create a Kwik application instance without an auth session store (kwik 1.13 behaviour)."""
     return Kwik(settings=settings, api_router=api_router)
 
 
-@pytest.fixture
-def client(kwik_app: Kwik, engine: Engine) -> Generator[TestClient, None, None]:
+def _rolled_back_client(app: Kwik, engine: Engine) -> Generator[TestClient, None, None]:
     """
-    Set up an HTTP client whose requests share one rolled-back transaction.
+    Yield an HTTP client for ``app`` whose requests share one rolled-back transaction.
 
     The API session joins an outer transaction in ``create_savepoint`` mode, so the
     commit kwik issues before every response only releases a SAVEPOINT and the
@@ -44,15 +56,27 @@ def client(kwik_app: Kwik, engine: Engine) -> Generator[TestClient, None, None]:
     def _get_session_override() -> Generator[Session, None, None]:
         yield api_session
 
-    kwik_app.app.dependency_overrides[_get_session] = _get_session_override
+    app.app.dependency_overrides[_get_session] = _get_session_override
     try:
-        with TestClient(app=kwik_app.app) as client:
+        with TestClient(app=app.app) as client:
             yield client
     finally:
-        kwik_app.app.dependency_overrides.pop(_get_session, None)
+        app.app.dependency_overrides.pop(_get_session, None)
         api_session.close()
         transaction.rollback()
         connection.close()
+
+
+@pytest.fixture
+def client(kwik_app: Kwik, engine: Engine) -> Generator[TestClient, None, None]:
+    """Set up an HTTP client for the session-aware application."""
+    yield from _rolled_back_client(kwik_app, engine)
+
+
+@pytest.fixture
+def legacy_client(legacy_kwik_app: Kwik, engine: Engine) -> Generator[TestClient, None, None]:
+    """Set up an HTTP client for the application without an auth session store."""
+    yield from _rolled_back_client(legacy_kwik_app, engine)
 
 
 @pytest.fixture

@@ -7,6 +7,7 @@ and API schema definitions across the kwik web framework.
 
 from __future__ import annotations
 
+from .auth import RefreshRequest
 from .mixins import ORMMixin, RecordInfoMixin
 from .pagination import Paginated
 from .permission import PermissionDefinition, PermissionProfile, PermissionUpdate
@@ -30,6 +31,7 @@ __all__ = [
     "PermissionProfile",
     "PermissionUpdate",
     "RecordInfoMixin",
+    "RefreshRequest",
     "RoleDefinition",
     "RolePermissionAssignment",
     "RoleProfile",

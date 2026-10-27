@@ -6,6 +6,7 @@ This module contains comprehensive test cases for the login router endpoints inc
 - Token validation (/test-token)
 - User impersonation functionality (/impersonate, /is_impersonating, /stop_impersonating)
 - Password reset functionality (/reset-password)
+- Auth sessions (login opens a session, /refresh rotates it, /logout revokes it)
 """
 
 from __future__ import annotations
@@ -16,17 +17,55 @@ from typing import TYPE_CHECKING
 
 import jwt
 
-from kwik.security import generate_password_reset_token, get_password_hash
+from kwik.security import decode_token, generate_password_reset_token, get_password_hash
 
 if TYPE_CHECKING:
+    import pytest
     from fastapi.testclient import TestClient
 
+    from kwik.auth import InMemoryAuthSessionStore
     from kwik.models import User
     from kwik.settings import BaseKwikSettings
     from kwik.testing import IdentityAwareTestClient
 
 # Constants for magic values
 MIN_JWT_TOKEN_LENGTH = 50
+SECONDS_PER_MINUTE = 60
+NO_GRACE_SECONDS = 0
+LOGIN_URL = "/api/v1/login/access-token"
+REFRESH_URL = "/api/v1/login/refresh"
+LOGOUT_URL = "/api/v1/login/logout"
+TEST_TOKEN_URL = "/api/v1/login/test-token"
+
+
+def _login(client: TestClient, settings: BaseKwikSettings) -> dict:
+    """Log the first superuser in with the password form and return the token response."""
+    response = client.post(
+        LOGIN_URL,
+        data={"username": settings.FIRST_SUPERUSER, "password": settings.FIRST_SUPERUSER_PASSWORD},
+    )
+    assert response.status_code == HTTPStatus.OK
+    return response.json()
+
+
+def _bearer(token: str) -> dict[str, str]:
+    """Return the Authorization header for ``token``."""
+    return {"Authorization": f"Bearer {token}"}
+
+
+def _reuse(client: TestClient, settings: BaseKwikSettings, monkeypatch: pytest.MonkeyPatch) -> tuple[dict, dict]:
+    """
+    Rotate a session's refresh token, then present the rotated one again outside the grace window.
+
+    The window is set to zero instead of sleeping. Returns the first pair and the successor pair.
+    """
+    first = _login(client, settings)
+    rotated = client.post(REFRESH_URL, json={"refresh_token": first["refresh_token"]})
+    assert rotated.status_code == HTTPStatus.OK
+    monkeypatch.setattr(settings, "REFRESH_REUSE_GRACE_SECONDS", NO_GRACE_SECONDS)
+    reused = client.post(REFRESH_URL, json={"refresh_token": first["refresh_token"]})
+    assert reused.status_code == HTTPStatus.UNAUTHORIZED
+    return first, rotated.json()
 
 
 class TestLoginRouter:
@@ -120,13 +159,17 @@ class TestLoginRouter:
 
     def test_impersonate_with_permission(
         self,
-        client: TestClient,
+        legacy_client: TestClient,
         regular_user: User,
         settings: BaseKwikSettings,
     ) -> None:
-        """Test successful user impersonation with proper permissions."""
+        """
+        Test successful user impersonation with proper permissions.
+
+        Impersonation does not open sessions yet, so this runs on the application without a store.
+        """
         # Login as admin with impersonation permission
-        login_response = client.post(
+        login_response = legacy_client.post(
             "/api/v1/login/access-token",
             data={
                 "username": settings.FIRST_SUPERUSER,
@@ -137,8 +180,8 @@ class TestLoginRouter:
         admin_token = login_response.json()["access_token"]
 
         # Impersonate regular user
-        client.headers = {**client.headers, "Authorization": f"Bearer {admin_token}"}
-        response = client.post(
+        legacy_client.headers = {**legacy_client.headers, "Authorization": f"Bearer {admin_token}"}
+        response = legacy_client.post(
             "/api/v1/login/impersonate",
             params={"user_id": regular_user.id},
         )
@@ -150,8 +193,8 @@ class TestLoginRouter:
 
         # Verify impersonation token works
         impersonation_token = data["access_token"]
-        client.headers = {"Authorization": f"Bearer {impersonation_token}"}
-        test_response = client.post("/api/v1/login/test-token")
+        legacy_client.headers = {"Authorization": f"Bearer {impersonation_token}"}
+        test_response = legacy_client.post("/api/v1/login/test-token")
         assert test_response.status_code == HTTPStatus.OK
         user_data = test_response.json()
         assert user_data["id"] == regular_user.id
@@ -216,13 +259,17 @@ class TestLoginRouter:
 
     def test_is_impersonating_impersonation_token(
         self,
-        client: TestClient,
+        legacy_client: TestClient,
         regular_user: User,
         settings: BaseKwikSettings,
     ) -> None:
-        """Test is_impersonating returns True for impersonation token."""
+        """
+        Test is_impersonating returns True for impersonation token.
+
+        Impersonation does not open sessions yet, so this runs on the application without a store.
+        """
         # Login and impersonate
-        login_response = client.post(
+        login_response = legacy_client.post(
             "/api/v1/login/access-token",
             data={
                 "username": settings.FIRST_SUPERUSER,
@@ -231,8 +278,8 @@ class TestLoginRouter:
         )
         admin_token = login_response.json()["access_token"]
 
-        client.headers = {**client.headers, "Authorization": f"Bearer {admin_token}"}
-        impersonate_response = client.post(
+        legacy_client.headers = {**legacy_client.headers, "Authorization": f"Bearer {admin_token}"}
+        impersonate_response = legacy_client.post(
             "/api/v1/login/impersonate",
             params={"user_id": regular_user.id},
         )
@@ -240,21 +287,25 @@ class TestLoginRouter:
         impersonation_token = impersonate_response.json()["access_token"]
 
         # Check impersonation status
-        client.headers = {"Authorization": f"Bearer {impersonation_token}"}
-        response = client.post("/api/v1/login/is_impersonating")
+        legacy_client.headers = {"Authorization": f"Bearer {impersonation_token}"}
+        response = legacy_client.post("/api/v1/login/is_impersonating")
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() is True
 
     def test_stop_impersonating(
         self,
-        client: TestClient,
+        legacy_client: TestClient,
         regular_user: User,
         settings: BaseKwikSettings,
     ) -> None:
-        """Test stopping impersonation and returning to original user."""
+        """
+        Test stopping impersonation and returning to original user.
+
+        Impersonation does not open sessions yet, so this runs on the application without a store.
+        """
         # Login and impersonate
-        login_response = client.post(
+        login_response = legacy_client.post(
             "/api/v1/login/access-token",
             data={
                 "username": settings.FIRST_SUPERUSER,
@@ -263,16 +314,16 @@ class TestLoginRouter:
         )
         admin_token = login_response.json()["access_token"]
 
-        client.headers = {"Authorization": f"Bearer {admin_token}"}
-        impersonate_response = client.post(
+        legacy_client.headers = {"Authorization": f"Bearer {admin_token}"}
+        impersonate_response = legacy_client.post(
             "/api/v1/login/impersonate",
             params={"user_id": regular_user.id},
         )
         impersonation_token = impersonate_response.json()["access_token"]
 
         # Stop impersonating
-        client.headers = {"Authorization": f"Bearer {impersonation_token}"}
-        stop_response = client.post("/api/v1/login/stop_impersonating")
+        legacy_client.headers = {"Authorization": f"Bearer {impersonation_token}"}
+        stop_response = legacy_client.post("/api/v1/login/stop_impersonating")
 
         assert stop_response.status_code == HTTPStatus.OK
         data = stop_response.json()
@@ -281,8 +332,8 @@ class TestLoginRouter:
 
         # Verify we're back to the original admin user
         original_token = data["access_token"]
-        client.headers = {"Authorization": f"Bearer {original_token}"}
-        test_response = client.post("/api/v1/login/test-token")
+        legacy_client.headers = {"Authorization": f"Bearer {original_token}"}
+        test_response = legacy_client.post("/api/v1/login/test-token")
         user_data = test_response.json()
         assert user_data["email"] == settings.FIRST_SUPERUSER
 
@@ -357,3 +408,108 @@ class TestLoginRouter:
 
         # Expired tokens cause TokenValidationError which returns 400
         assert response.status_code == HTTPStatus.BAD_REQUEST
+
+    def test_access_token_opens_session(
+        self, client: TestClient, settings: BaseKwikSettings, auth_store: InMemoryAuthSessionStore
+    ) -> None:
+        """Password login opens a session and returns an access and a refresh token bound to it."""
+        data = _login(client, settings)
+
+        payload = decode_token(token=data["access_token"], settings=settings)
+        assert payload.sid is not None
+        assert auth_store.get(payload.sid) is not None
+        assert data["expires_in"] == settings.ACCESS_TOKEN_EXPIRE_MINUTES * SECONDS_PER_MINUTE
+        refresh_payload = decode_token(token=data["refresh_token"], settings=settings, token_type="refresh")
+        assert refresh_payload.sid == payload.sid
+
+    def test_access_token_legacy_app_has_no_session(
+        self, legacy_client: TestClient, settings: BaseKwikSettings
+    ) -> None:
+        """Without a store, login returns a 1.13 token: no refresh token, no expires_in, no sid."""
+        data = _login(legacy_client, settings)
+
+        assert data["refresh_token"] is None
+        assert data["expires_in"] is None
+        assert decode_token(token=data["access_token"], settings=settings).sid is None
+
+    def test_refresh_returns_new_pair(self, client: TestClient, settings: BaseKwikSettings) -> None:
+        """Refreshing rotates the refresh token and the new access token authenticates."""
+        first = _login(client, settings)
+
+        second = client.post(REFRESH_URL, json={"refresh_token": first["refresh_token"]})
+
+        assert second.status_code == HTTPStatus.OK
+        assert second.json()["refresh_token"] != first["refresh_token"]
+        used = client.post(TEST_TOKEN_URL, headers=_bearer(second.json()["access_token"]))
+        assert used.status_code == HTTPStatus.OK
+
+    def test_refresh_rejects_access_token(self, client: TestClient, settings: BaseKwikSettings) -> None:
+        """An access token is not a refresh token."""
+        first = _login(client, settings)
+
+        response = client.post(REFRESH_URL, json={"refresh_token": first["access_token"]})
+
+        assert response.status_code == HTTPStatus.UNAUTHORIZED
+        assert response.headers["WWW-Authenticate"] == 'Bearer error="invalid_token"'
+
+    def test_refresh_reuse_revokes_session(
+        self,
+        client: TestClient,
+        settings: BaseKwikSettings,
+        auth_store: InMemoryAuthSessionStore,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Presenting a rotated refresh token outside the grace window revokes the session."""
+        first, _ = _reuse(client, settings, monkeypatch)
+
+        session_id = decode_token(token=first["access_token"], settings=settings).sid
+        record = auth_store.get(session_id)
+        assert record is not None
+        assert record.revoked_at is not None
+
+    def test_access_token_rejected_after_reuse(
+        self, client: TestClient, settings: BaseKwikSettings, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """After reuse revokes the session, the successor's access token no longer authenticates."""
+        _, second = _reuse(client, settings, monkeypatch)
+
+        response = client.post(TEST_TOKEN_URL, headers=_bearer(second["access_token"]))
+
+        assert response.status_code == HTTPStatus.UNAUTHORIZED
+
+    def test_refresh_within_grace_returns_same_successor(self, client: TestClient, settings: BaseKwikSettings) -> None:
+        """The previous refresh token, presented again inside the grace window, returns the same successor."""
+        first = _login(client, settings)
+        second = client.post(REFRESH_URL, json={"refresh_token": first["refresh_token"]})
+
+        again = client.post(REFRESH_URL, json={"refresh_token": first["refresh_token"]})
+
+        assert again.status_code == HTTPStatus.OK
+        assert again.json()["refresh_token"] == second.json()["refresh_token"]
+
+    def test_refresh_without_store_is_501(self, legacy_client: TestClient) -> None:
+        """An application with no session store answers 501 on refresh."""
+        response = legacy_client.post(REFRESH_URL, json={"refresh_token": "anything"})
+
+        assert response.status_code == HTTPStatus.NOT_IMPLEMENTED
+
+    def test_logout_revokes_session(self, client: TestClient, settings: BaseKwikSettings) -> None:
+        """Logging out revokes the session: neither its access token nor its refresh token works."""
+        data = _login(client, settings)
+
+        logout = client.post(LOGOUT_URL, headers=_bearer(data["access_token"]))
+
+        assert logout.status_code == HTTPStatus.OK
+        assert logout.json() == {"msg": "Session revoked"}
+        used = client.post(TEST_TOKEN_URL, headers=_bearer(data["access_token"]))
+        assert used.status_code == HTTPStatus.UNAUTHORIZED
+        refreshed = client.post(REFRESH_URL, json={"refresh_token": data["refresh_token"]})
+        assert refreshed.status_code == HTTPStatus.UNAUTHORIZED
+
+    def test_logout_without_store_is_501(self, legacy_client: TestClient, settings: BaseKwikSettings) -> None:
+        """An application with no session store answers 501 on logout."""
+        data = _login(legacy_client, settings)
+
+        response = legacy_client.post(LOGOUT_URL, headers=_bearer(data["access_token"]))
+
+        assert response.status_code == HTTPStatus.NOT_IMPLEMENTED
