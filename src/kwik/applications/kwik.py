@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from fastapi import APIRouter
     from sqlalchemy.orm import Session
 
+    from kwik.auth import AuthSessionStore
     from kwik.settings import BaseKwikSettings
 
 
@@ -94,6 +95,9 @@ class Kwik:
     It automatically registers all the endpoints from the api_router.
     Every route commits its database session after the endpoint returns and
     before the response is sent, so clients never read ahead of a write.
+
+    With an ``auth_session_store`` every bearer-authenticated request checks that its
+    token's session is still active; without one the application behaves as kwik 1.13.
     """
 
     def __init__(
@@ -102,10 +106,12 @@ class Kwik:
         settings: BaseKwikSettings,
         api_router: APIRouter,
         seed_db: Callable[[Session, BaseKwikSettings], None] | None = None,
+        auth_session_store: AuthSessionStore | None = None,
     ) -> None:
-        """Initialize Kwik application with API router."""
+        """Initialize Kwik application with API router and an optional auth session store."""
         self.settings = settings
         self._seed_db = seed_db
+        self._auth_session_store = auth_session_store
         configure_password_policy(min_length=settings.PASSWORD_MIN_LENGTH)
         self._app = self._init_fastapi_app(api_router=api_router)
 
@@ -139,6 +145,8 @@ class Kwik:
             # Commit every route's session before its response is sent (teban #823).
             dependencies=[Depends(_commit_session, scope="function")],
         )
+        # Set here rather than in the lifespan so it is readable before startup.
+        app.state.auth_session_store = self._auth_session_store
 
         app.add_middleware(ProxyHeadersMiddleware)
         app.add_middleware(GZipMiddleware)

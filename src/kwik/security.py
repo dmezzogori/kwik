@@ -21,6 +21,7 @@ from kwik.exceptions.users import PasswordTooLongError
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
+    from kwik.auth import AuthSessionStore
     from kwik.crud.context import Context
     from kwik.models import User
     from kwik.settings import BaseKwikSettings
@@ -197,6 +198,7 @@ def authenticate_from_token(
     token: str,
     settings: BaseKwikSettings,
     session: Session,
+    store: AuthSessionStore | None = None,
 ) -> User:
     """
     Validate a JWT token and return the corresponding user.
@@ -208,20 +210,26 @@ def authenticate_from_token(
         token: Raw JWT string.
         settings: Application settings (provides SECRET_KEY and ALGORITHM).
         session: SQLAlchemy session for user lookup.
+        store: The application's auth session store; when given, the token's session
+            must be active.
 
     Returns:
         The authenticated User ORM object.
 
     Raises:
-        AccessDeniedError: If the token is invalid or the user does not exist.
+        TokenValidationError: If the token is invalid or expired.
+        InvalidBearerTokenError: If ``store`` is given and the token's session is not active.
+        AccessDeniedError: If the user does not exist.
 
     """
-    # Local imports to avoid circular dependency: crud.users imports security for hashing
+    # Local imports to avoid circular dependencies: crud.users and kwik.auth import security
+    from kwik.auth import require_active_session  # noqa: PLC0415
     from kwik.crud import crud_users  # noqa: PLC0415
     from kwik.crud.context import Context  # noqa: PLC0415
     from kwik.exceptions import AccessDeniedError  # noqa: PLC0415
 
     payload = decode_token(token=token, settings=settings)
+    require_active_session(payload=payload, store=store)
     if payload.sub is None:
         raise AccessDeniedError
     context = Context(session=session, user=None)

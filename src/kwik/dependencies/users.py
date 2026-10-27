@@ -4,26 +4,16 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, Request
 
 from kwik.crud import crud_users
 from kwik.crud.context import Context
 from kwik.exceptions import AccessDeniedError
 from kwik.models import User
-from kwik.security import decode_token
 
 from .session import Session  # noqa: TC001
 from .settings import Settings  # noqa: TC001
-from .token import current_token  # noqa: TC001
-
-# Optional OAuth2 scheme that does NOT raise on missing Bearer token.
-# Used by _resolve_current_user to support both JWT and API key auth.
-_settings = __import__("kwik.settings", fromlist=["BaseKwikSettings"]).BaseKwikSettings()
-_oauth2_optional = OAuth2PasswordBearer(
-    tokenUrl=f"{_settings.API_V1_STR}/login/access-token",
-    auto_error=False,
-)
+from .token import AuthSessions, _bearer_token, _payload_from, current_token
 
 
 def _get_current_user(token: current_token, session: Session) -> User:
@@ -47,29 +37,36 @@ def _get_current_user(token: current_token, session: Session) -> User:
 
 def _resolve_current_user(
     request: Request,
-    raw_token: Annotated[str | None, Depends(_oauth2_optional)],
+    raw_token: Annotated[str | None, Depends(_bearer_token)],
     settings: Settings,
     session: Session,
+    store: AuthSessions,
 ) -> User:
     """
-    Resolve the current user from either an API key or a JWT.
+    Resolve the current user from either an API key or a bearer token.
 
     Checks ``request.state.api_key_user`` first (set by
-    ``verify_api_key`` on ``ApiKeyRouter``). Falls back to decoding
-    the JWT Bearer token. This allows ``has_permission`` to work
-    transparently on both ``AuthenticatedRouter`` and ``ApiKeyRouter``.
+    ``verify_api_key`` on ``ApiKeyRouter``). Falls back to the bearer
+    token, whose auth session is checked when the application configured
+    a store. This allows ``has_permission`` to work transparently on both
+    ``AuthenticatedRouter`` and ``ApiKeyRouter``.
+
+    ``store`` has no default on purpose: a direct caller that omitted it
+    would silently skip the auth-session check.
 
     Args:
         request: The incoming HTTP request.
-        raw_token: Optional Bearer token (extracted with ``auto_error=False``).
-        settings: Application settings for JWT decoding.
+        raw_token: Optional bearer token (None when the header is missing).
+        settings: Application settings for token decoding.
         session: Database session.
+        store: The application's auth session store, or None.
 
     Returns:
         The authenticated user.
 
     Raises:
-        HTTPException: 401 if no user can be resolved from either source.
+        MissingBearerTokenError: 401 if neither an API key user nor a bearer token is present.
+        InvalidBearerTokenError: 401 if the token is invalid or expired, or its session is not active.
         AccessDeniedError: 403 if the user is not found in the database.
 
     """
@@ -78,14 +75,8 @@ def _resolve_current_user(
     if user is not None:
         return user
 
-    # JWT path
-    if raw_token is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
-    token = decode_token(token=raw_token, settings=settings)
+    # Bearer path
+    token = _payload_from(raw_token, settings, store)
     if token.sub is None:
         raise AccessDeniedError
 

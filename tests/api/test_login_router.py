@@ -88,8 +88,9 @@ class TestLoginRouter:
         client.headers = {"Authorization": "Bearer invalid_token"}
         response = client.post("/api/v1/login/test-token")
 
-        # FastAPI returns 400 for invalid JWT tokens
-        assert response.status_code == HTTPStatus.BAD_REQUEST
+        # An invalid bearer token is a 401 with the RFC 6750 invalid_token challenge
+        assert response.status_code == HTTPStatus.UNAUTHORIZED
+        assert response.headers["WWW-Authenticate"] == 'Bearer error="invalid_token"'
 
     def test_test_token_missing_token(self, client: TestClient) -> None:
         """Test token validation without token."""

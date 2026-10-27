@@ -16,11 +16,12 @@ from .permissions import has_permission
 from .session import Session
 from .settings import Settings
 from .sorting_query import Sorting
-from .token import current_token
+from .token import AuthSessions, current_token
 from .users import current_user, resolved_user
 
 __all__ = [
     "ApiKeyContext",
+    "AuthSessions",
     "Filters",
     "ListQuery",
     "NoUserContext",

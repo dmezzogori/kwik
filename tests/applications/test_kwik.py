@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from kwik.api.api import api_router
 from kwik.applications import Kwik
+from kwik.auth import InMemoryAuthSessionStore
 from kwik.crud import Context, crud_users
 from kwik.database import create_session, session_scope
 from kwik.logging import logger
@@ -43,6 +44,20 @@ class TestKwikApplicationCreation:
         assert kwik_app is not None
         assert kwik_app.settings == settings
         assert kwik_app.app is not None
+
+    def test_auth_session_store_on_app_state(self, settings: BaseKwikSettings) -> None:
+        """The auth session store passed to Kwik is reachable on the app state before startup."""
+        store = InMemoryAuthSessionStore()
+
+        kwik_app = Kwik(settings=settings, api_router=api_router, auth_session_store=store)
+
+        assert kwik_app.app.state.auth_session_store is store
+
+    def test_default_has_no_store(self, settings: BaseKwikSettings) -> None:
+        """Without a store the app state holds None, so sessions are not checked."""
+        kwik_app = Kwik(settings=settings, api_router=api_router)
+
+        assert kwik_app.app.state.auth_session_store is None
 
 
 class TestSeedingFunctionality:
