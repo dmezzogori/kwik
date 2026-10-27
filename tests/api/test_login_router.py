@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 
 import jwt
 
+from kwik.auth import revoke_session
 from kwik.security import decode_token, generate_password_reset_token, get_password_hash
 
 if TYPE_CHECKING:
@@ -36,6 +37,9 @@ LOGIN_URL = "/api/v1/login/access-token"
 REFRESH_URL = "/api/v1/login/refresh"
 LOGOUT_URL = "/api/v1/login/logout"
 TEST_TOKEN_URL = "/api/v1/login/test-token"
+IMPERSONATE_URL = "/api/v1/login/impersonate"
+IS_IMPERSONATING_URL = "/api/v1/login/is_impersonating"
+STOP_IMPERSONATING_URL = "/api/v1/login/stop_impersonating"
 
 
 def _login(client: TestClient, settings: BaseKwikSettings) -> dict:
@@ -51,6 +55,13 @@ def _login(client: TestClient, settings: BaseKwikSettings) -> dict:
 def _bearer(token: str) -> dict[str, str]:
     """Return the Authorization header for ``token``."""
     return {"Authorization": f"Bearer {token}"}
+
+
+def _impersonate(client: TestClient, token: str, user_id: int) -> dict:
+    """Impersonate ``user_id`` with the bearer ``token`` and return the token response."""
+    response = client.post(IMPERSONATE_URL, params={"user_id": user_id}, headers=_bearer(token))
+    assert response.status_code == HTTPStatus.OK
+    return response.json()
 
 
 def _reuse(client: TestClient, settings: BaseKwikSettings, monkeypatch: pytest.MonkeyPatch) -> tuple[dict, dict]:
@@ -159,17 +170,13 @@ class TestLoginRouter:
 
     def test_impersonate_with_permission(
         self,
-        legacy_client: TestClient,
+        client: TestClient,
         regular_user: User,
         settings: BaseKwikSettings,
     ) -> None:
-        """
-        Test successful user impersonation with proper permissions.
-
-        Impersonation does not open sessions yet, so this runs on the application without a store.
-        """
+        """Test successful user impersonation with proper permissions."""
         # Login as admin with impersonation permission
-        login_response = legacy_client.post(
+        login_response = client.post(
             "/api/v1/login/access-token",
             data={
                 "username": settings.FIRST_SUPERUSER,
@@ -180,8 +187,8 @@ class TestLoginRouter:
         admin_token = login_response.json()["access_token"]
 
         # Impersonate regular user
-        legacy_client.headers = {**legacy_client.headers, "Authorization": f"Bearer {admin_token}"}
-        response = legacy_client.post(
+        client.headers = {**client.headers, "Authorization": f"Bearer {admin_token}"}
+        response = client.post(
             "/api/v1/login/impersonate",
             params={"user_id": regular_user.id},
         )
@@ -193,8 +200,8 @@ class TestLoginRouter:
 
         # Verify impersonation token works
         impersonation_token = data["access_token"]
-        legacy_client.headers = {"Authorization": f"Bearer {impersonation_token}"}
-        test_response = legacy_client.post("/api/v1/login/test-token")
+        client.headers = {"Authorization": f"Bearer {impersonation_token}"}
+        test_response = client.post("/api/v1/login/test-token")
         assert test_response.status_code == HTTPStatus.OK
         user_data = test_response.json()
         assert user_data["id"] == regular_user.id
@@ -259,17 +266,13 @@ class TestLoginRouter:
 
     def test_is_impersonating_impersonation_token(
         self,
-        legacy_client: TestClient,
+        client: TestClient,
         regular_user: User,
         settings: BaseKwikSettings,
     ) -> None:
-        """
-        Test is_impersonating returns True for impersonation token.
-
-        Impersonation does not open sessions yet, so this runs on the application without a store.
-        """
+        """Test is_impersonating returns True for impersonation token."""
         # Login and impersonate
-        login_response = legacy_client.post(
+        login_response = client.post(
             "/api/v1/login/access-token",
             data={
                 "username": settings.FIRST_SUPERUSER,
@@ -278,8 +281,8 @@ class TestLoginRouter:
         )
         admin_token = login_response.json()["access_token"]
 
-        legacy_client.headers = {**legacy_client.headers, "Authorization": f"Bearer {admin_token}"}
-        impersonate_response = legacy_client.post(
+        client.headers = {**client.headers, "Authorization": f"Bearer {admin_token}"}
+        impersonate_response = client.post(
             "/api/v1/login/impersonate",
             params={"user_id": regular_user.id},
         )
@@ -287,25 +290,21 @@ class TestLoginRouter:
         impersonation_token = impersonate_response.json()["access_token"]
 
         # Check impersonation status
-        legacy_client.headers = {"Authorization": f"Bearer {impersonation_token}"}
-        response = legacy_client.post("/api/v1/login/is_impersonating")
+        client.headers = {"Authorization": f"Bearer {impersonation_token}"}
+        response = client.post("/api/v1/login/is_impersonating")
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() is True
 
     def test_stop_impersonating(
         self,
-        legacy_client: TestClient,
+        client: TestClient,
         regular_user: User,
         settings: BaseKwikSettings,
     ) -> None:
-        """
-        Test stopping impersonation and returning to original user.
-
-        Impersonation does not open sessions yet, so this runs on the application without a store.
-        """
+        """Test stopping impersonation and returning to original user."""
         # Login and impersonate
-        login_response = legacy_client.post(
+        login_response = client.post(
             "/api/v1/login/access-token",
             data={
                 "username": settings.FIRST_SUPERUSER,
@@ -314,16 +313,16 @@ class TestLoginRouter:
         )
         admin_token = login_response.json()["access_token"]
 
-        legacy_client.headers = {"Authorization": f"Bearer {admin_token}"}
-        impersonate_response = legacy_client.post(
+        client.headers = {"Authorization": f"Bearer {admin_token}"}
+        impersonate_response = client.post(
             "/api/v1/login/impersonate",
             params={"user_id": regular_user.id},
         )
         impersonation_token = impersonate_response.json()["access_token"]
 
         # Stop impersonating
-        legacy_client.headers = {"Authorization": f"Bearer {impersonation_token}"}
-        stop_response = legacy_client.post("/api/v1/login/stop_impersonating")
+        client.headers = {"Authorization": f"Bearer {impersonation_token}"}
+        stop_response = client.post("/api/v1/login/stop_impersonating")
 
         assert stop_response.status_code == HTTPStatus.OK
         data = stop_response.json()
@@ -332,8 +331,8 @@ class TestLoginRouter:
 
         # Verify we're back to the original admin user
         original_token = data["access_token"]
-        legacy_client.headers = {"Authorization": f"Bearer {original_token}"}
-        test_response = legacy_client.post("/api/v1/login/test-token")
+        client.headers = {"Authorization": f"Bearer {original_token}"}
+        test_response = client.post("/api/v1/login/test-token")
         user_data = test_response.json()
         assert user_data["email"] == settings.FIRST_SUPERUSER
 
@@ -344,7 +343,7 @@ class TestLoginRouter:
         # Regular tokens have empty kwik_impersonate field, which should return HTTP 400
         response = identity_aware_client.post_as(admin_user, "/api/v1/login/stop_impersonating")
         assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert "invalid literal for int()" in response.json()["detail"]
+        assert response.json()["detail"] == "Not impersonating"
 
     def test_reset_password_unauthenticated_valid_token(
         self,
@@ -513,3 +512,144 @@ class TestLoginRouter:
         response = legacy_client.post(LOGOUT_URL, headers=_bearer(data["access_token"]))
 
         assert response.status_code == HTTPStatus.NOT_IMPLEMENTED
+
+    def test_impersonate_opens_child_session(
+        self,
+        client: TestClient,
+        settings: BaseKwikSettings,
+        regular_user: User,
+        admin_user: User,
+        auth_store: InMemoryAuthSessionStore,
+    ) -> None:
+        """Impersonating opens a child session of the administrator's session, with its own refresh token."""
+        admin = _login(client, settings)
+
+        child = _impersonate(client, admin["access_token"], regular_user.id)
+
+        payload = decode_token(token=child["access_token"], settings=settings)
+        record = auth_store.get(payload.sid)
+        assert record is not None
+        assert (record.user_id, record.impersonator_user_id) == (regular_user.id, admin_user.id)
+        assert record.parent_session_id == decode_token(token=admin["access_token"], settings=settings).sid
+        assert child["refresh_token"] is not None
+
+    def test_impersonation_refresh_keeps_claim(
+        self, client: TestClient, settings: BaseKwikSettings, regular_user: User, admin_user: User
+    ) -> None:
+        """Refreshing an impersonation session keeps the impersonator claim on the new access token."""
+        admin = _login(client, settings)
+        child = _impersonate(client, admin["access_token"], regular_user.id)
+
+        refreshed = client.post(REFRESH_URL, json={"refresh_token": child["refresh_token"]})
+
+        assert refreshed.status_code == HTTPStatus.OK
+        access_token = refreshed.json()["access_token"]
+        assert decode_token(token=access_token, settings=settings).kwik_impersonate == str(admin_user.id)
+        assert client.post(IS_IMPERSONATING_URL, headers=_bearer(access_token)).json() is True
+
+    def test_impersonate_while_impersonating_is_forbidden(
+        self, client: TestClient, settings: BaseKwikSettings, regular_user: User, admin_user: User
+    ) -> None:
+        """An impersonation session cannot impersonate again, even as a user holding the permission."""
+        admin = _login(client, settings)
+        child = _impersonate(client, admin["access_token"], admin_user.id)
+
+        response = client.post(
+            IMPERSONATE_URL, params={"user_id": regular_user.id}, headers=_bearer(child["access_token"])
+        )
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+    def test_stop_impersonating_revokes_child_and_opens_admin_session(
+        self,
+        client: TestClient,
+        settings: BaseKwikSettings,
+        regular_user: User,
+        auth_store: InMemoryAuthSessionStore,
+    ) -> None:
+        """Stopping revokes the impersonation session and returns a fresh administrator session."""
+        admin = _login(client, settings)
+        admin_sid = decode_token(token=admin["access_token"], settings=settings).sid
+        child = _impersonate(client, admin["access_token"], regular_user.id)
+        child_sid = decode_token(token=child["access_token"], settings=settings).sid
+
+        response = client.post(STOP_IMPERSONATING_URL, headers=_bearer(child["access_token"]))
+
+        assert response.status_code == HTTPStatus.OK
+        stopped = response.json()
+        child_record = auth_store.get(child_sid)
+        assert child_record is not None
+        assert child_record.revoked_at is not None
+        assert client.post(TEST_TOKEN_URL, headers=_bearer(child["access_token"])).status_code == (
+            HTTPStatus.UNAUTHORIZED
+        )
+        stopped_payload = decode_token(token=stopped["access_token"], settings=settings)
+        assert stopped_payload.sid not in (child_sid, admin_sid)
+        assert stopped_payload.kwik_impersonate == ""
+        assert stopped["refresh_token"] is not None
+        used = client.post(TEST_TOKEN_URL, headers=_bearer(stopped["access_token"]))
+        assert used.json()["email"] == settings.FIRST_SUPERUSER
+        admin_record = auth_store.get(admin_sid)
+        assert admin_record is not None
+        assert admin_record.revoked_at is None
+
+    def test_stop_impersonating_refused_when_parent_revoked(
+        self,
+        client: TestClient,
+        settings: BaseKwikSettings,
+        regular_user: User,
+        auth_store: InMemoryAuthSessionStore,
+    ) -> None:
+        """Stopping is refused when the administrator's session is no longer active."""
+        admin = _login(client, settings)
+        admin_sid = decode_token(token=admin["access_token"], settings=settings).sid
+        child = _impersonate(client, admin["access_token"], regular_user.id)
+        parent = auth_store.get(admin_sid)
+        assert parent is not None
+        # Revoke only the parent row, without the cascade, as an admin UI revoking one row might.
+        parent.revoked_at = datetime.now(UTC)
+        auth_store.update(parent)
+        assert client.post(TEST_TOKEN_URL, headers=_bearer(child["access_token"])).status_code == HTTPStatus.OK
+
+        response = client.post(STOP_IMPERSONATING_URL, headers=_bearer(child["access_token"]))
+
+        assert response.status_code == HTTPStatus.UNAUTHORIZED
+        assert response.headers["WWW-Authenticate"] == 'Bearer error="invalid_token"'
+
+    def test_refresh_child_refused_after_parent_revoked(
+        self,
+        client: TestClient,
+        settings: BaseKwikSettings,
+        regular_user: User,
+        auth_store: InMemoryAuthSessionStore,
+    ) -> None:
+        """Revoking the administrator's session revokes the impersonation session opened from it."""
+        admin = _login(client, settings)
+        child = _impersonate(client, admin["access_token"], regular_user.id)
+
+        revoke_session(session_id=decode_token(token=admin["access_token"], settings=settings).sid, store=auth_store)
+
+        refreshed = client.post(REFRESH_URL, json={"refresh_token": child["refresh_token"]})
+        assert refreshed.status_code == HTTPStatus.UNAUTHORIZED
+        used = client.post(TEST_TOKEN_URL, headers=_bearer(child["access_token"]))
+        assert used.status_code == HTTPStatus.UNAUTHORIZED
+
+    def test_legacy_impersonation_unchanged(
+        self, legacy_client: TestClient, settings: BaseKwikSettings, regular_user: User, admin_user: User
+    ) -> None:
+        """Without a store, impersonate and stop_impersonating return 1.13 tokens without a session."""
+        admin = _login(legacy_client, settings)
+
+        child = _impersonate(legacy_client, admin["access_token"], regular_user.id)
+
+        child_payload = decode_token(token=child["access_token"], settings=settings)
+        assert child_payload.sid is None
+        assert child_payload.kwik_impersonate == str(admin_user.id)
+        assert child["refresh_token"] is None
+        response = legacy_client.post(STOP_IMPERSONATING_URL, headers=_bearer(child["access_token"]))
+        assert response.status_code == HTTPStatus.OK
+        stopped = response.json()
+        stopped_payload = decode_token(token=stopped["access_token"], settings=settings)
+        assert stopped_payload.sid is None
+        assert stopped_payload.sub == admin_user.id
+        assert stopped["refresh_token"] is None

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Body, Depends
@@ -20,7 +21,8 @@ from kwik.dependencies import (
     has_permission,
 )
 from kwik.exceptions import AuthSessionsNotConfiguredError
-from kwik.exceptions.base import TokenValidationError
+from kwik.exceptions.auth import InvalidBearerTokenError
+from kwik.exceptions.base import AccessDeniedError, TokenValidationError
 from kwik.schemas import NewPassword, RefreshRequest, Token, UserProfile
 from kwik.security import create_token, verify_password_reset_token
 
@@ -94,15 +96,37 @@ def test_token(user: current_user) -> User:
     response_model=Token,
     dependencies=(has_permission(Permissions.impersonification),),
 )
-def impersonate(
+def impersonate(  # noqa: PLR0913
     user_id: int,
     user: current_user,
+    token: current_token,
     settings: Settings,
     context: UserContext,
+    store: AuthSessions,
 ) -> Token:
-    """Impersonate a user."""
+    """
+    Impersonate a user.
+
+    When the application configured an auth session store, impersonation opens a child session
+    of the caller's session, with its own refresh token; revoking the caller's session revokes
+    it too. Otherwise it returns a plain impersonation access token.
+
+    Raises:
+        AccessDeniedError: If the caller is already impersonating (with a store; no chains).
+
+    """
+    if store is not None and token.kwik_impersonate != "":
+        raise AccessDeniedError(detail="Already impersonating")
     user_to_impersonate = crud_users.get_if_exist(entity_id=user_id, context=context)
-    return create_token(user_id=user_to_impersonate.id, impersonator_user_id=user.id, settings=settings)
+    if store is None:
+        return create_token(user_id=user_to_impersonate.id, impersonator_user_id=user.id, settings=settings)
+    return open_session(
+        user_id=user_to_impersonate.id,
+        impersonator_user_id=user.id,
+        parent_session_id=token.sid,
+        settings=settings,
+        store=store,
+    )
 
 
 @login_router.post("/is_impersonating", response_model=bool)
@@ -111,15 +135,32 @@ def is_impersonating(token: current_token) -> bool:
 
 
 @login_router.post("/stop_impersonating", response_model=Token)
-def stop_impersonating(token: current_token, settings: Settings) -> Token:
+def stop_impersonating(token: current_token, settings: Settings, store: AuthSessions) -> Token:
     """
-    Stop impersonating and return the original token.
+    Stop impersonating and return a token for the impersonator.
+
+    With an auth session store, this revokes the impersonation session and opens a fresh session
+    for the impersonator; the impersonator's own session, which may be in use elsewhere, is left
+    alone. Otherwise it returns a plain access token for the impersonator.
 
     Raises:
-        InvalidToken: If the token is invalid
+        TokenValidationError: If the token is not an impersonation token.
+        InvalidBearerTokenError: If the impersonation session or the impersonator's session is
+            no longer active.
 
     """
-    return create_token(user_id=int(token.kwik_impersonate), settings=settings)
+    if token.kwik_impersonate == "":
+        raise TokenValidationError(detail="Not impersonating")
+    impersonator_user_id = int(token.kwik_impersonate)
+    if store is None:
+        return create_token(user_id=impersonator_user_id, settings=settings)
+    now = datetime.now(UTC)
+    child = store.get(token.sid) if token.sid is not None else None
+    parent = store.get(child.parent_session_id) if child is not None and child.parent_session_id else None
+    if child is None or parent is None or not parent.is_active(now=now):
+        raise InvalidBearerTokenError
+    revoke_session(session_id=child.id, store=store, now=now)
+    return open_session(user_id=impersonator_user_id, settings=settings, store=store, now=now)
 
 
 @login_router.post("/reset-password")
