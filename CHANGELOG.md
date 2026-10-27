@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-10-27
+
+### Changed
+
+- **BREAKING: an invalid, expired or revoked bearer token is a 401** with `WWW-Authenticate: Bearer error="invalid_token"`. It was a 400 `Invalid token`, raised from `TokenValidationError`. A missing or non-Bearer `Authorization` header is also a 401, with `WWW-Authenticate: Bearer`, and a `has_permission` route called with no credentials now sends that header too (its status was already 401). `decode_token` itself still raises `TokenValidationError`, so library callers are unchanged. Frontends that keyed on the old 400 to detect an expired token must handle 401.
+- **BREAKING: `_resolve_current_user` takes a new required `store` keyword.** Applications that call it directly from an override pass `store=`; `None` keeps the 1.13 behaviour.
+- **BREAKING: `kwik.dependencies.token.oauth2_scheme` is gone.** The bearer dependencies read the header through `HTTPBearer` instead of the OAuth2 password form, so OpenAPI declares one `bearer` http scheme and no settings are read at import time. **Swagger UI's Authorize dialog now takes a pasted token**, not a username and password, because the password-flow scheme no longer exists.
+- **`Token` has two new nullable fields**, `refresh_token` and `expires_in`. Both are `None` for a token minted without a session, so the 1.13 response is unchanged apart from the two null fields.
+- **BREAKING: an inactive account is refused** (kwik #43 item 2). `current_user`, `has_permission` and `authenticate_from_token` answer 401 `Inactive user` when the acting account is inactive, or when the impersonator behind an impersonation token is inactive or missing; impersonating an inactive account still works. `POST /login/access-token` refuses an inactive account with the same answer as a wrong password, so sign-in does not reveal the account state. This holds with or without an auth session store, so the "nothing changes without a store" rule does not cover it. An application that overrode the two dependencies to add this check (Teban's `active_user.py`) can drop the override.
+- **BREAKING: `api_keys.expires_at`, `revoked_at` and `last_used_at` are `timestamptz`** (kwik #43 item 3). `verify_api_key` compares and writes with `datetime.now(UTC)`; 1.13 wrote `last_used_at` with the process-local `datetime.now()`. An application that owns the table in its Alembic history migrates it (see Migration).
+- **`IdentityAwareTestClient` no longer calls `POST /login/access-token`** when settings are given or `app.state.settings` is available: it mints the token itself. Application tests that relied on it to exercise login (rate limits, a deactivated account refused at sign-in, a wrong-password `RuntimeError`) must post the form themselves. A token is now minted for any user object with an `id`, so a request made as an inactive user gets 401 from the bearer check instead of the sign-in refusing it. **The client's `settings` argument changes meaning**: in 1.13 it only served to detect the admin email for the form login; in 1.14 it is the signing configuration, so a caller that passes a settings object whose `SECRET_KEY` or `ALGORITHM` differ from the app's now gets 401s. Pass the same settings the app is built from, or omit it and let the client read `app.state.settings` after the lifespan starts.
+
+### Added
+
+- **Auth sessions, in the new `kwik.auth` package.** `AuthSession` is the record and `AuthSessionStore` the protocol an application implements; kwik adds no table and no runtime dependency, and calls the store on every authenticated request so that a revoked session stops working at once. `InMemoryAuthSessionStore` is a lock-guarded reference store for tests and single-process use. `open_session`, `refresh_session`, `revoke_session` and `require_active_session` are the service functions. `Kwik(auth_session_store=...)` puts the store on `app.state`, and the overridable dependency `_get_auth_session_store` (annotated alias `AuthSessions`) hands it to the bearer dependencies. An application that passes no store gets 1.13 behaviour: tokens without `sid`, no refresh, the password-form login unchanged.
+- **Refresh tokens that rotate.** `POST /login/refresh` (public, JSON body) exchanges a refresh token for a new access and refresh token. Rotation goes through the store's compare-and-set `rotate()`. The previous token presented again within `REFRESH_REUSE_GRACE_SECONDS` (30) of the rotation returns the identical successor, also when this request lost the rotation race, so a client that missed the response can retry; any other reuse revokes the session and its impersonation children. Refresh tokens carry only `typ`, `sub`, `sid`, `jti` and `exp`, and are deterministic (no `iat`) so a re-mint is identical. `refresh_session` refuses, and revokes, an impersonation session whose parent session is missing or inactive (revoked without the cascade, or expired).
+- **`POST /login/logout`** revokes the current session. It answers 501 without a store and 401 for a token without `sid`; the latter cannot be reached over HTTP, since the bearer check refuses such a token first.
+- **Impersonation sessions.** With a store, `POST /login/impersonate` opens a child session of the administrator's session (`impersonator_user_id` and `parent_session_id` set, its own refresh token), so revoking the administrator's session revokes it too. `POST /login/stop_impersonating` checks that the administrator's parent session is still active (401 otherwise), revokes the impersonation session and opens a fresh administrator session; the parent is left alone.
+- **`create_refresh_token`**, `decode_token(token_type=...)` (a token of the other type is rejected), `TokenPayload.sid`, `typ` and `jti`, and `create_token(session_id=...)`, which adds `sid`, `typ` and `expires_in` only when a session is given. `authenticate_from_token` accepts an optional `store=`.
+- **`REFRESH_TOKEN_EXPIRE_MINUTES`** (43 200, 30 days) and **`REFRESH_REUSE_GRACE_SECONDS`** (30) settings. `ACCESS_TOKEN_EXPIRE_MINUTES` keeps its 10 080 default (7 days); an application that adopts sessions sets it to minutes.
+- `InvalidBearerTokenError` and `MissingBearerTokenError` (401, with a `WWW-Authenticate` challenge) and `AuthSessionsNotConfiguredError` (501). `KwikError` gains optional `headers`, passed through `http_exc` and the exception handler.
+- A handbook "Authentication" page documents bearer authentication, sessions, refresh, impersonation and the store protocol.
+
+### Deprecated
+
+- **`IdentityAwareTestClient` posting the password form.** It remains only as a fallback when no settings are available, emits a `DeprecationWarning`, and is removed in kwik 2.0.
+
+### Fixed
+
+- **`POST /login/stop_impersonating` with a non-impersonation token answers `400 Not impersonating`.** It used to leak a `ValueError` message from `int()`.
+- **Impersonating while already impersonating is refused (403)**, with or without a store. It used to mint a token whose `kwik_impersonate` named the impersonated user rather than the administrator.
+
+### Security
+
+- **The startup debug log no longer prints secrets** (kwik #43 item 1). The lifespan logged `settings.model_dump()` at DEBUG, exposing `SECRET_KEY`, the database and superuser passwords and the assembled database URI. It now logs `redacted_settings_dump()`, which masks `SecretStr` values, `str` fields whose name contains `PASSWORD`, `TOKEN`, `DSN` or `SECRET`, and the password in URLs that carry credentials. Subclass fields follow the same rule.
+- **The PyJWT runtime floor is now `pyjwt>=2.15.0`** (was `>=2.10.0`), so an application cannot resolve a vulnerable PyJWT. **Locked dependencies upgraded** for the 43 Dependabot alerts open on 2026-10-27: pyjwt 2.15.1, anyio 4.14.2, filelock 4.2.4, urllib3 2.8.0, virtualenv 21.15.0.
+
+### Testing
+
+- `IdentityAwareTestClient.token_for(user)` signs an access token from the settings (the argument, else `app.state.settings`) and opens an auth session when a store is given or set on `app.state`. `_get_auth_token` delegates to it, so existing call sites keep working.
+- `InMemoryAuthSessionStore` is available to application tests; kwik's own API fixtures now run with a store.
+
+### Migration
+
+Coming from 1.13:
+
+- **Sessions need no action if you pass no store.** To adopt them: implement `AuthSessionStore` (see the handbook "Authentication" page), pass it as `Kwik(auth_session_store=...)`, set `ACCESS_TOKEN_EXPIRE_MINUTES` to minutes, handle `refresh_token` in the client, and have users sign in once, since tokens issued before the change carry no `sid`. Update frontends keyed on the old 400 to handle 401.
+- **Inactive accounts stop authenticating**, with or without a store. Drop any override that added the check.
+- **The API-key columns change type.** An application that owns the `api_keys` table adds this step to its own Alembic history, for `expires_at`, `revoked_at` and `last_used_at`:
+
+  ```python
+  op.alter_column("api_keys", col, type_=sa.DateTime(timezone=True), existing_type=sa.DateTime(), postgresql_using=f"{col} AT TIME ZONE 'UTC'")
+  ```
+
+  Existing values are read as UTC. Check that the application's processes ran in UTC: kwik 1.13 wrote `last_used_at` with the local `datetime.now()`. Naive values an application writes (for example `expires_at`) are interpreted in the PostgreSQL session time zone, so write aware UTC datetimes instead.
+
 ## [1.13.0] - 2026-10-11
 
 ### Changed
