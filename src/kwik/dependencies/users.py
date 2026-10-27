@@ -10,6 +10,7 @@ from kwik.crud import crud_users
 from kwik.crud.context import Context
 from kwik.exceptions import AccessDeniedError
 from kwik.models import User
+from kwik.security import _assert_acting_account_active
 
 from .session import Session  # noqa: TC001
 from .settings import Settings  # noqa: TC001
@@ -22,6 +23,8 @@ def _get_current_user(token: current_token, session: Session) -> User:
 
     Raises:
         Forbidden: if the user is not found
+        InvalidBearerTokenError: if the acting account (the impersonator under impersonation)
+            is missing or inactive
 
     """
     if token.sub is None:
@@ -32,6 +35,7 @@ def _get_current_user(token: current_token, session: Session) -> User:
     if user is None:
         raise AccessDeniedError
 
+    _assert_acting_account_active(user=user, payload=token, session=session)
     return user
 
 
@@ -66,7 +70,8 @@ def _resolve_current_user(
 
     Raises:
         MissingBearerTokenError: 401 if neither an API key user nor a bearer token is present.
-        InvalidBearerTokenError: 401 if the token is invalid or expired, or its session is not active.
+        InvalidBearerTokenError: 401 if the token is invalid or expired, its session is not
+            active, or the acting account (the impersonator under impersonation) is missing or inactive.
         AccessDeniedError: 403 if the user is not found in the database.
 
     """
@@ -85,6 +90,7 @@ def _resolve_current_user(
     if user is None:
         raise AccessDeniedError
 
+    _assert_acting_account_active(user=user, payload=token, session=session)
     return user
 
 

@@ -73,6 +73,26 @@ class TestLoginRouter:
 
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
+    def test_login_refused_for_inactive_user_with_the_wrong_password_answer(
+        self, identity_aware_client: IdentityAwareTestClient, client: TestClient, admin_user: User
+    ) -> None:
+        """An inactive account with the right password gets the same answer as a wrong password."""
+        email = "inactive-login@example.com"
+        password = "inactivepassword123"
+        created = identity_aware_client.post_as(
+            admin_user,
+            "/api/v1/users/",
+            json={"name": "Inactive", "surname": "User", "email": email, "password": password, "is_active": False},
+        )
+        assert created.status_code == HTTPStatus.OK
+        client.headers = {}
+
+        refused = client.post("/api/v1/login/access-token", data={"username": email, "password": password})
+        wrong = client.post("/api/v1/login/access-token", data={"username": email, "password": "wrong-password"})
+
+        assert refused.status_code == wrong.status_code == HTTPStatus.UNAUTHORIZED
+        assert refused.json() == wrong.json()
+
     def test_test_token_valid_token(
         self, identity_aware_client: IdentityAwareTestClient, admin_user: User, settings: BaseKwikSettings
     ) -> None:

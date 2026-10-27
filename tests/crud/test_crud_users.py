@@ -221,6 +221,19 @@ class TestUserCRUD:
         with pytest.raises(AuthenticationFailedError):
             crud_users.authenticate(email="auth@example.com", password="wrongpassword", context=no_user_context)
 
+    def test_authenticate_refuses_inactive_user_with_the_right_password(
+        self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
+    ) -> None:
+        """An inactive account with the right password gets the wrong-password error."""
+        password = "inactivepassword123"
+        user_factory(email="inactive-auth@example.com", password=password, is_active=False)
+
+        with pytest.raises(AuthenticationFailedError) as refused:
+            crud_users.authenticate(email="inactive-auth@example.com", password=password, context=no_user_context)
+        with pytest.raises(AuthenticationFailedError) as wrong_password:
+            crud_users.authenticate(email="inactive-auth@example.com", password="wrong", context=no_user_context)
+        assert refused.value.detail == wrong_password.value.detail
+
     def test_change_password_with_valid_old_password(
         self, no_user_context: NoUserCtx, user_factory: Callable[..., User]
     ) -> None:

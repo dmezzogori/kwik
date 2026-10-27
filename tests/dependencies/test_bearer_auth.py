@@ -17,11 +17,12 @@ from sqlalchemy.orm import Session as OrmSession
 from kwik.applications import Kwik
 from kwik.auth import InMemoryAuthSessionStore, open_session, revoke_session
 from kwik.core.enum import Permissions
-from kwik.dependencies import current_token  # noqa: TC001 - FastAPI resolves endpoint annotations at runtime
+from kwik.dependencies import current_token, current_user  # noqa: TC001 - FastAPI resolves annotations at runtime
 from kwik.dependencies.permissions import has_permission
 from kwik.dependencies.session import _get_session
 from kwik.dependencies.token import _get_auth_session_store
 from kwik.exceptions.auth import InvalidBearerTokenError
+from kwik.models import User
 from kwik.models.api_key import ApiKey
 from kwik.routers import ApiKeyRouter, AuthenticatedRouter
 from kwik.security import ALGORITHM, authenticate_from_token, create_token, decode_token
@@ -29,18 +30,21 @@ from kwik.security import ALGORITHM, authenticate_from_token, create_token, deco
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+    from httpx import Response
     from sqlalchemy import Engine
 
-    from kwik.models import User
     from kwik.settings import BaseKwikSettings
 
 PROBE_PATH = "/probe"
+ME_PATH = "/probe/me"
 ADMIN_PATH = "/admin-only"
 KEYED_PATH = "/keyed"
 CHALLENGE = "Bearer"
 INVALID_TOKEN_CHALLENGE = 'Bearer error="invalid_token"'
 EXPIRED_AGO = timedelta(minutes=1)
 GHOST_SESSION_ID = "ghost"
+INACTIVE_DETAIL = "Inactive user"
+MISSING_USER_ID = 2_000_000_000
 
 
 def _router() -> APIRouter:
@@ -52,6 +56,10 @@ def _router() -> APIRouter:
     @probe.get("")
     def probe_route(token: current_token) -> dict[str, int | None]:
         return {"sub": token.sub}
+
+    @probe.get("/me")
+    def me_route(user: current_user) -> dict[str, int]:
+        return {"id": user.id}
 
     @router.get(ADMIN_PATH, dependencies=[has_permission(Permissions.impersonification)])
     def admin_route() -> dict[str, bool]:
@@ -284,3 +292,113 @@ def test_authenticate_from_token_checks_store(
         authenticate_from_token(token=dead.access_token, settings=settings, session=session, store=store)
     user = authenticate_from_token(token=live.access_token, settings=settings, session=session, store=store)
     assert user.id == admin_user.id
+
+
+def _deactivate(session: OrmSession, user: User) -> None:
+    """Mark ``user`` inactive inside ``session``; the change is rolled back at teardown."""
+    row = session.get(User, user.id)
+    assert row is not None
+    row.is_active = False
+    session.flush()
+
+
+def _assert_inactive_refusal(response: Response) -> None:
+    """Assert ``response`` is the 401 an inactive acting account gets."""
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json()["detail"] == INACTIVE_DETAIL
+    assert response.headers["WWW-Authenticate"] == INVALID_TOKEN_CHALLENGE
+
+
+def test_inactive_user_is_401_on_current_user_and_has_permission_routes(
+    legacy_client: TestClient, settings: BaseKwikSettings, api_session: OrmSession, admin_user: User
+) -> None:
+    """An inactive account is refused on current_user and has_permission routes, even without a store."""
+    headers = _bearer(create_token(user_id=admin_user.id, settings=settings).access_token)
+    me_url = f"{settings.API_V1_STR}{ME_PATH}"
+    admin_url = f"{settings.API_V1_STR}{ADMIN_PATH}"
+    assert legacy_client.get(me_url, headers=headers).status_code == HTTPStatus.OK
+    assert legacy_client.get(admin_url, headers=headers).status_code == HTTPStatus.OK
+
+    _deactivate(api_session, admin_user)
+
+    _assert_inactive_refusal(legacy_client.get(me_url, headers=headers))
+    _assert_inactive_refusal(legacy_client.get(admin_url, headers=headers))
+
+
+def test_inactive_impersonator_is_401(
+    legacy_client: TestClient,
+    settings: BaseKwikSettings,
+    api_session: OrmSession,
+    admin_user: User,
+    regular_user: User,
+) -> None:
+    """Under impersonation the impersonator is the acting account and must be active."""
+    token = create_token(user_id=regular_user.id, impersonator_user_id=admin_user.id, settings=settings)
+    headers = _bearer(token.access_token)
+    _deactivate(api_session, admin_user)
+
+    _assert_inactive_refusal(legacy_client.get(f"{settings.API_V1_STR}{ME_PATH}", headers=headers))
+    _assert_inactive_refusal(legacy_client.get(f"{settings.API_V1_STR}{ADMIN_PATH}", headers=headers))
+
+
+def test_missing_impersonator_is_401(legacy_client: TestClient, settings: BaseKwikSettings, regular_user: User) -> None:
+    """An impersonation token whose impersonator no longer exists is refused."""
+    token = create_token(user_id=regular_user.id, impersonator_user_id=MISSING_USER_ID, settings=settings)
+    headers = _bearer(token.access_token)
+
+    _assert_inactive_refusal(legacy_client.get(f"{settings.API_V1_STR}{ME_PATH}", headers=headers))
+    _assert_inactive_refusal(legacy_client.get(f"{settings.API_V1_STR}{ADMIN_PATH}", headers=headers))
+
+
+def test_impersonating_an_inactive_user_works(
+    legacy_client: TestClient,
+    settings: BaseKwikSettings,
+    api_session: OrmSession,
+    admin_user: User,
+    regular_user: User,
+) -> None:
+    """An active impersonator may act as an inactive account."""
+    token = create_token(user_id=regular_user.id, impersonator_user_id=admin_user.id, settings=settings)
+    headers = _bearer(token.access_token)
+    _deactivate(api_session, regular_user)
+
+    response = legacy_client.get(f"{settings.API_V1_STR}{ME_PATH}", headers=headers)
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {"id": regular_user.id}
+    # Authenticated as the regular user, who lacks the permission: 403, not 401.
+    assert legacy_client.get(f"{settings.API_V1_STR}{ADMIN_PATH}", headers=headers).status_code == (
+        HTTPStatus.FORBIDDEN
+    )
+
+
+def test_authenticate_from_token_refuses_inactive(
+    settings: BaseKwikSettings, session: OrmSession, admin_user: User
+) -> None:
+    """authenticate_from_token refuses an inactive account."""
+    token = create_token(user_id=admin_user.id, settings=settings)
+    _deactivate(session, admin_user)
+
+    with pytest.raises(InvalidBearerTokenError) as excinfo:
+        authenticate_from_token(token=token.access_token, settings=settings, session=session)
+    assert excinfo.value.detail == INACTIVE_DETAIL
+
+
+def test_api_key_owner_rule_unchanged(
+    session_client: TestClient, settings: BaseKwikSettings, api_session: OrmSession, admin_user: User
+) -> None:
+    """The API-key path keeps its own inactive-owner answer."""
+    plaintext = "tbk_" + secrets.token_urlsafe(48)
+    api_session.add(
+        ApiKey(
+            user_id=admin_user.id,
+            name="Inactive owner key",
+            prefix="tbk_",
+            key_hash=hashlib.sha256(plaintext.encode()).hexdigest(),
+            key_suffix=plaintext[-4:],
+        )
+    )
+    _deactivate(api_session, admin_user)
+
+    response = session_client.get(f"{settings.API_V1_STR}{KEYED_PATH}", headers={"X-API-Key": plaintext})
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json()["detail"] == "API key owner is inactive"

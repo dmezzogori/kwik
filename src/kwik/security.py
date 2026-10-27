@@ -15,6 +15,7 @@ from kwik.core import BCRYPT_MAX_PASSWORD_BYTES
 
 # Re-exported: applications configure and read the password policy through kwik.security.
 from kwik.core.password_policy import configure_password_policy, password_min_length  # noqa: F401
+from kwik.exceptions.auth import InvalidBearerTokenError
 from kwik.exceptions.base import TokenValidationError
 from kwik.exceptions.users import PasswordTooLongError
 
@@ -193,6 +194,32 @@ def verify_password_reset_token(token: str, settings: BaseKwikSettings, context:
     return email
 
 
+def _assert_acting_account_active(*, user: User, payload: schemas.TokenPayload, session: Session) -> None:
+    """
+    Refuse a bearer token whose acting account is inactive.
+
+    Under impersonation the acting account is the impersonator, which must exist and be
+    active; the impersonated ``user`` may be inactive, so an administrator can inspect a
+    deactivated account. Otherwise ``user`` must be active. The bearer dependencies in
+    :mod:`kwik.dependencies.users` share this rule; it lives here because those modules
+    import :mod:`kwik.security` through :mod:`kwik.crud`.
+
+    Raises:
+        InvalidBearerTokenError: If the acting account is missing or inactive.
+
+    """
+    if payload.kwik_impersonate:
+        # Local imports to avoid circular dependency: crud.users imports security for hashing
+        from kwik.crud import crud_users  # noqa: PLC0415
+        from kwik.crud.context import Context  # noqa: PLC0415
+
+        acting = crud_users.get(entity_id=int(payload.kwik_impersonate), context=Context(session=session, user=None))
+    else:
+        acting = user
+    if acting is None or not acting.is_active:
+        raise InvalidBearerTokenError(detail="Inactive user")
+
+
 def authenticate_from_token(
     *,
     token: str,
@@ -218,7 +245,8 @@ def authenticate_from_token(
 
     Raises:
         TokenValidationError: If the token is invalid or expired.
-        InvalidBearerTokenError: If ``store`` is given and the token's session is not active.
+        InvalidBearerTokenError: If ``store`` is given and the token's session is not active,
+            or if the acting account (the impersonator under impersonation) is missing or inactive.
         AccessDeniedError: If the user does not exist.
 
     """
@@ -236,4 +264,5 @@ def authenticate_from_token(
     user = crud_users.get(entity_id=int(payload.sub), context=context)
     if user is None:
         raise AccessDeniedError
+    _assert_acting_account_active(user=user, payload=payload, session=session)
     return user

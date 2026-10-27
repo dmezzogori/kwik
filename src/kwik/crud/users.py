@@ -71,11 +71,16 @@ class _CRUDUsers(AutoCRUD[MaybeUserCtx, User, UserRegistration, UserProfileUpdat
         return obj_db
 
     def authenticate(self, *, email: str, password: str, context: MaybeUserCtx) -> User:
-        """Authenticate a user with email and password."""
+        """
+        Authenticate a user with email and password.
+
+        An inactive account gets the wrong-password error, so the answer does not reveal
+        whether the account exists or is deactivated.
+        """
         user = self.get_by_email(email=email, context=context)
 
-        # Check if the user exists and the password is correct
-        if user is None or not verify_password(password, user.hashed_password):
+        # Check the user exists, the password is correct and the account is active
+        if user is None or not verify_password(password, user.hashed_password) or not user.is_active:
             raise AuthenticationFailedError
 
         return user
