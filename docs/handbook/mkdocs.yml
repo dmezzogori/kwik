@@ -30,6 +30,7 @@ nav:
     - Endpoints: writing-endpoints.md
     - AutoCRUD: autocrud.md
     - Database: database.md
+    - Authentication: authentication.md
   - Testing:
       - Overview: testing.md
       - Fixtures: testing-fixtures.md

@@ -22,7 +22,7 @@ What you’ll learn:
 
 ## The Router: AuthenticatedRouter {#router}
 
-Kwik exposes an `AuthenticatedRouter` which adds JWT authentication to every route registered under it. You just pick a `prefix` and all endpoints defined in that router will require a valid access token.
+Kwik exposes an `AuthenticatedRouter` which adds bearer-token authentication to every route registered under it. You just pick a `prefix` and all endpoints defined in that router will require a valid access token.
 
 Example (Projects):
 
@@ -138,7 +138,7 @@ def handler(context: UserContext) -> None:
 
 ### Authentication (current_user / current_token)
 
-`current_user` gives you the authenticated `User` model; `current_token` exposes the decoded JWT payload (`src/kwik/dependencies/users.py`, `src/kwik/dependencies/token.py`).
+`current_user` gives you the authenticated `User` model; `current_token` exposes the decoded token payload (`src/kwik/dependencies/users.py`, `src/kwik/dependencies/token.py`). Clients send `Authorization: Bearer <token>`; see [Authentication and sessions](authentication.md) for refresh tokens and revocation.
 
 Use `user: current_user` when you need ownership/auditing in the handler body.
 
@@ -176,7 +176,7 @@ By always calling CRUD functions with `context=...`, your endpoints stay small a
 ## Why `settings` matters (security/config) {#settings}
 
 Many security utilities depend on application configuration (e.g., `SECRET_KEY`, token expiration). Inject `settings: Settings` whenever you need to:
-- Create or validate JWTs
+- Create or validate tokens
 - Access environment‑driven configuration (ports, DB, debug flags, etc.)
 
 You should not instantiate settings manually inside handlers—always inject with the dependency so the same instance is used across the app.
