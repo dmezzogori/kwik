@@ -269,6 +269,56 @@ def test_refresh_revoked_session_refused(
     assert _record(store, sid) == before
 
 
+def _impersonation(
+    settings: BaseKwikSettings, store: InMemoryAuthSessionStore, now: datetime, *, parent_sid: str | None = None
+) -> tuple[str, Token]:
+    """Open an impersonation session under ``parent_sid`` (a fresh admin session when None); return both."""
+    if parent_sid is None:
+        parent_sid = _sid(open_session(user_id=ADMIN_ID, settings=settings, store=store, now=now), settings)
+    child = open_session(
+        user_id=USER_ID,
+        impersonator_user_id=ADMIN_ID,
+        parent_session_id=parent_sid,
+        settings=settings,
+        store=store,
+        now=now,
+    )
+    return parent_sid, child
+
+
+def test_refresh_child_refused_when_parent_revoked_without_cascade(
+    settings: BaseKwikSettings, store: InMemoryAuthSessionStore, now: datetime
+) -> None:
+    """A parent revoked by a plain update (no cascade) refuses the child's refresh and revokes the child."""
+    parent_sid, child = _impersonation(settings, store, now)
+    store.update(replace(_record(store, parent_sid), revoked_at=now))
+    later = now + ONE_SECOND
+    with pytest.raises(InvalidBearerTokenError):
+        refresh_session(refresh_token=child.refresh_token, settings=settings, store=store, now=later)
+    assert _record(store, _sid(child, settings)).revoked_at == later
+
+
+def test_refresh_child_refused_when_parent_expired(
+    settings: BaseKwikSettings, store: InMemoryAuthSessionStore, now: datetime
+) -> None:
+    """A child cannot outlive an expired parent by refreshing itself."""
+    parent_sid, child = _impersonation(settings, store, now)
+    store.update(replace(_record(store, parent_sid), expires_at=now + ONE_HOUR))
+    with pytest.raises(InvalidBearerTokenError):
+        refresh_session(refresh_token=child.refresh_token, settings=settings, store=store, now=now + 2 * ONE_HOUR)
+    assert _record(store, _sid(child, settings)).revoked_at is not None
+
+
+def test_refresh_child_refused_when_parent_missing(
+    settings: BaseKwikSettings, store: InMemoryAuthSessionStore, now: datetime
+) -> None:
+    """A child whose parent session is unknown to the store cannot be refreshed."""
+    _, child = _impersonation(settings, store, now, parent_sid="unknown-session")
+    with pytest.raises(InvalidBearerTokenError):
+        refresh_session(refresh_token=child.refresh_token, settings=settings, store=store, now=now + ONE_SECOND)
+    assert _record(store, _sid(child, settings)).revoked_at is not None
+
+
 def test_revoke_session_defaults_to_wall_clock(settings: BaseKwikSettings, store: InMemoryAuthSessionStore) -> None:
     """Without an injected clock, revoke_session stamps the current UTC time."""
     sid = _sid(open_session(user_id=USER_ID, settings=settings, store=store), settings)

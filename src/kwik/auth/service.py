@@ -123,7 +123,9 @@ def refresh_session(
 
     Raises:
         InvalidBearerTokenError: If the token is invalid, expired or not a refresh token, if
-            the session is unknown, revoked or expired, or if the token was reused.
+            the session is unknown, revoked or expired, if it is an impersonation session whose
+            parent session is unknown, revoked or expired (which also revokes it), or if the
+            token was reused.
 
     """
     now = now or datetime.now(UTC)
@@ -134,6 +136,13 @@ def refresh_session(
     record = store.get(payload.sid) if payload.sid else None
     if record is None or not record.is_active(now=now):
         raise InvalidBearerTokenError
+    if record.parent_session_id is not None:
+        # An impersonation session cannot outlive the impersonator's session; a dead parent
+        # does not come back, so the child is revoked for good.
+        parent = store.get(record.parent_session_id)
+        if parent is None or not parent.is_active(now=now):
+            store.revoke(record.id, at=now)
+            raise InvalidBearerTokenError
     if payload.jti == record.refresh_token_id:
         # Current generation: rotate through the store's compare-and-set.
         rotated = store.rotate(

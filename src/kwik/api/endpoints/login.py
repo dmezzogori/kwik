@@ -77,10 +77,13 @@ def logout(token: current_token, store: AuthSessions) -> dict:
 
     Raises:
         AuthSessionsNotConfiguredError: If the application configured no auth session store.
+        InvalidBearerTokenError: If the token carries no session id.
 
     """
-    if store is None or token.sid is None:
+    if store is None:
         raise AuthSessionsNotConfiguredError
+    if token.sid is None:
+        raise InvalidBearerTokenError
     revoke_session(session_id=token.sid, store=store)
     return {"msg": "Session revoked"}
 
@@ -112,10 +115,10 @@ def impersonate(  # noqa: PLR0913
     it too. Otherwise it returns a plain impersonation access token.
 
     Raises:
-        AccessDeniedError: If the caller is already impersonating (with a store; no chains).
+        AccessDeniedError: If the caller is already impersonating (no chains).
 
     """
-    if store is not None and token.kwik_impersonate != "":
+    if token.kwik_impersonate != "":
         raise AccessDeniedError(detail="Already impersonating")
     user_to_impersonate = crud_users.get_if_exist(entity_id=user_id, context=context)
     if store is None:

@@ -11,20 +11,23 @@ This module contains comprehensive test cases for the login router endpoints inc
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 
 import jwt
+import pytest
 
-from kwik.auth import revoke_session
+from kwik.api.endpoints.login import logout
+from kwik.auth import InMemoryAuthSessionStore, revoke_session
+from kwik.exceptions import InvalidBearerTokenError
+from kwik.schemas import TokenPayload
 from kwik.security import decode_token, generate_password_reset_token, get_password_hash
 
 if TYPE_CHECKING:
-    import pytest
     from fastapi.testclient import TestClient
 
-    from kwik.auth import InMemoryAuthSessionStore
     from kwik.models import User
     from kwik.settings import BaseKwikSettings
     from kwik.testing import IdentityAwareTestClient
@@ -33,6 +36,7 @@ if TYPE_CHECKING:
 MIN_JWT_TOKEN_LENGTH = 50
 SECONDS_PER_MINUTE = 60
 NO_GRACE_SECONDS = 0
+USER_ID_WITHOUT_SESSION = 1
 LOGIN_URL = "/api/v1/login/access-token"
 REFRESH_URL = "/api/v1/login/refresh"
 LOGOUT_URL = "/api/v1/login/logout"
@@ -480,6 +484,7 @@ class TestLoginRouter:
         """The previous refresh token, presented again inside the grace window, returns the same successor."""
         first = _login(client, settings)
         second = client.post(REFRESH_URL, json={"refresh_token": first["refresh_token"]})
+        assert second.status_code == HTTPStatus.OK
 
         again = client.post(REFRESH_URL, json={"refresh_token": first["refresh_token"]})
 
@@ -504,6 +509,17 @@ class TestLoginRouter:
         assert used.status_code == HTTPStatus.UNAUTHORIZED
         refreshed = client.post(REFRESH_URL, json={"refresh_token": data["refresh_token"]})
         assert refreshed.status_code == HTTPStatus.UNAUTHORIZED
+
+    def test_logout_token_without_session_is_invalid(self) -> None:
+        """
+        With a store, a token without a session id is a token problem (401), not a missing store (501).
+
+        The bearer dependency already refuses such a token, so the endpoint function is called directly.
+        """
+        token = TokenPayload(sub=USER_ID_WITHOUT_SESSION, kwik_impersonate="")
+
+        with pytest.raises(InvalidBearerTokenError):
+            logout(token=token, store=InMemoryAuthSessionStore())
 
     def test_logout_without_store_is_501(self, legacy_client: TestClient, settings: BaseKwikSettings) -> None:
         """An application with no session store answers 501 on logout."""
@@ -607,11 +623,31 @@ class TestLoginRouter:
         parent = auth_store.get(admin_sid)
         assert parent is not None
         # Revoke only the parent row, without the cascade, as an admin UI revoking one row might.
-        parent.revoked_at = datetime.now(UTC)
-        auth_store.update(parent)
+        auth_store.update(replace(parent, revoked_at=datetime.now(UTC)))
         assert client.post(TEST_TOKEN_URL, headers=_bearer(child["access_token"])).status_code == HTTPStatus.OK
 
         response = client.post(STOP_IMPERSONATING_URL, headers=_bearer(child["access_token"]))
+
+        assert response.status_code == HTTPStatus.UNAUTHORIZED
+        assert response.headers["WWW-Authenticate"] == 'Bearer error="invalid_token"'
+
+    def test_refresh_child_refused_when_parent_revoked_without_cascade(
+        self,
+        client: TestClient,
+        settings: BaseKwikSettings,
+        regular_user: User,
+        auth_store: InMemoryAuthSessionStore,
+    ) -> None:
+        """Refreshing an impersonation session is refused once the administrator's session is inactive."""
+        admin = _login(client, settings)
+        admin_sid = decode_token(token=admin["access_token"], settings=settings).sid
+        child = _impersonate(client, admin["access_token"], regular_user.id)
+        parent = auth_store.get(admin_sid)
+        assert parent is not None
+        # Revoke only the parent row, without the cascade, as an admin UI revoking one row might.
+        auth_store.update(replace(parent, revoked_at=datetime.now(UTC)))
+
+        response = client.post(REFRESH_URL, json={"refresh_token": child["refresh_token"]})
 
         assert response.status_code == HTTPStatus.UNAUTHORIZED
         assert response.headers["WWW-Authenticate"] == 'Bearer error="invalid_token"'
@@ -653,3 +689,16 @@ class TestLoginRouter:
         assert stopped_payload.sid is None
         assert stopped_payload.sub == admin_user.id
         assert stopped["refresh_token"] is None
+
+    def test_legacy_impersonate_while_impersonating_is_forbidden(
+        self, legacy_client: TestClient, settings: BaseKwikSettings, regular_user: User, admin_user: User
+    ) -> None:
+        """Without a store, an impersonation token cannot impersonate again either."""
+        admin = _login(legacy_client, settings)
+        child = _impersonate(legacy_client, admin["access_token"], admin_user.id)
+
+        response = legacy_client.post(
+            IMPERSONATE_URL, params={"user_id": regular_user.id}, headers=_bearer(child["access_token"])
+        )
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
