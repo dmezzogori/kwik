@@ -6,6 +6,7 @@ This module provides a simple settings system that loads configuration from envi
 
 from __future__ import annotations
 
+import re
 import secrets
 from typing import Any, Literal
 
@@ -16,6 +17,7 @@ from pydantic import (
     NonNegativeInt,
     PositiveFloat,
     PositiveInt,
+    SecretStr,
     field_validator,
     model_validator,
 )
@@ -148,3 +150,30 @@ class BaseKwikSettings(BaseSettings):
         env_prefix="KWIK_",
         env_ignore_empty=True,
     )
+
+
+REDACTED = "**********"
+_SECRET_NAME_PARTS = ("PASSWORD", "TOKEN", "DSN", "SECRET")
+_URL_CREDENTIALS = re.compile(r"^([A-Za-z][\w+.-]*://[^:@/]*:).+@")
+
+
+def _redact_value(name: str, value: object) -> object:
+    """Return the value to log for one setting, hiding secrets."""
+    if isinstance(value, SecretStr):
+        return REDACTED
+    if isinstance(value, str):
+        if any(part in name.upper() for part in _SECRET_NAME_PARTS):
+            return REDACTED
+        return _URL_CREDENTIALS.sub(rf"\g<1>{REDACTED}@", value)
+    return value
+
+
+def redacted_settings_dump(settings: BaseKwikSettings) -> dict[str, object]:
+    """
+    Return ``settings.model_dump()`` with secrets replaced by ``**********``.
+
+    Redacted are ``SecretStr`` values, ``str`` values of fields whose name contains ``PASSWORD``, ``TOKEN``,
+    ``DSN`` or ``SECRET`` (case-insensitive, so ``SECRET_KEY`` is covered), and the password of ``str`` values
+    that are URLs with credentials. Numbers and booleans are left as they are. Subclasses inherit the rule.
+    """
+    return {name: _redact_value(name, value) for name, value in settings.model_dump().items()}

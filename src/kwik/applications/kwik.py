@@ -16,6 +16,7 @@ from kwik.database import create_engine, create_session_factory, session_scope, 
 from kwik.dependencies.session import _commit_session
 from kwik.exceptions import KwikError, kwik_exception_handler, value_error_handler
 from kwik.logging import logger
+from kwik.settings import redacted_settings_dump
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Callable
@@ -71,7 +72,7 @@ def _make_lifespan(
 
         try:
             logger.debug("Kwik application lifespan started.")
-            logger.debug(f"Initializing Kwik application with settings: {pformat(settings.model_dump())}")
+            logger.debug(f"Initializing Kwik application with settings: {pformat(redacted_settings_dump(settings))}")
             yield
         finally:
             # Clean up app state

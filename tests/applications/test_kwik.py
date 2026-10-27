@@ -7,18 +7,19 @@ from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import SecretStr
 from sqlalchemy.orm import Session
 
 from kwik.api.api import api_router
 from kwik.applications import Kwik
 from kwik.crud import Context, crud_users
 from kwik.database import create_session, session_scope
+from kwik.logging import logger
 from kwik.schemas import UserRegistration
+from kwik.settings import BaseKwikSettings, redacted_settings_dump
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
-
-    from kwik.settings import BaseKwikSettings
 
 
 class TestKwikApplicationCreation:
@@ -216,3 +217,71 @@ class TestSeedingErrorHandling:
             user = crud_users.get_by_email(email=test_email, context=context)
 
             assert user is None
+
+
+REDACTED = "**********"
+KNOWN_SECRET_KEY = "known-secret-key-value"
+KNOWN_DB_PASSWORD = "known-db-password-value"
+KNOWN_SUPERUSER_PASSWORD = "known-superuser-password-value"
+
+
+class TestStartupLogRedaction:
+    """The startup debug log must never contain secret settings values."""
+
+    def test_startup_log_never_contains_secrets(self, settings: BaseKwikSettings) -> None:
+        """No secret appears in the debug log, and the redaction marker does."""
+        secret_settings = settings.model_copy(
+            update={
+                "SECRET_KEY": KNOWN_SECRET_KEY,
+                "POSTGRES_PASSWORD": KNOWN_DB_PASSWORD,
+                "FIRST_SUPERUSER_PASSWORD": KNOWN_SUPERUSER_PASSWORD,
+            },
+        )
+        records: list[str] = []
+        sink_id = logger.add(records.append, level="DEBUG", format="{message}")
+        try:
+            with TestClient(app=Kwik(settings=secret_settings, api_router=api_router).app):
+                pass
+        finally:
+            logger.remove(sink_id)
+
+        log = "\n".join(records)
+        assert REDACTED in log
+        for secret in (KNOWN_SECRET_KEY, KNOWN_DB_PASSWORD, KNOWN_SUPERUSER_PASSWORD):
+            assert secret not in log
+
+    def test_database_uri_password_is_redacted(self) -> None:
+        """A password embedded in a URL is replaced, the rest of the URL stays."""
+        uri_settings = BaseKwikSettings(POSTGRES_PASSWORD=KNOWN_DB_PASSWORD, POSTGRES_SERVER="db")
+        dump = redacted_settings_dump(uri_settings)
+
+        assert dump["SQLALCHEMY_DATABASE_URI"] == f"postgresql://postgres:{REDACTED}@db:5432/db"
+
+    def test_redaction_keeps_non_secret_values(self, settings: BaseKwikSettings) -> None:
+        """Numbers, booleans and ordinary strings are left readable."""
+        dump = redacted_settings_dump(settings)
+
+        assert dump["ACCESS_TOKEN_EXPIRE_MINUTES"] == settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        assert dump["POSTGRES_SERVER"] == settings.POSTGRES_SERVER
+
+    def test_redaction_covers_a_subclass_field(self) -> None:
+        """Fields added by an application subclass follow the same name rule."""
+
+        class AppSettings(BaseKwikSettings):
+            MY_API_TOKEN: str = "subclass-token-value"
+            SENTRY_DSN: str = "https://key@sentry.example/1"
+            SAFE_NAME: str = "visible"
+
+        dump = redacted_settings_dump(AppSettings())
+
+        assert dump["MY_API_TOKEN"] == REDACTED
+        assert dump["SENTRY_DSN"] == REDACTED
+        assert dump["SAFE_NAME"] == "visible"
+
+    def test_redaction_covers_secret_str_values(self) -> None:
+        """SecretStr fields are redacted whatever their name."""
+
+        class AppSettings(BaseKwikSettings):
+            OPAQUE: SecretStr = SecretStr("hidden-value")
+
+        assert redacted_settings_dump(AppSettings())["OPAQUE"] == REDACTED
