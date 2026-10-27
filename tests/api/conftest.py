@@ -81,5 +81,5 @@ def legacy_client(legacy_kwik_app: Kwik, engine: Engine) -> Generator[TestClient
 
 @pytest.fixture
 def identity_aware_client(client: TestClient, settings: BaseKwikSettings) -> IdentityAwareTestClient:
-    """TestClient with identity-aware authentication context switching."""
+    """TestClient with identity-aware authentication context switching; the session store is read from ``app.state``."""
     return IdentityAwareTestClient(client, settings)

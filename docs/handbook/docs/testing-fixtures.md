@@ -215,13 +215,12 @@ The `session` fixture isolates test data with rollbacks. For heavier tests that 
 
 ## Interaction with IdentityAwareTestClient
 
-The IdentityAwareTestClient knows how to authenticate these users:
+The IdentityAwareTestClient mints a token for the user you pass, so these fixtures need no particular password for authenticated requests. The passwords below matter only for the deprecated fallback, which posts the login form when the client has no settings (see [IdentityAwareTestClient](testing.md)):
 
 - `regular_user` uses the password `regularpassword123`
-- the admin user uses `settings.FIRST_SUPERUSER_PASSWORD`
 - unknown users default to `testpassword123`
 
-This aligns with fixture defaults so authenticated requests work out of the box.
+These match the fixture defaults, so the fallback also works out of the box.
 
 ## Troubleshooting
 

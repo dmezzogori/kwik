@@ -95,19 +95,34 @@ These use `admin_context` automatically for operations that require elevated pri
 
 ## IdentityAwareTestClient: authenticated requests
 
-Wrap FastAPI’s `TestClient` to make requests “as a user” without manually handling tokens. It automatically logs in via `/api/v1/login/access-token` and caches tokens per user.
+Wrap FastAPI’s `TestClient` to make requests “as a user” without manually handling tokens. The client mints a bearer token for the user from the application settings, opens an auth session when the application has an auth session store, and caches the token per user. It does not post the login form.
 
 ```python
 from fastapi.testclient import TestClient
 from kwik.testing import IdentityAwareTestClient
 
-def test_protected_endpoint(app, admin_user):
-    client = IdentityAwareTestClient(TestClient(app))
+def test_protected_endpoint(app, settings, admin_user):
+    with TestClient(app) as http:
+        client = IdentityAwareTestClient(http, settings)
 
-    # Perform request as admin_user
-    res = client.get_as(admin_user, "/api/v1/protected")
-    assert res.status_code == 200
+        # Perform request as admin_user
+        res = client.get_as(admin_user, "/api/v1/protected")
+        assert res.status_code == 200
 ```
+
+Settings come from the `settings` argument or, when you omit it, from `app.state.settings`, which the application sets when its lifespan runs (enter the `TestClient` as a context manager). The auth session store comes from the `auth_session_store` argument or from `app.state.auth_session_store`, which `Kwik` sets when you pass a store. An application without a store gets a token without a session, as in kwik 1.13.
+
+`token_for(user)` returns the token itself, for example to call the API with another HTTP client:
+
+```python
+token = client.token_for(admin_user)
+headers = {"Authorization": f"Bearer {token}"}
+```
+
+A user object only needs an `id`: the token is not checked against the database until a request uses it, and a request is then refused with 401 if the account is inactive.
+
+!!! warning "Deprecated fallback"
+    If neither the `settings` argument nor `app.state.settings` is available, the client posts the password form to `/api/v1/login/access-token` and emits a `DeprecationWarning`. This fallback is removed in kwik 2.0; pass `settings` or enter the `TestClient` context instead.
 
 Available methods mirror HTTP verbs: `get_as`, `post_as`, `put_as`, `patch_as`, `delete_as`. For public endpoints, use the wrapped client’s regular methods (e.g., `client.get("/public")`).
 

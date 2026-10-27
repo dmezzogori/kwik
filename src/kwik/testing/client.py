@@ -24,15 +24,20 @@ Example usage:
 
 from __future__ import annotations
 
+import warnings
 from http import HTTPStatus
 from typing import TYPE_CHECKING
+
+from kwik.auth import open_session
+from kwik.security import create_token
+from kwik.settings import BaseKwikSettings
 
 if TYPE_CHECKING:
     from fastapi.testclient import TestClient
     from requests import Response
 
+    from kwik.auth import AuthSessionStore
     from kwik.models import User
-    from kwik.settings import BaseKwikSettings
 
 
 class IdentityAwareTestClient:
@@ -40,46 +45,98 @@ class IdentityAwareTestClient:
     Enhanced TestClient with built-in authentication context switching.
 
     Provides convenient methods for making authenticated requests as different users
-    without manually managing authentication tokens or headers.
+    without manually managing authentication tokens or headers. Tokens are minted
+    directly from the application settings, so no request is spent on logging in.
     """
 
-    def __init__(self, client: TestClient, settings: BaseKwikSettings | None = None) -> None:
+    def __init__(
+        self,
+        client: TestClient,
+        settings: BaseKwikSettings | None = None,
+        *,
+        auth_session_store: AuthSessionStore | None = None,
+    ) -> None:
         """
         Initialize the identity-aware client.
 
         Args:
             client: Base TestClient instance to wrap
-            settings: Optional settings for admin user detection
+            settings: Settings used to sign tokens; defaults to ``client.app.state.settings``,
+                which the application lifespan sets
+            auth_session_store: Store in which to open a session per user; defaults to the
+                ``auth_session_store`` in ``client.app.state``, which ``Kwik`` sets
 
         """
         self._client = client
         self._token_cache: dict[int, str] = {}
         self._settings = settings
+        self._auth_session_store = auth_session_store
 
-    def _get_auth_token(self, user: User) -> str:
+    def _app_state_attribute(self, name: str) -> object | None:
+        """Return ``client.app.state.<name>``, or None when the wrapped client has no such app state."""
+        return getattr(getattr(getattr(self._client, "app", None), "state", None), name, None)
+
+    def token_for(self, user: User) -> str:
         """
-        Get authentication token for a user, caching for efficiency.
+        Return a bearer token for ``user``, cached per user id.
+
+        The token is signed with the settings (the ``settings`` argument, else the application's
+        ``state.settings``). When the application has an auth session store the call opens a
+        session in it, so the token passes the per-request session check. Only when no settings
+        are available does it post the password form to ``/api/v1/login/access-token``, which is
+        deprecated and removed in kwik 2.0.
 
         Args:
             user: User to authenticate as
 
         Returns:
-            Authentication token
+            Access token
 
         Raises:
-            RuntimeError: If authentication fails
+            RuntimeError: If the deprecated password form login fails
 
         """
         if user.id in self._token_cache:
             return self._token_cache[user.id]
 
-        # Determine the correct password based on user email
-        if user.email == "regular@example.com":
-            password = "regularpassword123"  # noqa: S105
-        elif self._settings and user.email == self._settings.FIRST_SUPERUSER:
-            password = self._settings.FIRST_SUPERUSER_PASSWORD
+        settings = self._settings
+        if settings is None:
+            candidate = self._app_state_attribute("settings")
+            settings = candidate if isinstance(candidate, BaseKwikSettings) else None
+
+        if settings is not None:
+            store = self._auth_session_store or self._app_state_attribute("auth_session_store")
+            if store is not None:
+                token = open_session(user_id=user.id, settings=settings, store=store).access_token
+            else:
+                token = create_token(user_id=user.id, settings=settings).access_token
         else:
-            password = "testpassword123"  # Default test password  # noqa: S105
+            warnings.warn(
+                "IdentityAwareTestClient posts the password form because it has no settings: "
+                "pass settings or run the app's lifespan; the password form fallback is removed in kwik 2.0",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            token = self._login_with_password_form(user)
+
+        self._token_cache[user.id] = token
+        return token
+
+    def _get_auth_token(self, user: User) -> str:
+        """Return a bearer token for ``user``; kept for callers of the pre-1.14 private name."""
+        return self.token_for(user)
+
+    def _login_with_password_form(self, user: User) -> str:
+        """
+        Obtain a token by guessing the user's password and posting the login form.
+
+        Raises:
+            RuntimeError: If authentication fails
+
+        """
+        # Determine the correct password based on user email
+        is_regular = user.email == "regular@example.com"
+        password = "regularpassword123" if is_regular else "testpassword123"
 
         response = self._client.post(
             "/api/v1/login/access-token",
@@ -94,13 +151,10 @@ class IdentityAwareTestClient:
             raise RuntimeError(msg)
 
         try:
-            token = response.json()["access_token"]
+            return response.json()["access_token"]
         except (KeyError, ValueError) as e:
             msg = f"Invalid authentication response for user {user.email}: {e}"
             raise RuntimeError(msg) from e
-
-        self._token_cache[user.id] = token
-        return token
 
     def _make_authenticated_request(
         self,

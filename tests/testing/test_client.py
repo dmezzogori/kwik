@@ -15,6 +15,8 @@ from kwik.testing import IdentityAwareTestClient
 if TYPE_CHECKING:
     from kwik.models import User
 
+FORM_FALLBACK_WARNING = "password form fallback"
+
 
 class TestIdentityAwareClientErrorHandling:
     """Test error handling in IdentityAwareTestClient."""
@@ -42,7 +44,10 @@ class TestIdentityAwareClientErrorHandling:
         identity_client = IdentityAwareTestClient(failing_client)
 
         # Attempt to make authenticated request, should fail with RuntimeError
-        with pytest.raises(RuntimeError, match=r"Authentication failed for user .+: 401"):
+        with (
+            pytest.warns(DeprecationWarning, match=FORM_FALLBACK_WARNING),
+            pytest.raises(RuntimeError, match=r"Authentication failed for user .+: 401"),
+        ):
             identity_client.get_as(test_user_for_testing, "/test-endpoint")
 
     def test_authentication_invalid_json_response(
@@ -66,7 +71,10 @@ class TestIdentityAwareClientErrorHandling:
         identity_client = IdentityAwareTestClient(malformed_client)
 
         # Attempt to make authenticated request, should fail with RuntimeError
-        with pytest.raises(RuntimeError, match=r"Invalid authentication response for user .+: 'access_token'"):
+        with (
+            pytest.warns(DeprecationWarning, match=FORM_FALLBACK_WARNING),
+            pytest.raises(RuntimeError, match=r"Invalid authentication response for user .+: 'access_token'"),
+        ):
             identity_client.get_as(test_user_for_testing, "/test-endpoint")
 
     def test_authentication_json_decode_error(
@@ -89,7 +97,10 @@ class TestIdentityAwareClientErrorHandling:
         identity_client = IdentityAwareTestClient(mock_client)
 
         # Attempt to make authenticated request, should fail with RuntimeError
-        with pytest.raises(RuntimeError, match=r"Invalid authentication response for user .+: Invalid JSON"):
+        with (
+            pytest.warns(DeprecationWarning, match=FORM_FALLBACK_WARNING),
+            pytest.raises(RuntimeError, match=r"Invalid authentication response for user .+: Invalid JSON"),
+        ):
             identity_client.get_as(test_user_for_testing, "/test-endpoint")
 
 
@@ -139,7 +150,8 @@ class TestIdentityAwareClientAuth:
 
         # The test_user_for_testing has email "unknown.pattern@testing.com"
         # which doesn't match any known patterns, so should use fallback
-        response = identity_client.get_as(test_user_for_testing, "/test-endpoint")
+        with pytest.warns(DeprecationWarning, match=FORM_FALLBACK_WARNING):
+            response = identity_client.get_as(test_user_for_testing, "/test-endpoint")
 
         assert response.status_code == HTTPStatus.OK
         assert received_data["password"] == "testpassword123"  # Fallback password used
@@ -185,7 +197,8 @@ class TestIdentityAwareClientAuth:
 
         identity_client = IdentityAwareTestClient(mock_test_client)
 
-        response = identity_client.get_as(regular_user, "/test-endpoint")
+        with pytest.warns(DeprecationWarning, match=FORM_FALLBACK_WARNING):
+            response = identity_client.get_as(regular_user, "/test-endpoint")
 
         assert response.status_code == HTTPStatus.OK
         assert received_data["password"] == "regularpassword123"  # Specific regular password
@@ -212,7 +225,8 @@ class TestIdentityAwareClientAuth:
         identity_client = IdentityAwareTestClient(client)
 
         # Make authenticated request
-        response = identity_client.get_as(test_user_for_testing, "/test-endpoint")
+        with pytest.warns(DeprecationWarning, match=FORM_FALLBACK_WARNING):
+            response = identity_client.get_as(test_user_for_testing, "/test-endpoint")
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == {"message": "success"}
@@ -242,7 +256,8 @@ class TestIdentityAwareClientAuth:
         identity_client = IdentityAwareTestClient(client)
 
         # Make first authenticated request
-        response1 = identity_client.get_as(test_user_for_testing, "/test-endpoint")
+        with pytest.warns(DeprecationWarning, match=FORM_FALLBACK_WARNING):
+            response1 = identity_client.get_as(test_user_for_testing, "/test-endpoint")
         assert response1.status_code == HTTPStatus.OK
         assert call_count == 1  # Authentication called once
 
@@ -280,7 +295,8 @@ class TestIdentityAwareClientMethods:
         identity_client = IdentityAwareTestClient(client)
 
         # Make authenticated PATCH request
-        response = identity_client.patch_as(test_user_for_testing, "/test-endpoint", json={"field": "value"})
+        with pytest.warns(DeprecationWarning, match=FORM_FALLBACK_WARNING):
+            response = identity_client.patch_as(test_user_for_testing, "/test-endpoint", json={"field": "value"})
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == {"message": "patched", "method": "PATCH"}
@@ -314,7 +330,8 @@ class TestIdentityAwareClientMethods:
         identity_client = IdentityAwareTestClient(client)
 
         # First request - should authenticate
-        response1 = identity_client.get_as(test_user_for_testing, "/test-endpoint")
+        with pytest.warns(DeprecationWarning, match=FORM_FALLBACK_WARNING):
+            response1 = identity_client.get_as(test_user_for_testing, "/test-endpoint")
         assert response1.status_code == HTTPStatus.OK
         assert auth_call_count == 1
 
@@ -327,7 +344,8 @@ class TestIdentityAwareClientMethods:
         identity_client.clear_token_cache()
 
         # Third request - should authenticate again after cache clear
-        response3 = identity_client.get_as(test_user_for_testing, "/test-endpoint")
+        with pytest.warns(DeprecationWarning, match=FORM_FALLBACK_WARNING):
+            response3 = identity_client.get_as(test_user_for_testing, "/test-endpoint")
         assert response3.status_code == HTTPStatus.OK
         expected_auth_count = 2  # Increased to 2, re-authenticated
         assert auth_call_count == expected_auth_count
