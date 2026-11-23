@@ -6,7 +6,8 @@ import pytest
 from pydantic import BaseModel
 from sqlalchemy import Column, Integer, String, select
 
-from kwik.crud.autocrud import AutoCRUD, _sort_query
+import kwik.crud
+from kwik.crud.autocrud import AutoCRUD, _sort_query, sort_query
 from kwik.crud.context import NoUserCtx, UserCtx
 from kwik.models import Base
 
@@ -132,12 +133,36 @@ class TestAutoCRUDValidation:
             InvalidCRUD()
 
     def test_sort_query_invalid_field(self) -> None:
-        """Test _sort_query function with invalid field name."""
+        """Test sort_query function with invalid field name."""
         mock_sort = [("invalid_field", "asc")]
         stmt = select(ModelWithoutAuditFields)
 
         with pytest.raises(ValueError, match="Invalid sort field 'invalid_field' for model ModelWithoutAuditFields"):
-            _sort_query(model=ModelWithoutAuditFields, stmt=stmt, sort=mock_sort)
+            sort_query(model=ModelWithoutAuditFields, stmt=stmt, sort=mock_sort)
+
+    def test_sort_query_orders_by_each_pair(self) -> None:
+        """Test sort_query adds one ORDER BY term per pair, in order and direction."""
+        stmt = select(ModelWithoutAuditFields)
+
+        sorted_stmt = sort_query(model=ModelWithoutAuditFields, stmt=stmt, sort=[("name", "desc"), ("id", "asc")])
+
+        order_by = str(sorted_stmt).split("ORDER BY", 1)[1].strip()
+        assert order_by == "model_without_audit.name DESC, model_without_audit.id ASC"
+
+    def test_sort_query_is_exported_from_kwik_crud(self) -> None:
+        """Test sort_query is part of the public kwik.crud API."""
+        assert kwik.crud.sort_query is sort_query
+        assert "sort_query" in kwik.crud.__all__
+
+    def test_private_sort_query_alias_warns_and_delegates(self) -> None:
+        """Test the deprecated _sort_query alias warns and returns the same ordering as sort_query."""
+        stmt = select(ModelWithoutAuditFields)
+        sort = [("name", "desc")]
+
+        with pytest.warns(DeprecationWarning, match=r"_sort_query is deprecated: use kwik\.crud\.sort_query"):
+            aliased = _sort_query(model=ModelWithoutAuditFields, stmt=stmt, sort=sort)
+
+        assert str(aliased) == str(sort_query(model=ModelWithoutAuditFields, stmt=stmt, sort=sort))
 
     def test_get_multi_invalid_filter_field(self, no_user_context: NoUserCtx) -> None:
         """Test get_multi with invalid filter field."""

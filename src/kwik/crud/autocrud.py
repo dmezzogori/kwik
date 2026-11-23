@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, ClassVar, get_args
 
 from pydantic import BaseModel
@@ -19,10 +20,28 @@ if TYPE_CHECKING:
     from kwik.dependencies.sorting_query import ParsedSortingQuery
 
 
-def _sort_query[ModelType: Base](
+def sort_query[ModelType: Base](
     *, model: type[ModelType], stmt: Select[tuple[ModelType]], sort: ParsedSortingQuery
 ) -> Select[tuple[ModelType]]:
-    """Apply sorting parameters to SQLAlchemy select statement with basic validation."""
+    """
+    Apply sorting parameters to a SQLAlchemy select statement.
+
+    This is the ordering step of `AutoCRUD.get_multi`, for CRUD classes that build their own
+    select statement. Each field must be a mapped column of `model`; `list_allowed_fields`
+    is not consulted, so callers that restrict sortable fields check them first.
+
+    Args:
+        model: The mapped class whose columns the sort fields name.
+        stmt: The select statement to order.
+        sort: `(field, direction)` pairs, as produced by the sorting query dependency.
+
+    Returns:
+        The statement with an `ORDER BY` clause per pair, in the given order.
+
+    Raises:
+        ValueError: If a field is not a mapped column of `model`.
+
+    """
     mapper_columns = inspect(model).columns
     order_by = []
     for attr, order in sort:
@@ -35,6 +54,18 @@ def _sort_query[ModelType: Base](
         else:
             order_by.append(model_attr.desc())
     return stmt.order_by(*order_by)
+
+
+def _sort_query[ModelType: Base](
+    *, model: type[ModelType], stmt: Select[tuple[ModelType]], sort: ParsedSortingQuery
+) -> Select[tuple[ModelType]]:
+    """Apply `sort_query`; deprecated alias kept for callers of the former private name, removed in kwik 2.0."""
+    warnings.warn(
+        "kwik.crud.autocrud._sort_query is deprecated: use kwik.crud.sort_query; the alias is removed in kwik 2.0",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return sort_query(model=model, stmt=stmt, sort=sort)
 
 
 class NoDatabaseConnectionError(Exception):
@@ -133,7 +164,7 @@ class AutoCRUD[Ctx: Context, ModelType: Base, CreateSchemaType: BaseModel, Updat
                 if key not in self._list_allowed_fields:
                     msg = f"Invalid sort field '{key}' for model {self.model.__name__}"
                     raise ValueError(msg)
-            stmt = _sort_query(model=self.model, stmt=stmt, sort=sort)
+            stmt = sort_query(model=self.model, stmt=stmt, sort=sort)
         else:
             pk_cols = inspect(self.model).primary_key
             if pk_cols:

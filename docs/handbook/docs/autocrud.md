@@ -76,6 +76,20 @@ def read_items(q: ListQuery, context: UserContext):
     return {"total": total, "data": data}
 ```
 
+A CRUD class that builds its own select statement (joins, extra conditions) can apply the same ordering with `sort_query`, the function `get_multi()` uses:
+
+```python
+from sqlalchemy import select
+
+from kwik.crud import sort_query
+
+stmt = select(Product).where(Product.status == "active")
+if sort:
+    stmt = sort_query(model=Product, stmt=stmt, sort=sort)
+```
+
+`sort_query` raises `ValueError` for a field that is not a mapped column of the model. It does not read `list_allowed_fields`, so check those first if you restrict sorting. Before kwik 1.15 the function was the private `kwik.crud.autocrud._sort_query`; that name still works, emits a `DeprecationWarning`, and is removed in kwik 2.0.
+
 ## Core Methods {#methods}
 
 - `get(entity_id, context)` → Model | None: Fetch by id.

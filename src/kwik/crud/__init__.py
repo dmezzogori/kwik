@@ -5,7 +5,7 @@ This package provides Create, Read, Update, Delete operations for database model
 including automatic CRUD generation and specialized operations for user management and permissions.
 """
 
-from .autocrud import AutoCRUD, NoDatabaseConnectionError
+from .autocrud import AutoCRUD, NoDatabaseConnectionError, sort_query
 from .context import Context, MaybeUserCtx, NoUserCtx, UserCtx
 from .permissions import crud_permissions
 from .roles import crud_roles
@@ -21,4 +21,5 @@ __all__ = [
     "crud_permissions",
     "crud_roles",
     "crud_users",
+    "sort_query",
 ]
