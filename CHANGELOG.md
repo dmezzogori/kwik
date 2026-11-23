@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-11-23
+
+### Added
+
+- **`sort_query` is public**, exported from `kwik.crud`. It is the ordering step of `AutoCRUD.get_multi()` (one `ORDER BY` term per `(field, direction)` pair, `ValueError` for a field that is not a mapped column), for CRUD classes that build their own select statement. Its signature and behaviour are those of the former private `kwik.crud.autocrud._sort_query`. The handbook's AutoCRUD page shows its use.
+
+### Deprecated
+
+- **`kwik.crud.autocrud._sort_query`.** It still works and delegates to `sort_query`, but emits a `DeprecationWarning` and is removed in kwik 2.0. Import `sort_query` from `kwik.crud` instead.
+
 ## [1.14.0] - 2026-10-27
 
 ### Changed
